@@ -20,6 +20,30 @@ chatbot powered by memory network
 * user_slot: 地点,名字,性别
 * product_slot_list: deny_list, keep_list
 
+## memory network trial plan
+### label
+* category: 空调,手机,水果
+* brand: 格力,美的,苹果,三星,华为
+* ac_power: NUMBER
+* price: NUMBER
+
+### knowledge graph database
+小米手机note5, 手机, 小米, 1499, 安卓, 中国
+小米手机红米, 手机, 小米, 1299, 安卓, 中国
+三星galaxy S7, 手机, 三星, 5999, 安卓, 韩国
+华为荣耀8, 手机, 华为, 4999, 安卓, 韩国
+华为P9, 手机, 华为, 3999, 安卓, 韩国
+苹果iphone6, 手机, 苹果, 5999, iOS, 美国
+苹果iphone7, 手机, 苹果, 6999, iOS, 美国
+苹果, 水果
+
+
+### classes to be predicted
+* 空调, 手机, 水果, #brand#, api_call_interactive_search, #ac_power#, update_category, update_brand, update_price, update_ac_power, ask_price, ask_discount, ask_location, api_call_ask_machine_name, list_category, list_brand, list_more_category, list_more_brand
+
+### slot_hierarchy
+仍然是树结构
+
 # TASK
 Task 1: Issuing API calls 
 
