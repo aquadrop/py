@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Node:
     def __init__(self, slot, value, fields):
         '''
@@ -10,7 +13,9 @@ class Node:
         self.fields = fields
         self.parent_node = None
         self.slot_values_mapper = dict()
+        self.value_slot_mapper = dict()
         self.children = dict()  # value to chidren nodes
+        self.level = 0
 
     def add_node(self, node):
         """
@@ -25,6 +30,7 @@ class Node:
             raise ValueError(
                 'error: node must have field which is included in self.fields. Fix the graph file before continue')
         self.children[node_value] = node
+        node.level = self.level + 1
         node.parent_node = self
 
         # supply other information
@@ -32,8 +38,46 @@ class Node:
             self.slot_values_mapper[node_field] = []
         self.slot_values_mapper[node_field].append(node_value)
 
-    def siblings(self, keep_slot):
+    def has_ancestor_by_value(self, value):
+        node = self.parent_node
+        while node != None:
+            if node.value == value:
+                return True
+            node = node.parent_node
+        return False
+
+    def is_api_call_node(self):
+        return False
+
+    def get_num_required_slots(self):
+        return 0
+
+    def get_slot_by_value(self, value):
+        if value not in self.value_slot_mapper:
+            return None
+        return self.value_slot_mapper[value]
+
+    def get_required_slot_fields(self):
+        return dict()
+
+    def has_child(self, value):
         """
+        has direct child
+        """
+        return value in self.children
+
+    def get_child(self, value):
+        return self.children[value]
+
+    def has_posterity(self, value):
+        return False
+
+    def get_posterity_nodes_by_value(self, value):
+        return None
+
+    def get_siblings(self, keep_slot):
+        """
+        This function might be dangerous to be used
         Args:
             keep_slot: True or False, return only siblings with same slot or not
         """
@@ -41,16 +85,29 @@ class Node:
             return []
 
         siblings = []
-        if keep_slot == True:
-            children = self.parent_node.chidren
-            for key, value in children.iteritems():
-                pass
+        children = self.parent_node.chidren
+        for key, value in children.iteritems():
+            if key != self.value:
+                sibling = value
+                if sibling.slot == self.slot or keep_slot == False:
+                    siblings.append(sibling)
+        return siblings
 
-    def sibling_names(self, value, keep_slot):
-        pass
+    def get_sibling_names(self, value, keep_slot):
+        siblings = self.get_siblings(keep_slot)
+        sibling_names = []
+        for node in siblings:
+            sibling_names.append(node.value)
+        return sibling_names
 
     def get_parent_node(self):
         return self.parent_node
 
     def get_children_names(self, max_num, required_only):
-        pass
+        children_names = []
+        for key, value in self.children.iteritems()
+            if self.fields[key] == True or required_only == False:
+                children_names.append(key)
+        children_names = np.array(children_names)
+        children_names = np.random.choice(children_names, max_num)
+        return children_names
