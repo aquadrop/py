@@ -9,6 +9,7 @@ class Graph(node.Node, object):
         # This parameter stores all
         # value is a list of nodes that share the same.
         self.node_header = dict()
+        self.id_node = dict()
 
     def get_node_connected_slots(self, value):
         """
@@ -32,3 +33,6 @@ class Graph(node.Node, object):
         return a list
         """
         return self.node_header[node_value]
+
+    def get_node_by_id(self, id):
+        return self.id_node[id]

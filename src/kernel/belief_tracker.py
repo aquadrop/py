@@ -42,6 +42,10 @@ class BeliefTracker:
     static_belief_graph = None
     static_qa_clf = None
 
+    API_CALL_STATE = "api_call_state"
+    TRAVEL_STATE = "travel_state"
+    AMBIGUITY_STATE = "ambiguity_state"
+
     def __init__(self, graph_path, clf_path):
         self.gbdt = None
         self.state_cleared = True
@@ -58,7 +62,10 @@ class BeliefTracker:
         self.negative_slots = {}
         self.score_stairs = [1, 4, 16, 64, 256]
         self.api_call = None
+        self.machine_state = None  # API_NODE, NORMAL_NODE
         self.filling_slots = dict()
+        self.wild_card_slots = dict()
+        self.ambiguity_slots = dict()
         # self.negative = False
         # self.negative_clf = Negative_Clf()
         # self.simple = SimpleQAKernel()
@@ -205,48 +212,67 @@ class BeliefTracker:
         except:
             return slots_list
 
-    def update_belief_graph(self, search_parent_node, slot_values_list, slot_values_marker=None):
+    def update_belief_graph(self, search_parent_node, ambiguity_nodes=[], slot_values_list, slot_values_marker=None):
         """
-        一般从上到下递归, 如果出现断层, 则尝试从底部到上连接,消除歧义节点
-        广度优先搜索
-        search_parent_node is the current_node
-
-1. start from "ROOT" node
-2. give priority to searching direct child node. if it is, move pointer to it. if not, check if posterity. if neither, discard
-3. if multiple indirect nodes found, NEXT ROUND, ask parent of these posterity. if parents of these posterity collapse, keep asking!
-(see figure) finally determine node.
-4. CURRENT_ROUND OR NEXT_ROND, go to 2. plus, if the node is not posterity of current node, move
-5. ask all slots util filled. ISSUE api_call
-
-ISSUNE api_call condition: node has more than one required fields, or all children are leaves
-
-ISSUNE api_call: 当前所有slot值和当前节点回溯到ROOT
+        1. if node is single, go directly
+        2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
+            2.1 if fail, enter ambiguity state
         """
         if not slot_values_marker:
             slot_values_marker = [0] * len(slots_list)
         slot_values_list = list(set(slot_values_list))
-        if search_parent_node.is_api_call_node():
-            self.required_filling_slots = search_parent_node.get_required_slot_fields()
-            # start filling
-            for i, value in enumerate(slot_values_list):
-                slot = search_parent_node.get_slot_by_value(value)
-                if slot:
-                    self.filling_slots[slot] = value
+
+        if len(ambiguity_nodes) > 1:
+            # now there are ambiguity nodes
+            # build profiles of ambiguity, first use information from slot_values_list to remove ambiguity
+            for node in search_parent_nodes:
+                parent_values = node.get_parent_values()
+                self.ambiguity_slots.clear()
+                self.ambiguity_slots[parent_values[0]] = node
+                for slot_value in slot_values_list:
+                    if slot_values_marker[i] == 1:
+                        continue
+                    if slot_value in parent_values:
+                        # found
+                        next_parent_search_node = node
+                        return self.update_belief_graph(
+                            next_parent_search_node, slot_values_list, slot_values_marker)
+
+            # fail to remove ambiguity, enter ambiguity state
+            self.machine_state = self.AMBIGUITY_STATE
+            return
+
+        # session terminal end api_call_node
+        # issune api_call_to_solr
+        # node_水果 是 api_node, 没有必要再继续往下了
+        if search_parent_node.is_api_node():
+            self.machine_state = self.API_CALL_STATE
             return
 
         for i, value in enumerate(slot_values_list):
-            if search_parent_node.has_child(value):
-                search_parent_node = search_parent_node.get_child(value)
-                slot_values_marker[i] = 1
-                return self.update_belief_graph(search_parent_node, slot_values_list, slot_values_marker)
+            if slot_values_marker[i] == 1:
+                continue
+            candidate_nodes = search_parent_node.get_posterity_nodes_by_value(
+                value)
+            # consider single node first
+            if len(candidate_nodes) == 1:
+                self.slot_values_marker[i] == 1
+                next_parent_search_node = candidate_nodes[0]
+                self.machine_state = self.TRAVEL_STATE
+                return self.update_belief_graph(
+                    search_parent_node=next_parent_search_node, slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
-            if search_parent_node.has_posterity(value):
-                posterity_nodes = search_parent_node.get_posterity_nodes_by_value(
-                    value)
-                if len(posterity_nodes) == 1:
-                    search_parent_node = posterity_nodes[0]
-                else:
-                    # ISSUE ambiguity request
+            # enter ambiguity state
+            if len(candidate_nodes) > 1:
+                self.slot_values_marker[i] == 1
+                return self.update_belief_graph(
+                    search_parent_node=next_parent_search_node, ambiguity_nodes=candidate_nodes,
+                    slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+
+            # go directly to ROOT
+            search_parent_node = self.belief_graph
+            return self.update_belief_graph(
+                search_parent_node=next_parent_search_node, slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:

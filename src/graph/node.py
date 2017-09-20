@@ -1,8 +1,9 @@
 import numpy as np
+import uuid
 
 
 class Node:
-    def __init__(self, slot, value, fields):
+    def __init__(self, slot, value, fields, id=None):
         '''
         Args:
             slot: slot serves as edge
@@ -15,6 +16,8 @@ class Node:
         self.slot_values_mapper = dict()
         self.value_slot_mapper = dict()
         self.children = dict()  # value to chidren nodes
+        if not id:
+            self.id = str(uuid.uuid4)  # globally uniq
         self.level = 0
 
     def add_node(self, node):
@@ -58,6 +61,9 @@ class Node:
         return self.value_slot_mapper[value]
 
     def get_required_slot_fields(self):
+        return dict()
+
+    def get_optional_slot_fields(self):
         return dict()
 
     def has_child(self, value):
