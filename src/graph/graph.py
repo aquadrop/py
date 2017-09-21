@@ -27,6 +27,9 @@ class Graph(node.Node, object):
         """
         pass
 
+    def get_root_node(self):
+        return self.get_nodes_by_value[self.ROOT][0]
+
     def get_nodes_by_value(self, node_value):
         """
         get_nodes_by_value("苹果")...
