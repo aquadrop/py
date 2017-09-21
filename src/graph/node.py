@@ -3,21 +3,20 @@ import uuid
 
 
 class Node:
-    def __init__(self, slot, value, fields, id=None):
+    def __init__(self, slot, value, fields, api_node=False):
         '''
+        For now only api_node has more than one field
         Args:
             slot: slot serves as edge
             fields: a map indicating fields that are required or not
         '''
         self.value = value  # value aka slot-value filling
         self.slot = slot  # slot aks slot value filling
-        self.fields = fields
         self.parent_node = None
-        self.slot_values_mapper = dict()
-        self.value_slot_mapper = dict()
+        self.fields = fields  # is a dict, valued as prob
         self.children = dict()  # value to chidren nodes
-        if not id:
-            self.id = str(uuid.uuid4)  # globally uniq
+        self.api_node = api_node
+        self.id = str(uuid.uuid4)  # globally uniq
         self.level = 0
 
     def add_node(self, node):

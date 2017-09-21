@@ -42,29 +42,29 @@ class BeliefTracker:
     static_belief_graph = None
     static_qa_clf = None
 
+    API_REQUEST_STATE = "api_request_state"
     API_CALL_STATE = "api_call_state"
     TRAVEL_STATE = "travel_state"
     AMBIGUITY_STATE = "ambiguity_state"
+    REQUEST_PROPERTY_STATE = "request_property_state"
 
     def __init__(self, graph_path, clf_path):
         self.gbdt = None
         self.state_cleared = True
         self._load_graph(graph_path)
         self._load_clf(clf_path)
-        self.search_graph = BeliefGraph()
-        # keep track of remaining slots, the old slots has lower score index, if index = -1, remove that slot
-        # alias as machine slot,
-        self.remaining_slots = {}
+        self.search_node = self.belief_graph.get_root_node()
+
         # keep tracker of user profile, for instance: name, location, gender
         self.user_slots = {}
         # keep track of pushed product ids
         self.product_push_list = []
-        self.negative_slots = {}
+
         self.score_stairs = [1, 4, 16, 64, 256]
-        self.api_call = None
         self.machine_state = None  # API_NODE, NORMAL_NODE
-        self.filling_slots = dict()
-        self.wild_card_slots = dict()
+        self.filling_slots = dict()  # current slot
+        self.required_slots = list()  # required slot obtained from api_node, ordered
+
         self.ambiguity_slots = dict()
         # self.negative = False
         # self.negative_clf = Negative_Clf()
@@ -182,37 +182,11 @@ class BeliefTracker:
                 self.negative_slots.clear()
                 self.search_graph = BeliefGraph()
 
-    # fill slots when incomplete
-    # silly fix
-    def inter_fix(self, slots_list):
-        # check broken
-        try:
-            broken = True
-            for slot in slots_list:
-                if self.belief_graph.has_child(key=slot, value_type=Node.KEY):
-                    broken = False
-                    break
-            if not broken:
-                return slots_list
+    def move_to_node(self, node):
+        self.search_node = node
+        self.required_slots = search_node.generate_required_slots()
 
-            max_go_up = 10
-            filled_slots_list = list(set(slots_list))
-            for slot in slots_list:
-                current_slot = slot
-                for i in xrange(max_go_up):
-                    node = self.belief_graph.get_global_node(current_slot)
-                    parent_node = node.parent_node
-                    current_slot = parent_node.slot
-                    if not parent_node.is_root():
-                        filled_slots_list.append(parent_node.slot)
-                    else:
-                        break
-
-            return list(set(filled_slots_list))
-        except:
-            return slots_list
-
-    def update_belief_graph(self, search_parent_node, ambiguity_nodes=[], slot_values_list, slot_values_marker=None):
+    def update_belief_graph(self, ambiguity_nodes=[], slot_values_list, slot_values_marker=None):
         """
         1. if node is single, go directly
         2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
@@ -234,7 +208,7 @@ class BeliefTracker:
                         continue
                     if slot_value in parent_values:
                         # found
-                        next_parent_search_node = node
+                        self.move_to_node(node)
                         return self.update_belief_graph(
                             next_parent_search_node, slot_values_list, slot_values_marker)
 
@@ -245,34 +219,65 @@ class BeliefTracker:
         # session terminal end api_call_node
         # issune api_call_to_solr
         # node_水果 是 api_node, 没有必要再继续往下了
-        if search_parent_node.is_api_node():
-            self.machine_state = self.API_CALL_STATE
+        if self.search_node.is_api_node():
+            self.machine_state = self.API_REQUEST_STATE
+            for i, value in enumerate(slot_values_list):
+                if slot_values_marker[i] == 1:
+                    continue
+                if self.search_node.has_child(value):
+                    slot = search_parent_node.get_slot_by_value(value)
+                    self.filling_slots[slot] = value
+                    self.required_slots.remove(slot)
+
+                    if len(self.required_slots) == 0:
+                        self.machine_state = self.API_CALL_STATE
             return
 
         for i, value in enumerate(slot_values_list):
             if slot_values_marker[i] == 1:
                 continue
-            candidate_nodes = search_parent_node.get_posterity_nodes_by_value(
+            candidate_nodes = self.search_node.get_posterity_nodes_by_value(
                 value)
             # consider single node first
             if len(candidate_nodes) == 1:
                 self.slot_values_marker[i] == 1
                 next_parent_search_node = candidate_nodes[0]
-                self.machine_state = self.TRAVEL_STATE
+                self.move_to_node(next_parent_search_node)
+                self.machine_state = self.API_REQUEST_STATE
                 return self.update_belief_graph(
-                    search_parent_node=next_parent_search_node, slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                    slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
             # enter ambiguity state
             if len(candidate_nodes) > 1:
                 self.slot_values_marker[i] == 1
+                # search_node stays
                 return self.update_belief_graph(
-                    search_parent_node=next_parent_search_node, ambiguity_nodes=candidate_nodes,
+                    ambiguity_nodes=candidate_nodes,
                     slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
             # go directly to ROOT
-            search_parent_node = self.belief_graph
+            self.move_to_node(self.belief_graph.get_root_node())
+            self.machine_state = self.API_REQUEST_STATE
             return self.update_belief_graph(
-                search_parent_node=next_parent_search_node, slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+
+    def issune_api():
+        if self.machine_state == self.API_REQUEST_STATE:
+            slot = self.required_slots[0]
+            return "api_request_value_of_" + slot
+        if self.machine_state == self.AMBIGUITY_STATE:
+            param = ','.join(self.ambugity_slots.keys())
+            return "api_request_ambiguity_removal_" + param
+        if self.machine_state == self.API_CALL_STATE:
+            # first filling slots
+            param = "api_call_"
+            for key, value in self.filling_slots:
+                param += key + ":" + value
+
+            node = self.search_node
+            while node.value != self.belief_graph.ROOT:
+                param += node.slot + ":" + node.value
+            return param
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:
