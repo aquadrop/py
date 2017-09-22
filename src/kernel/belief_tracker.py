@@ -26,6 +26,7 @@ class BeliefTracker:
     TRAVEL_STATE = "travel_state"
     AMBIGUITY_STATE = "ambiguity_state"
     REQUEST_PROPERTY_STATE = "request_property_state"
+    RESET_STATE = "reset_state"
 
     def __init__(self, graph_path):
         self.gbdt = None
@@ -162,7 +163,7 @@ class BeliefTracker:
         """
         if not slot_values_marker:
             slot_values_marker = [0] * len(slot_values_list)
-        slot_values_list = list(set(slot_values_list))
+        # slot_values_list = list(set(slot_values_list))
 
         if self.machine_state == self.API_CALL_STATE:
             self.machine_state = self.TRAVEL_STATE
@@ -202,6 +203,9 @@ class BeliefTracker:
                     if len(self.required_slots) == 0:
                         self.machine_state = self.API_CALL_STATE
                 else:
+                    if self.search_node.has_ancestor_by_value(value):
+                        # just ignore this stupid input value
+                        continue
                     self.move_to_node(self.belief_graph.get_root_node())
                     self.machine_state = self.API_REQUEST_STATE
 
@@ -265,14 +269,19 @@ class BeliefTracker:
                 if len(filtered_nodes) == 1:
                     # found
                     # remove AMBIGUITY_STATE
+                    node = filtered_nodes[0]
                     self.machine_state = self.TRAVEL_STATE
                     self.move_to_node(node)
                     return self.update_belief_graph(
                         slot_values_list=slot_values_list,
                         slot_values_marker=slot_values_marker)
-                else:
+                elif len(filtered_nodes) > 1:
                     for node in filtered_nodes:
                         self.ambiguity_slots[node.parent_node.value] = node
+                    return
+                else:
+                    self.machine_state = self.RESET_STATE
+                    self.move_to_node(self.belief_graph.get_root_node())
                     return
 
             # go directly to ROOT
@@ -300,6 +309,8 @@ class BeliefTracker:
                 fill.append(node.slot + ":" + node.value)
                 node = node.parent_node
             return param + ",".join(fill)
+        if self.machine_state == self.RESET_STATE:
+            return "reset_requested"
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:
