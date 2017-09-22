@@ -29,6 +29,7 @@ class BeliefTracker:
     TRAVEL_STATE = "travel_state"
     AMBIGUITY_STATE = "ambiguity_state"
     REQUEST_PROPERTY_STATE = "request_property_state"
+    RESET_STATE = "reset_state"
 
     def __init__(self, graph_path):
         self.gbdt = None
@@ -154,7 +155,8 @@ class BeliefTracker:
 
     def fill_slot(self, slot, value):
         self.filling_slots[slot] = value
-        self.required_slots.remove(slot)
+        if slot in self.required_slots:
+            self.required_slots.remove(slot)
 
     def update_belief_graph(self, slot_values_list, slot_values_marker=None):
         """
@@ -164,7 +166,12 @@ class BeliefTracker:
         """
         if not slot_values_marker:
             slot_values_marker = [0] * len(slot_values_list)
-        slot_values_list = list(set(slot_values_list))
+        # slot_values_list = list(set(slot_values_list))
+
+        if self.machine_state == self.API_CALL_STATE:
+            self.machine_state = self.TRAVEL_STATE
+            self.move_to_node(self.belief_graph.get_root_node())
+            return self.update_belief_graph(slot_values_list, slot_values_marker)
 
         if self.machine_state == self.API_CALL_STATE:
             self.machine_state = self.TRAVEL_STATE
@@ -181,6 +188,7 @@ class BeliefTracker:
                     self.move_to_node(self.ambiguity_slots[value])
                     return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
             # ambiguity removal failed, abandon
+            self.machine_state = self.TRAVEL_STATE
             self.move_to_node(self.belief_graph.get_root_node())
             return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
@@ -203,6 +211,9 @@ class BeliefTracker:
                     if len(self.required_slots) == 0:
                         self.machine_state = self.API_CALL_STATE
                 else:
+                    if self.search_node.has_ancestor_by_value(value):
+                        # just ignore this stupid input value
+                        continue
                     self.move_to_node(self.belief_graph.get_root_node())
                     self.machine_state = self.API_REQUEST_STATE
 
@@ -216,6 +227,10 @@ class BeliefTracker:
             slot = self.search_node.slot
             value = self.search_node.value
             self.move_to_node(parent_node)
+            # mark parent slot_value mark 1
+            if parent_node.value in slot_values_list:
+                slot_values_marker[slot_values_list.index(
+                    parent_node.value)] = 1
             self.fill_slot(slot, value)
             return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
@@ -239,23 +254,43 @@ class BeliefTracker:
                 self.machine_state = self.AMBIGUITY_STATE
                 # search_node stays
                 #
-                for node in candidate_nodes:
+                filtered = [1] * len(candidate_nodes)
+                removal_slot_value_index = set()
+                for k, node in enumerate(candidate_nodes):
                     parent_values = node.get_ancestry_values()
 
-                    self.ambiguity_slots[parent_values[0]] = node
+                    # self.ambiguity_slots[parent_values[0]] = node
+                    # filter
                     for j, slot_value in enumerate(slot_values_list):
                         if slot_values_marker[j] == 1:
                             continue
-                        if slot_value in parent_values:
-                            slot_values_marker[j] = 1
-                            # found
-                            # remove AMBIGUITY_STATE
-                            self.machine_state = self.TRAVEL_STATE
-                            self.move_to_node(node)
-                            return self.update_belief_graph(
-                                slot_values_list=slot_values_list,
-                                slot_values_marker=slot_values_marker)
-                return
+                        if slot_value not in parent_values:
+                            filtered[k] = 0
+                        else:
+                            removal_slot_value_index.add(j)
+                filtered_nodes = []
+                for m in removal_slot_value_index:
+                    slot_values_marker[m] = 1
+                for idx, flag in enumerate(filtered):
+                    if flag == 1:
+                        filtered_nodes.append(candidate_nodes[idx])
+                if len(filtered_nodes) == 1:
+                    # found
+                    # remove AMBIGUITY_STATE
+                    node = filtered_nodes[0]
+                    self.machine_state = self.TRAVEL_STATE
+                    self.move_to_node(node)
+                    return self.update_belief_graph(
+                        slot_values_list=slot_values_list,
+                        slot_values_marker=slot_values_marker)
+                elif len(filtered_nodes) > 1:
+                    for node in filtered_nodes:
+                        self.ambiguity_slots[node.parent_node.value] = node
+                    return
+                else:
+                    self.machine_state = self.RESET_STATE
+                    self.move_to_node(self.belief_graph.get_root_node())
+                    return
 
             # go directly to ROOT
             self.move_to_node(self.belief_graph.get_root_node())
@@ -273,15 +308,17 @@ class BeliefTracker:
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_"
+            fill = []
             for key, value in self.filling_slots.items():
-                param += key + ":" + value
+                fill.append(key + ":" + value)
 
             node = self.search_node
-            attach = []
             while node.value != self.belief_graph.ROOT:
-                attach.append(node.slot + ":" + node.value)
+                fill.append(node.slot + ":" + node.value)
                 node = node.parent_node
-            return param + ",".join(attach)
+            return param + ",".join(fill)
+        if self.machine_state == self.RESET_STATE:
+            return "reset_requested"
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:
