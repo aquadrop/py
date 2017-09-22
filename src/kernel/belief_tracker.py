@@ -1,14 +1,17 @@
 """ 
 Belief Tracker
 """
+import traceback
+import pickle
+
+import os
 import sys
-sys.path.insert(0, '..')
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
 
-import cPickle as pickle
-
-import kernel.memory_network.MemoryNetwork
-from graph.graph import Graph
+import sys
 from graph.node import Node
+from graph.belief_graph import Graph
 from utils.query_util import QueryUtils
 
 
@@ -24,11 +27,11 @@ class BeliefTracker:
     AMBIGUITY_STATE = "ambiguity_state"
     REQUEST_PROPERTY_STATE = "request_property_state"
 
-    def __init__(self, graph_path, clf_path):
+    def __init__(self, graph_path):
         self.gbdt = None
         self.state_cleared = True
         self._load_graph(graph_path)
-        self._load_clf(clf_path)
+        # self._load_clf(clf_path)
         self.search_node = self.belief_graph.get_root_node()
 
         # keep tracker of user profile, for instance: name, location, gender
@@ -53,9 +56,9 @@ class BeliefTracker:
 
     def kernel(self, query):
         query = QueryUtils.static_simple_remove_punct(query)
-        next_scene, inside_intentions, response = self.r_walk_with_pointer_with_clf(
+        response = self.r_walk_with_pointer_with_clf(
             query=query)
-        return next_scene, inside_intentions, response
+        return response
 
     def clear_state(self):
         self.search_graph = BeliefGraph()
@@ -66,13 +69,13 @@ class BeliefTracker:
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
             try:
-                print('attaching gbdt classifier...100%')
+                print('attaching classifier...100%')
                 with open(path, "rb") as input_file:
                     self.gbdt = pickle.load(input_file)
                     BeliefTracker.static_gbdt = self.gbdt
                     # self.gbdt = Multilabel_Clf.load(path)
-            except Exception, e:
-                print('failed to attach main kernel...detaching...', e.message)
+            except Exception:
+                traceback.print_exc()
         else:
             print('skipping attaching gbdt classifier as already attached...')
             self.gbdt = BeliefTracker.static_gbdt
@@ -84,11 +87,9 @@ class BeliefTracker:
                 with open(path, "rb") as input_file:
                     self.belief_graph = pickle.load(input_file)
                     BeliefTracker.static_belief_graph = self.belief_graph
-                    # print(self.graph.go('购物', Node.REGEX))
             except:
-                print('failed to attach logic graph...detaching...')
+                traceback.print_exc()
         else:
-            print('skipping attaching logic graph...')
             self.belief_graph = BeliefTracker.static_belief_graph
 
     def travel_with_clf(self, query):
@@ -98,11 +99,8 @@ class BeliefTracker:
         filtered_slots_list = []
         try:
             # flipped, self.negative = self.negative_clf.predict(input_=query)
-            intention, is_api_call, prob = self.rnn_clf(query)
-            if is_api_call:
-                self.api_call = intention
-                return True
-            filtered_slots_list = self.unfold_slots_list(intention)
+            intention, prob = self.rnn_clf(query)
+            filtered_slot_values_list = self.unfold_slots_list(intention)
         except:
             traceback.print_exc()
             return False
@@ -112,28 +110,16 @@ class BeliefTracker:
         # filtered_slots_list = self.inter_fix(filtered_slots_list)
         # self.should_expire_all_slots(filtered_slots_list)
         self.update_belief_graph(
-            search_parent_node=self.search_graph, slots_list=filtered_slots_list)
-        return True
-
-    def sort_slots_list_by_level(self, slot_value_list):
-        """
-        unfold nodes sharing the same name/slot_value, bottom to top
-        """
-        if Graph.ROOT not in slots_list:
-            slot_value_list.append(Graph.ROOT)
-        node_list = []
-        for slot_value in slot_value_list:
-            header_list = self.belief_graph.get_nodes_by_value(slot_value)
-            node_list.extend(header_list)
-        node_list.sort(key=lambda x: x.level, reverse=True)
-        return node_list
+            slot_values_list=filtered_slot_values_list)
+        return self.issune_api()
 
     def unfold_slots_list(self, intention):
-    """
-    api_call, slots_ We unfold slots from slots_
-    """
-        slots = "_".join(intention.split("_")[1:-1]).split(",")
-        return slots
+        """
+        api_call, slots_ We unfold slots from slots_
+        """
+        # slots = "_".join(intention.split("_")[1:-1]).split(",")
+        # return slots
+        return intention
 
     def retrieve_intention_from_solr(self, q):
         tokens = QueryUtils.static_jieba_cut(
@@ -156,41 +142,38 @@ class BeliefTracker:
                     and self.belief_graph.slot_identities[slot] == 'intention':
                 self.remaining_slots.clear()
                 self.negative_slots.clear()
-                self.search_graph = BeliefGraph()
+                self.search_graph = Graph()
 
     def move_to_node(self, node):
         self.search_node = node
-        self.required_slots = search_node.generate_required_slots()
+        self.required_slots = self.search_node.gen_required_slot_fields()
 
-    def update_belief_graph(self, ambiguity_nodes=[], slot_values_list, slot_values_marker=None):
+    def fill_slot(self, slot, value):
+        self.filling_slots[slot] = value
+        self.required_slots.remove(slot)
+
+    def update_belief_graph(self, slot_values_list, slot_values_marker=None):
         """
         1. if node is single, go directly
         2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
             2.1 if fail, enter ambiguity state
         """
         if not slot_values_marker:
-            slot_values_marker = [0] * len(slots_list)
+            slot_values_marker = [0] * len(slot_values_list)
         slot_values_list = list(set(slot_values_list))
 
-        if len(ambiguity_nodes) > 1:
-            # now there are ambiguity nodes
-            # build profiles of ambiguity, first use information from slot_values_list to remove ambiguity
-            for node in search_parent_nodes:
-                parent_values = node.get_parent_values()
-                self.ambiguity_slots.clear()
-                self.ambiguity_slots[parent_values[0]] = node
-                for slot_value in slot_values_list:
-                    if slot_values_marker[i] == 1:
-                        continue
-                    if slot_value in parent_values:
-                        # found
-                        self.move_to_node(node)
-                        return self.update_belief_graph(
-                            next_parent_search_node, slot_values_list, slot_values_marker)
-
-            # fail to remove ambiguity, enter ambiguity state
-            self.machine_state = self.AMBIGUITY_STATE
-            return
+        if self.machine_state == self.AMBIGUITY_STATE:
+            for i, value in enumerate(slot_values_list):
+                if slot_values_marker[i] == 1:
+                    continue
+                if value in self.ambiguity_slots:
+                    slot_values_marker[i] = 1
+                    self.machine_state = self.TRAVEL_STATE
+                    self.move_to_node(self.ambiguity_slots[value])
+                    return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+            # ambiguity removal failed, abandon
+            self.move_to_node(self.belief_graph.get_root_node())
+            return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
         # session terminal end api_call_node
         # issune api_call_to_solr
@@ -201,23 +184,38 @@ class BeliefTracker:
                 if slot_values_marker[i] == 1:
                     continue
                 if self.search_node.has_child(value):
-                    slot = search_parent_node.get_slot_by_value(value)
-                    self.filling_slots[slot] = value
-                    self.required_slots.remove(slot)
+                    # slot_values_marker[i] = 1
+                    slot = self.search_node.get_slot_by_value(value)
+                    self.fill_slot(slot, value)
 
                     if len(self.required_slots) == 0:
                         self.machine_state = self.API_CALL_STATE
+                else:
+                    self.move_to_node(self.belief_graph.get_root_node())
+                    self.machine_state = self.API_REQUEST_STATE
+
+                    return self.update_belief_graph(
+                        slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
             return
+
+        # if property node, go up
+        if self.search_node.is_property_node():
+            parent_node = self.search_node.parent_node
+            slot = self.search_node.slot
+            value = self.search_node.value
+            self.move_to_node(parent_node)
+            self.fill_slot(slot, value)
+            return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
         for i, value in enumerate(slot_values_list):
             if slot_values_marker[i] == 1:
                 continue
             candidate_nodes = self.search_node.get_posterity_nodes_by_value(
-                value)
+                value, self.belief_graph)
             # consider single node first
             if len(candidate_nodes) == 1:
-                self.slot_values_marker[i] == 1
                 next_parent_search_node = candidate_nodes[0]
+                slot_values_marker[i] = 1
                 self.move_to_node(next_parent_search_node)
                 self.machine_state = self.API_REQUEST_STATE
                 return self.update_belief_graph(
@@ -225,11 +223,27 @@ class BeliefTracker:
 
             # enter ambiguity state
             if len(candidate_nodes) > 1:
-                self.slot_values_marker[i] == 1
+                slot_values_marker[i] = 1
+                self.machine_state = self.AMBIGUITY_STATE
                 # search_node stays
-                return self.update_belief_graph(
-                    ambiguity_nodes=candidate_nodes,
-                    slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                #
+                for node in candidate_nodes:
+                    parent_values = node.get_ancestry_values()
+
+                    self.ambiguity_slots[parent_values[0]] = node
+                    for j, slot_value in enumerate(slot_values_list):
+                        if slot_values_marker[j] == 1:
+                            continue
+                        if slot_value in parent_values:
+                            slot_values_marker[j] = 1
+                            # found
+                            # remove AMBIGUITY_STATE
+                            self.machine_state = self.TRAVEL_STATE
+                            self.move_to_node(node)
+                            return self.update_belief_graph(
+                                slot_values_list=slot_values_list,
+                                slot_values_marker=slot_values_marker)
+                return
 
             # go directly to ROOT
             self.move_to_node(self.belief_graph.get_root_node())
@@ -237,33 +251,35 @@ class BeliefTracker:
             return self.update_belief_graph(
                 slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
-    def issune_api():
+    def issune_api(self):
         if self.machine_state == self.API_REQUEST_STATE:
             slot = self.required_slots[0]
             return "api_request_value_of_" + slot
         if self.machine_state == self.AMBIGUITY_STATE:
-            param = ','.join(self.ambugity_slots.keys())
+            param = ','.join(self.ambiguity_slots.keys())
             return "api_request_ambiguity_removal_" + param
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_"
-            for key, value in self.filling_slots:
+            for key, value in self.filling_slots.items():
                 param += key + ":" + value
 
             node = self.search_node
+            attach = []
             while node.value != self.belief_graph.ROOT:
-                param += node.slot + ":" + node.value
-            return param
+                attach.append(node.slot + ":" + node.value)
+                node = node.parent_node
+            return param + ",".join(attach)
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:
-            for remaining_slot, index in self.remaining_slots.iteritems():
+            for remaining_slot, index in self.remaining_slots.items():
                 self.remaining_slots[remaining_slot] = index - 1
                 # special clear this slot once
                 if remaining_slot in ['随便']:
                     self.remaining_slots[remaining_slot] = -1
             self.remaining_slots = {
-                k: v for k, v in self.remaining_slots.iteritems() if v >= 0}
+                k: v for k, v in self.remaining_slots.items() if v >= 0}
         if slot:
             if self.negative:
                 self.negative_slots[slot] = True
@@ -273,18 +289,19 @@ class BeliefTracker:
 
     def r_walk_with_pointer_with_clf(self, query):
         if not query or len(query) == 1:
-            return None, 'invalid query', ''
-        sucess = self.travel_with_clf(query)
-        if not sucess:
-            return 'sale', 'invalid_query', ''
-        return self.search()
+            return 'invalid query'
+        api = self.travel_with_clf(query)
+        if not api:
+            return 'invalid query'
+        # return self.search()
+        return api
 
     def single_last_slot(self, split=' OR '):
         return self.single_slot(self.last_slots, split=split)
 
     def remove_slots(self, key):
         new_remaining_slots = {}
-        for remaining_slot, index in self.remaining_slots.iteritems():
+        for remaining_slot, index in self.remaining_slots.items():
             if remaining_slot == key:
                 continue
             node = self.belief_graph.get_global_node(remaining_slot)
@@ -302,7 +319,7 @@ class BeliefTracker:
     def compose(self):
         intentions = []
         size = len(self.remaining_slots)
-        for slot, i in self.remaining_slots.iteritems():
+        for slot, i in self.remaining_slots.items():
             node = self.belief_graph.get_global_node(slot)
             score = self.score_stairs[i]
             importance = self.belief_graph.slot_importances[slot]
@@ -345,18 +362,21 @@ class BeliefTracker:
         return np.random.choice(a=cls_sibling, replace=False, size=maximum_num)
 
     def rnn_clf(self, q):
-        try:
-            rnn_url = "http://localhost:10001/sc/rnn/classify?q={0}".format(q)
-            r = requests.get(rnn_url)
-            text = r.text
-            if text:
-                slots_list = text.split(",")
-                probs = [1.0 for slot in slots_list]
-                return slots_list, probs
-            else:
-                return None, None
-        except:
-            return None, None
+        # try:
+        #     rnn_url = "http://localhost:10001/sc/rnn/classify?q={0}".format(q)
+        #     r = requests.get(rnn_url)
+        #     text = r.text
+        #     if text:
+        #         slots_list = text.split(",")
+        #         probs = [1.0 for slot in slots_list]
+        #         return slots_list, probs
+        #     else:
+        #         return None, None
+        # except:
+        #     return None, None
+        slot_values_list = q.split(",")
+        probs = [1.0] * len(slot_values_list)
+        return slot_values_list, probs
 
     def search(self):
         try:
@@ -445,12 +465,8 @@ class BeliefTracker:
 
 
 if __name__ == "__main__":
-    bt = BeliefTracker("../model/sc/belief_graph.pkl",
-                       '../model/sc/belief_clf.pkl')
-    ipts = [u"不购物"]
-    for ipt in ipts:
-        # ipt = raw_input()
-        # chinese comma
-        # bt.travel_with_clf(ipt)
-        cn_util.print_cn(",".join(bt.kernel(ipt)[1:-1]))
-        # cn_util.print_cn(bt.compose()[0])
+    bt = BeliefTracker(
+        "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+    while(True):
+        ipt = input("input:")
+        print(bt.kernel(ipt))
