@@ -1,4 +1,4 @@
-""" 
+"""
 Belief Tracker
 """
 import traceback
@@ -7,7 +7,10 @@ import pickle
 import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, parentdir)
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(parentdir)
+sys.path.append(grandfatherdir)
 
 import sys
 from graph.node import Node
@@ -164,6 +167,11 @@ class BeliefTracker:
         if not slot_values_marker:
             slot_values_marker = [0] * len(slot_values_list)
         # slot_values_list = list(set(slot_values_list))
+
+        if self.machine_state == self.API_CALL_STATE:
+            self.machine_state = self.TRAVEL_STATE
+            self.move_to_node(self.belief_graph.get_root_node())
+            return self.update_belief_graph(slot_values_list, slot_values_marker)
 
         if self.machine_state == self.API_CALL_STATE:
             self.machine_state = self.TRAVEL_STATE
@@ -505,9 +513,39 @@ class BeliefTracker:
             self.clear_state()
 
 
+def test():
+    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
+    bt = BeliefTracker(os.path.join(grandfatherdir,
+                                    "model/graph/belief_graph.pkl"))
+
+    with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
+        while(True):
+            try:
+                ipt = input("input:")
+                print(ipt, file=logfile)
+                resp = bt.kernel(ipt)
+                print(resp)
+                print(resp, file=logfile)
+            except Exception as e:
+                print(e)
+                print('error:', e, end='\n\n', file=logfile)
+                break
+
+
 if __name__ == "__main__":
-    bt = BeliefTracker(
-        "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
-    while(True):
-        ipt = input("input:")
-        print(bt.kernel(ipt))
+    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
+        bt = BeliefTracker(os.path.join(grandfatherdir,
+                                        "model/graph/belief_graph.pkl"))
+
+        with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
+            while(True):
+                try:
+                    ipt = input("input:")
+                    print(ipt, file=logfile)
+                    resp = bt.kernel(ipt)
+                    print(resp)
+                    print(resp, file=logfile)
+                except Exception as e:
+                    print(e)
+                    print('error:', e, end='\n\n', file=logfile)
+                    break

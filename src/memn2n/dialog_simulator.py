@@ -20,7 +20,7 @@ import numpy as np
 from collections import OrderedDict
 
 
-class DialogSim:
+class DialogSimulator:
     """
     dialog simulator
     """
@@ -29,7 +29,7 @@ class DialogSim:
               'qa': 'api_call_qa', 'buy': 'api_call_buy', 'bye': 'api_call_bye'}
 
     apicallMapper = {'api_call_greet': '您好，请问有什么可以帮助您的？', 'api_call_chat': 'apicall embotibot',
-                     'api_call_qa': 'api_call_qa', 'api_call_bye': '再见，谢谢光临！'}
+                     'api_call_qa': 'api_call qa', 'api_call_bye': '再见，谢谢光临！'}
 
     def __init__(self, userIntentFiles, dialogsFiles, category):
         self.data = self.loadData(userIntentFiles)
