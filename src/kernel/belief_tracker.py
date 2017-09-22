@@ -147,6 +147,7 @@ class BeliefTracker:
     def move_to_node(self, node):
         self.search_node = node
         self.required_slots = self.search_node.gen_required_slot_fields()
+        self.filling_slots.clear()
 
     def fill_slot(self, slot, value):
         self.filling_slots[slot] = value
@@ -161,6 +162,11 @@ class BeliefTracker:
         if not slot_values_marker:
             slot_values_marker = [0] * len(slot_values_list)
         slot_values_list = list(set(slot_values_list))
+
+        if self.machine_state == self.API_CALL_STATE:
+            self.machine_state = self.TRAVEL_STATE
+            self.move_to_node(self.belief_graph.get_root_node())
+            return self.update_belief_graph(slot_values_list, slot_values_marker)
 
         if self.machine_state == self.AMBIGUITY_STATE:
             for i, value in enumerate(slot_values_list):
