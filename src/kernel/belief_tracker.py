@@ -179,6 +179,7 @@ class BeliefTracker:
                     self.move_to_node(self.ambiguity_slots[value])
                     return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
             # ambiguity removal failed, abandon
+            self.machine_state = self.TRAVEL_STATE
             self.move_to_node(self.belief_graph.get_root_node())
             return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
@@ -241,23 +242,38 @@ class BeliefTracker:
                 self.machine_state = self.AMBIGUITY_STATE
                 # search_node stays
                 #
-                for node in candidate_nodes:
+                filtered = [1] * len(candidate_nodes)
+                removal_slot_value_index = set()
+                for k, node in enumerate(candidate_nodes):
                     parent_values = node.get_ancestry_values()
 
-                    self.ambiguity_slots[parent_values[0]] = node
+                    # self.ambiguity_slots[parent_values[0]] = node
+                    # filter
                     for j, slot_value in enumerate(slot_values_list):
                         if slot_values_marker[j] == 1:
                             continue
-                        if slot_value in parent_values:
-                            slot_values_marker[j] = 1
-                            # found
-                            # remove AMBIGUITY_STATE
-                            self.machine_state = self.TRAVEL_STATE
-                            self.move_to_node(node)
-                            return self.update_belief_graph(
-                                slot_values_list=slot_values_list,
-                                slot_values_marker=slot_values_marker)
-                return
+                        if slot_value not in parent_values:
+                            filtered[k] = 0
+                        else:
+                            removal_slot_value_index.add(j)
+                filtered_nodes = []
+                for m in removal_slot_value_index:
+                    slot_values_marker[m] = 1
+                for idx, flag in enumerate(filtered):
+                    if flag == 1:
+                        filtered_nodes.append(candidate_nodes[idx])
+                if len(filtered_nodes) == 1:
+                    # found
+                    # remove AMBIGUITY_STATE
+                    self.machine_state = self.TRAVEL_STATE
+                    self.move_to_node(node)
+                    return self.update_belief_graph(
+                        slot_values_list=slot_values_list,
+                        slot_values_marker=slot_values_marker)
+                else:
+                    for node in filtered_nodes:
+                        self.ambiguity_slots[node.parent_node.value] = node
+                    return
 
             # go directly to ROOT
             self.move_to_node(self.belief_graph.get_root_node())
