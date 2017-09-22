@@ -216,7 +216,8 @@ class BeliefTracker:
             self.move_to_node(parent_node)
             # mark parent slot_value mark 1
             if parent_node.value in slot_values_list:
-                slot_values_marker[slot_values_list.index(parent_node.value)] = 1
+                slot_values_marker[slot_values_list.index(
+                    parent_node.value)] = 1
             self.fill_slot(slot, value)
             return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
@@ -274,15 +275,15 @@ class BeliefTracker:
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_"
+            fill = []
             for key, value in self.filling_slots.items():
-                param += key + ":" + value
+                fill.append(key + ":" + value)
 
             node = self.search_node
-            attach = []
             while node.value != self.belief_graph.ROOT:
-                attach.append(node.slot + ":" + node.value)
+                fill.append(node.slot + ":" + node.value)
                 node = node.parent_node
-            return param + ",".join(attach)
+            return param + ",".join(fill)
 
     def update_remaining_slots(self, slot=None, expire=False):
         if expire:
