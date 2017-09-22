@@ -186,6 +186,9 @@ class BeliefTracker:
         # node_水果 是 api_node, 没有必要再继续往下了
         if self.search_node.is_api_node():
             self.machine_state = self.API_REQUEST_STATE
+            if len(self.required_slots) == 0:
+                self.machine_state = self.API_CALL_STATE
+                return
             for i, value in enumerate(slot_values_list):
                 if slot_values_marker[i] == 1:
                     continue
