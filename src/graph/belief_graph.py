@@ -129,4 +129,4 @@ def load_belief_graph(path, output_model_path):
 
 if __name__ == "__main__":
     load_belief_graph(
-        "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt", "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+        "/home/cb/work/memory_py/data/graph/belief_graph.txt", "/home/cb/work/memory_py/model/graph/belief_graph.pkl")
