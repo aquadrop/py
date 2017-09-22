@@ -151,7 +151,8 @@ class BeliefTracker:
 
     def fill_slot(self, slot, value):
         self.filling_slots[slot] = value
-        self.required_slots.remove(slot)
+        if slot in self.required_slots:
+            self.required_slots.remove(slot)
 
     def update_belief_graph(self, slot_values_list, slot_values_marker=None):
         """
@@ -213,6 +214,9 @@ class BeliefTracker:
             slot = self.search_node.slot
             value = self.search_node.value
             self.move_to_node(parent_node)
+            # mark parent slot_value mark 1
+            if parent_node.value in slot_values_list:
+                slot_values_marker[slot_values_list.index(parent_node.value)] = 1
             self.fill_slot(slot, value)
             return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
