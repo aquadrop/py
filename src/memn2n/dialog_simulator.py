@@ -16,6 +16,8 @@ user : <bye>        bot : <api_call_bye>
 """
 
 import os
+import random
+from copy import deepcopy
 import numpy as np
 from enum import Enum
 from collections import OrderedDict
@@ -28,9 +30,10 @@ class DialogSimulator:
     dialog simulator
     """
 
-    def __init__(self, userIntentFiles, dialogsFiles, merchandisesFile):
+    def __init__(self, userIntentFiles, totalFile, dialogsFiles, merchandisesFile):
         self.data = self.loadData(userIntentFiles)
         self.merchandises = self.loadMerchandises(merchandisesFile)
+        self.totalFile = totalFile
         self.dialogsFiles = dialogsFiles
         self.keys = ['greet', 'chat', 'qa', 'bye', 'buy']
         self.candidatesSet = set()
@@ -88,33 +91,14 @@ class DialogSimulator:
 
         return dialogs
 
-    # fix labellllllllllllllllllllll!!!!!!!!!!!!!
     def genBuyDialog(self, data):
-        def process(querys):
-            dialogs = list()
-            answer = 'api_call buy'
-            for merchandise in self.merchandises:
-                brand = merchandise['brand']
-                category = merchandise['category']
-                price = merchandise['price']
-                mapper = {'<brand>': brand,
-                          '<category>': category, '<price>': price}
-                dialog = list()
-                for query in querys:
-                    for key, value in mapper.items():
-                        query = query.replace(key, value)
-                    dialog.append([query] + [answer])
-
-                dialogs.append(dialog)
-                # print(dialog)
-            return dialogs
 
         def fill(dialog, slot):
             dialogs = list()
             for merchandise in self.merchandises:
-                brand = '<' + merchandise['brand'] + '>'
-                category = '<' + merchandise['category'] + '>'
-                price = '<' + merchandise['price'] + '>'
+                brand = merchandise['brand']
+                category = merchandise['category']
+                price = merchandise['price']
                 querySlotMap = {'<brand>': brand,
                                 '<category>': category, '<price>': price}
 
@@ -134,15 +118,17 @@ class DialogSimulator:
                             index) if slot[i][0] != 'rhetorical_ask']
                         # print('before:', beforeSlots)
                         for sslot in beforeSlots:
-                            sslot = ' <' + sslot + '>'
+                            sslot = ',' + '<' + sslot + '>'
                             answer += sslot
                             # print('answer:', answer)
-
+                    # print(answer)
                     for key, value in querySlotMap.items():
                         query = query.replace(key, value)
                         answer = answer.replace(key, value)
-                    query = query.replace(
-                        '<', '').replace('>', '')
+                    # print(answer)
+                    # print('------------')
+                    # query = query.replace(
+                    #     '<', '').replace('>', '')
                     self.candidatesSet.add(answer)
                     filledDialog.append([query] + [answer])
                 dialogs.append(filledDialog)
@@ -171,7 +157,7 @@ class DialogSimulator:
     def mergeDialog(self, commonDialogs, buyDialogs):
         keys = self.keys
         keys.remove('buy')
-        with open(self.dialogsFiles, 'w') as f:
+        with open(self.totalFile, 'w') as f:
             for buyDialog in buyDialogs:
                 dialog = list()
                 head = keys[:-1]
@@ -192,8 +178,38 @@ class DialogSimulator:
             for candidate in list(self.candidatesSet):
                 f.write(candidate + '\n')
 
-    def writeDialog(self, paths, data):
-        pass
+    def splitDataset(self):
+        with open(self.totalFile, 'r') as f:
+            lines = f.readlines()
+        total = list()
+        dialog = list()
+        for line in lines:
+            # line = line.strip()
+            if line != '\n':
+                dialog.append(line)
+            else:
+                dialog.append(line)
+                total.append(deepcopy(dialog))
+                dialog.clear()
+
+        random.shuffle(total)
+        length = len(total) // 5
+        train = total[:length * 3]
+        vald = total[length * 3:length * 4]
+        test = total[length * 4:]
+
+        with open(self.dialogsFiles[0], 'w') as trainF:
+            for dialog in train:
+                for line in dialog:
+                    trainF.write(line)
+        with open(self.dialogsFiles[1], 'w') as valdF:
+            for dialog in vald:
+                for line in dialog:
+                    valdF.write(line)
+        with open(self.dialogsFiles[2], 'w') as testF:
+            for dialog in test:
+                for line in dialog:
+                    testF.write(line)
 
 
 def main():
@@ -207,10 +223,14 @@ def main():
     }
 
     # dialogsFiles suppose to be a list : ['train','valid','test']
-    dialogsFiles = 'data/memn2n/train.txt'
+    totalFile = 'data/memn2n/total.txt'
+    dialogsFiles = ['data/memn2n/train.txt',
+                    'data/memn2n/val.txt', 'data/memn2n/test.txt']
     merchandisesFile = 'data/memn2n/dialog_simulator/merchandises.txt'
-    ds = DialogSimulator(userIntentFiles, dialogsFiles, merchandisesFile)
+    ds = DialogSimulator(userIntentFiles, totalFile,
+                         dialogsFiles, merchandisesFile)
     ds.genDialog()
+    ds.splitDataset()
 
 
 if __name__ == '__main__':
