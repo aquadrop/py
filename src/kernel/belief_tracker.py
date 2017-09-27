@@ -515,25 +515,6 @@ class BeliefTracker:
 
 def test():
     with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
-    bt = BeliefTracker(os.path.join(grandfatherdir,
-                                    "model/graph/belief_graph.pkl"))
-
-    with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
-        while(True):
-            try:
-                ipt = input("input:")
-                print(ipt, file=logfile)
-                resp = bt.kernel(ipt)
-                print(resp)
-                print(resp, file=logfile)
-            except Exception as e:
-                print(e)
-                print('error:', e, end='\n\n', file=logfile)
-                break
-
-
-if __name__ == "__main__":
-    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
         bt = BeliefTracker(os.path.join(grandfatherdir,
                                         "model/graph/belief_graph.pkl"))
 
@@ -549,3 +530,7 @@ if __name__ == "__main__":
                     print(e)
                     print('error:', e, end='\n\n', file=logfile)
                     break
+
+
+if __name__ == "__main__":
+    test()
