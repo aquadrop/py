@@ -271,6 +271,9 @@ def main(args):
             return isess
 
 
+def launch_multiple_session():
+    return
+
 # _______MAIN_______
 if __name__ == '__main__':
     main(sys.argv[1:])
