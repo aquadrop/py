@@ -30,9 +30,9 @@ def load_candidates(candidates_f=CANDID_PATH):
 
 
 def load_dialog(data_dir, candid_dic):
-    train_file = os.path.join(data_dir, 'dialogs_train.txt')
-    test_file = os.path.join(data_dir, 'dialogs_test.txt')
-    val_file = os.path.join(data_dir, 'dialogs_val.txt')
+    train_file = os.path.join(data_dir, 'train.txt')
+    test_file = os.path.join(data_dir, 'test.txt')
+    val_file = os.path.join(data_dir, 'val.txt')
 
     train_data = get_dialogs(train_file, candid_dic)
     test_data = get_dialogs(test_file, candid_dic)
@@ -139,7 +139,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
             ls = max(0, sentence_size - len(sentence))
             ss.append(
                 [word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
-        print(np.asarray(ss).shape)
+        # print(np.asarray(ss).shape)
         # take only the most recent sentences that fit in memory
         ss = ss[::-1][:memory_size][::-1]
         # print(ss)
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     train_data, test_data, val_data = load_dialog(
         data_dir=DATA_DIR,
         candid_dic=candid2idx)
-    print(train_data[:2])
+    # print(train_data[:2])
 
     metadata = build_vocab(train_data, candidates)
     train, val, test, batches = get_batches(

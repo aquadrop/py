@@ -54,6 +54,7 @@ class BeliefTracker:
         self.required_slots = list()  # required slot obtained from api_node, ordered
         self.numerical_slots = dict() # common like distance, size, price
         self.ambiguity_slots = dict()
+        self.wild_card = dict()
         # self.negative = False
         # self.negative_clf = Negative_Clf()
         # self.simple = SimpleQAKernel()
@@ -113,6 +114,10 @@ class BeliefTracker:
         # self.update_remaining_slots(expire=True)
         # filtered_slots_list = self.inter_fix(filtered_slots_list)
         # self.should_expire_all_slots(filtered_slots_list)
+        # clear wide card
+        self.wild_card.clear()
+        if self.search_node == self.belief_graph.get_root_node():
+            self.rule_base_num_retreive(query)
         self.update_belief_graph(query=query,
             slot_values_list=filtered_slot_values_list)
         return self.issune_api()
@@ -174,6 +179,7 @@ class BeliefTracker:
         # node_水果 是 api_node, 没有必要再继续往下了
 
         if self.search_node.is_api_node():
+            self.fill_with_wild_card()
             if self.machine_state == self.API_REQUEST_RULE_STATE:
                 state = self.rule_base_fill(query, self.required_slots[0])
             self.machine_state = self.API_REQUEST_STATE
@@ -282,6 +288,72 @@ class BeliefTracker:
             return self.update_belief_graph(
                 slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
+    def fill_with_wild_card(self):
+        for key, value in self.wild_card.items():
+            # forcefully, 可以设置隐藏节点
+            if self.search_node.has_field(key):
+                self.fill_slot(key, value)
+        self.wild_card.clear()
+
+    def rule_base_num_retreive(self, query):
+        tv_size_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸"
+        tv_distance_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米"
+        ac_power_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹]"
+        price_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元]"
+
+        tv_size_single = r"([-+]?\d*\.\d+|\d+)寸"
+        tv_distance_single = r"([-+]?\d*\.\d+|\d+)米"
+        ac_power_single = r"([-+]?\d*\.\d+|\d+)[P|匹]"
+        price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
+
+        dual = {"tv.size": tv_size_dual, "tv.distance":tv_distance_dual, "ac.power":ac_power_dual, "price":price_dual}
+        single = {"tv.size": tv_size_single, "tv.distance": tv_distance_single, "ac.power": ac_power_single,
+                "price": price_single}
+
+        query = str(new_cn2arab(query))
+        flag = False
+        for key, value in dual.items():
+            numbers = self.range_extract(value, query, False)
+            if numbers:
+                flag = True
+                self.wild_card[key] = numbers
+
+        for key, value in single.items():
+            numbers = self.range_extract(value, query, True)
+            if numbers:
+                flag = True
+                self.wild_card[key] = numbers
+
+        if flag:
+            return
+        price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
+        price_single_default = r"([-+]?\d*\.\d+|\d+)"
+        remove_regex = r"\d+[个|只|条|部|本|台]"
+        query = re.sub(remove_regex, '', query)
+        numbers = self.range_extract(price_dual_default, query, False)
+        if numbers:
+            self.wild_card['price'] = numbers
+        numbers = self.range_extract(price_single_default, query, True)
+        if numbers:
+            self.wild_card['price'] = numbers
+
+
+    def range_extract(self, pattern, query, single):
+        numbers = []
+        match = re.match(pattern, query)
+        if single:
+            if match:
+                numbers = match.group(0)
+                numbers = float(re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0])
+                numbers = [numbers * 0.9, numbers * 1.1]
+                numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+        else:
+            if match:
+                numbers = match.group(0)
+                numbers = [float(r) for r in re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0:2]]
+                numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+        return numbers
+
     def rule_base_fill(self, query, slot):
         """
         rule based,匹配数字到价格等slot
@@ -293,22 +365,18 @@ class BeliefTracker:
 
         query = str(new_cn2arab(query))
 
-        remove_regex = r"\d+[个|只|条]"
+        remove_regex = r"\d+[个|只|条|部|本|台]"
         query = re.sub(remove_regex, '', query)
         dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
         single = r"[-+]?\d*\.\d+|\d+"
-        if re.match(dual, query):
-            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", query)
-            numbers = [float(n) for n in numbers][0:2]
-            numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+
+        numbers = self.range_extract(dual, query, False)
+        if numbers:
             self.fill_slot(slot, numbers)
             return True
 
-        if re.match(single, query):
-            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", query)
-            numbers = [float(n) for n in numbers][0]
-            numbers = [numbers * 0.9, numbers * 1.1]
-            numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+        numbers = self.range_extract(single, query, True)
+        if numbers:
             self.fill_slot(slot, numbers)
             return True
 
@@ -517,30 +585,24 @@ class BeliefTracker:
             self.clear_state()
 
 
-# def test():
-#     with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
-#     bt = BeliefTracker(os.path.join(grandfatherdir,
-#                                     "model/graph/belief_graph.pkl"))
-#
-#     with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
-#         while(True):
-#             try:
-#                 ipt = input("input:")
-#                 print(ipt, file=logfile)
-#                 resp = bt.kernel(ipt)
-#                 print(resp)
-#                 print(resp, file=logfile)
-#             except Exception as e:
-#                 print(e)
-#                 print('error:', e, end='\n\n', file=logfile)
-#                 break
+def test():
+    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
+        bt = BeliefTracker(os.path.join(grandfatherdir,
+                                        "model/graph/belief_graph.pkl"))
+
+        with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
+            while(True):
+                try:
+                    ipt = input("input:")
+                    print(ipt, file=logfile)
+                    resp = bt.kernel(ipt)
+                    print(resp)
+                    print(resp, file=logfile)
+                except Exception as e:
+                    traceback.print_exc()
+                    print('error:', e, end='\n\n', file=logfile)
+                    break
 
 
 if __name__ == "__main__":
-
-    bt = BeliefTracker("../../model/graph/belief_graph.pkl")
-
-    while(True):
-        ipt = input("input:")
-        resp = bt.kernel(ipt)
-        print(resp)
+    test()

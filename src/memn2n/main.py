@@ -11,10 +11,10 @@ import data_utils
 import memn2n
 
 
-DATA_DIR = 'data/'
-P_DATA_DIR = 'data/processed/'
+DATA_DIR = 'data/memn2n'
+P_DATA_DIR = 'data/memn2n/processed/'
 BATCH_SIZE = 16
-CKPT_DIR = 'ckpt/'
+CKPT_DIR = 'model/memn2n/ckpt'
 
 
 '''
@@ -200,7 +200,7 @@ def main(args):
         vocab_size=vocab_size,
         candidates_size=n_cand,
         sentence_size=sentence_size,
-        embedding_size=20,
+        embedding_size=200,
         candidates_vec=candidates_vec,
         hops=3
     )

@@ -51,7 +51,7 @@ class Node:
         self.slot = slot  # slot aks slot value filling
         self.parent_node = None
         self.fields = fields  # is a dict, valued as prob
-        self.field_type = dict()
+        self.field_type = dict() # RANGE, KEY,...
         self.children = dict()  # value to chidren nodes
         self.node_type = node_type
         self.slot_to_values_mapper = dict()
@@ -66,6 +66,9 @@ class Node:
         if field not in self.field_type:
             return "KEY"
         return self.field_type[field]
+
+    def has_field(self, field):
+        return field in self.fields
 
     def add_node(self, node):
         """
