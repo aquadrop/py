@@ -61,7 +61,7 @@ class Graph(Node, object):
     def get_nodes_by_value(self, node_value):
         """
         get_nodes_by_value("苹果")...
-        return a list
+        return a listraw
         """
         return self.node_header[node_value]
 
