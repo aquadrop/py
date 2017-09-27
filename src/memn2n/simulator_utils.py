@@ -7,9 +7,9 @@ buyQueryMapper = {
         },
         'bot': {
             # initiative to request information,brand,category,price et.
-            'brand': 'api_call slot <brand> ',
-            'category': 'api_call slot <category>',
-            'brand category': 'api_call slot <brand> <category>'
+            'brand': 'api_call_slot <brand> ',
+            'category': 'api_call_slot <category>',
+            'brand category': 'api_call_slot <brand> <category>'
         }
     },
     'rhetorical_ask': {
@@ -19,9 +19,9 @@ buyQueryMapper = {
             'price': ['都有哪些价格？', '都有什么价啊？']
         },
         'bot': {
-            'brand': 'api_call rhetorical (brand)',
-            'category': 'api_call rhetorical (category)',
-            'price': 'api_call rhetorical (price)'
+            'brand': 'api_call_rhetorical (brand)',
+            'category': 'api_call_rhetorical (category)',
+            'price': 'api_call_rhetorical (price)'
         }
     },
     'provide': {
@@ -31,9 +31,9 @@ buyQueryMapper = {
             'category': ['<category>类的。']
         },
         'bot': {
-            'brand': 'api_call slot <brand>',
-            'price': 'api_call slot <price>',
-            'category': 'api_call slot <category>'
+            'brand': 'api_call_slot <brand>',
+            'price': 'api_call_slot <price>',
+            'category': 'api_call_slot <category>'
         }
     },
     'deny': {
@@ -43,9 +43,9 @@ buyQueryMapper = {
             'general': ['不喜欢。', '还有其它的吗？']
         },
         'bot': {
-            'brand': 'api_call deny (brand)',
-            'price': 'api_call deny (price)',
-            'general': 'api_call deny (general) '
+            'brand': 'api_call_deny (brand)',
+            'price': 'api_call_deny (price)',
+            'general': 'api_call_deny (general) '
         }
     },
     'accept': {
@@ -65,8 +65,8 @@ buyQueryMapper = {
 
 mapper = {
     'greet': '您好，请问有什么可以帮助您的？',
-    'chat': 'api_call embotibot',
-    'qa': 'api_call qa',
+    'chat': 'api_call_embotibot',
+    'qa': 'api_call_qa',
     'bye': '再见，谢谢光临！',
     'buy': buyQueryMapper
 }
