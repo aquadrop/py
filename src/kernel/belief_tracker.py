@@ -3,6 +3,7 @@ Belief Tracker
 """
 import traceback
 import pickle
+import re
 
 import os
 import sys
@@ -12,10 +13,13 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
+from SolrClient import SolrClient
+
 import sys
 from graph.node import Node
 from graph.belief_graph import Graph
-from utils.query_util import QueryUtils
+from utils.cn2arab import *
+from utils.query_util import *
 
 
 class BeliefTracker:
@@ -25,6 +29,7 @@ class BeliefTracker:
     static_qa_clf = None
 
     API_REQUEST_STATE = "api_request_state"
+    API_REQUEST_RULE_STATE = "api_request_rule_state"
     API_CALL_STATE = "api_call_state"
     TRAVEL_STATE = "travel_state"
     AMBIGUITY_STATE = "ambiguity_state"
@@ -47,7 +52,7 @@ class BeliefTracker:
         self.machine_state = None  # API_NODE, NORMAL_NODE
         self.filling_slots = dict()  # current slot
         self.required_slots = list()  # required slot obtained from api_node, ordered
-
+        self.numerical_slots = dict() # common like distance, size, price
         self.ambiguity_slots = dict()
         # self.negative = False
         # self.negative_clf = Negative_Clf()
@@ -57,18 +62,12 @@ class BeliefTracker:
 
     guide_url = "http://localhost:11403/solr/sc_sale_gen/select?defType=edismax&indent=on&wt=json"
     # tokenizer_url = "http://localhost:5000/pos?q="
+    solr = SolrClient('http://localhost:11403/solr')
 
     def kernel(self, query):
-        query = QueryUtils.static_simple_remove_punct(query)
         response = self.r_walk_with_pointer_with_clf(
             query=query)
         return response
-
-    def clear_state(self):
-        self.search_graph = BeliefGraph()
-        self.remaining_slots = {}
-        self.negative_slots = {}
-        self.negative = False
 
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
@@ -100,6 +99,7 @@ class BeliefTracker:
         """
         the memory network predictor has mainly two types of classes: api_call_... and slots_...
         """
+
         filtered_slots_list = []
         try:
             # flipped, self.negative = self.negative_clf.predict(input_=query)
@@ -113,7 +113,7 @@ class BeliefTracker:
         # self.update_remaining_slots(expire=True)
         # filtered_slots_list = self.inter_fix(filtered_slots_list)
         # self.should_expire_all_slots(filtered_slots_list)
-        self.update_belief_graph(
+        self.update_belief_graph(query=query,
             slot_values_list=filtered_slot_values_list)
         return self.issune_api()
 
@@ -135,7 +135,7 @@ class BeliefTracker:
         if slot in self.required_slots:
             self.required_slots.remove(slot)
 
-    def update_belief_graph(self, slot_values_list, slot_values_marker=None):
+    def update_belief_graph(self, slot_values_list, query=None, slot_values_marker=None):
         """
         1. if node is single, go directly
         2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
@@ -172,12 +172,19 @@ class BeliefTracker:
         # session terminal end api_call_node
         # issune api_call_to_solr
         # node_水果 是 api_node, 没有必要再继续往下了
+
         if self.search_node.is_api_node():
+            if self.machine_state == self.API_REQUEST_RULE_STATE:
+                state = self.rule_base_fill(query, self.required_slots[0])
             self.machine_state = self.API_REQUEST_STATE
             if len(self.required_slots) == 0:
                 self.machine_state = self.API_CALL_STATE
                 return
+            if self.search_node.get_field_type(self.required_slots[0]):
+                self.machine_state = self.API_REQUEST_RULE_STATE
             for i, value in enumerate(slot_values_list):
+                if not self.belief_graph.has_node_by_value(value):
+                    continue
                 if slot_values_marker[i] == 1:
                     continue
                 if self.search_node.has_child(value):
@@ -275,10 +282,115 @@ class BeliefTracker:
             return self.update_belief_graph(
                 slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
 
+    def rule_base_fill(self, query, slot):
+        """
+        rule based,匹配数字到价格等slot
+        :param query: 我要买一个两千到三千的手机
+        :return:
+        """
+        if self.machine_state != self.API_REQUEST_RULE_STATE:
+            return
+
+        query = str(new_cn2arab(query))
+
+        remove_regex = r"\d+[个|只|条]"
+        query = re.sub(remove_regex, '', query)
+        dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
+        single = r"[-+]?\d*\.\d+|\d+"
+        if re.match(dual, query):
+            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", query)
+            numbers = [float(n) for n in numbers][0:2]
+            numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+            self.fill_slot(slot, numbers)
+            return True
+
+        if re.match(single, query):
+            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", query)
+            numbers = [float(n) for n in numbers][0]
+            numbers = [numbers * 0.9, numbers * 1.1]
+            numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+            self.fill_slot(slot, numbers)
+            return True
+
+        return False
+
+    def is_key_type(self, slot):
+        return self.search_node.get_field_type(slot) == Node.KEY
+
+    def retreive_avail_values(self):
+        node = self.search_node
+        fill = []
+        facet_field = self.required_slots[0]
+
+        def render_range(a, gap):
+            if len(a) == 1:
+                return []
+            components = []
+            p = 0
+            if len(a) == 1:
+                components.append(str(a))
+            else:
+                for i in range(1, len(a)):
+                    if a[i] - a[i - 1] > gap:
+                        if i - p == 1:
+                            components.append(str(a[p]))
+                        else:
+                            components.append(str(a[p]) + "-" + str(a[i - 1]))
+                        p = i
+            return components
+
+        if self.is_key_type(facet_field):
+            params = {
+                'q': '*:*',
+                'facet': True,
+                'facet.field': facet_field,
+                "facet.mincount": 1
+            }
+            for key, value in self.filling_slots.items():
+                fill.append(key + ":" + str(value))
+            while node.value != self.belief_graph.ROOT:
+                if node.slot.startswith('virtual'):
+                    node = node.parent_node
+                    continue
+                fill.append(node.slot + ":" + node.value)
+                node = node.parent_node
+            params['fq'] = " AND ".join(fill)
+            res = self.solr.query('category', params)
+            return res.get_facet_keys_as_list(facet_field)
+        else:
+            # use facet.range
+            if facet_field == "price":
+                return []
+            params = {
+                'q': '*:*',
+                'facet': True,
+                'facet.range': facet_field,
+                "facet.mincount": 1,
+                'facet.range.start': 0,
+                'facet.range.end': 100,
+                'facet.range.gap': 1
+            }
+            for key, value in self.filling_slots.items():
+                fill.append(key + ":" + str(value))
+            while node.value != self.belief_graph.ROOT:
+                if node.slot.startswith('virtual'):
+                    node = node.parent_node
+                    continue
+                fill.append(node.slot + ":" + node.value)
+                node = node.parent_node
+            params['fq'] = " AND ".join(fill)
+            res = self.solr.query('category', params)
+            ranges = res.get_facets_ranges()[facet_field].keys()
+            ranges = [float(r) for r in ranges]
+            # now render the result
+            facet = render_range(ranges, 1)
+            return facet
+
     def issune_api(self):
-        if self.machine_state == self.API_REQUEST_STATE:
+        if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.required_slots[0]
-            return "api_request_value_of_" + slot
+            avails = self.retreive_avail_values()
+            return "api_request_value_of_" + slot + "#avail_values: " + str(avails)
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
             return "api_request_ambiguity_removal_" + param
@@ -287,7 +399,7 @@ class BeliefTracker:
             param = "api_call_"
             fill = []
             for key, value in self.filling_slots.items():
-                fill.append(key + ":" + value)
+                fill.append(key + ":" + str(value))
 
             node = self.search_node
             while node.value != self.belief_graph.ROOT:
@@ -298,6 +410,7 @@ class BeliefTracker:
             return "reset_requested"
 
     def r_walk_with_pointer_with_clf(self, query):
+        query = str(query)
         if not query or len(query) == 1:
             return 'invalid query'
         api = self.travel_with_clf(query)
@@ -384,7 +497,13 @@ class BeliefTracker:
         #         return None, None
         # except:
         #     return None, None
-        slot_values_list = q.split(",")
+        tokens = jieba_cut(q)
+        # slot_values_list = q.split(",")
+
+        slot_values_list = []
+        for t in tokens:
+            if self.belief_graph.has_node_by_value(t):
+                slot_values_list.append(t)
         probs = [1.0] * len(slot_values_list)
         return slot_values_list, probs
 
@@ -398,39 +517,30 @@ class BeliefTracker:
             self.clear_state()
 
 
-def test():
-    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
-    bt = BeliefTracker(os.path.join(grandfatherdir,
-                                    "model/graph/belief_graph.pkl"))
-
-    with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
-        while(True):
-            try:
-                ipt = input("input:")
-                print(ipt, file=logfile)
-                resp = bt.kernel(ipt)
-                print(resp)
-                print(resp, file=logfile)
-            except Exception as e:
-                print(e)
-                print('error:', e, end='\n\n', file=logfile)
-                break
+# def test():
+#     with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
+#     bt = BeliefTracker(os.path.join(grandfatherdir,
+#                                     "model/graph/belief_graph.pkl"))
+#
+#     with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
+#         while(True):
+#             try:
+#                 ipt = input("input:")
+#                 print(ipt, file=logfile)
+#                 resp = bt.kernel(ipt)
+#                 print(resp)
+#                 print(resp, file=logfile)
+#             except Exception as e:
+#                 print(e)
+#                 print('error:', e, end='\n\n', file=logfile)
+#                 break
 
 
 if __name__ == "__main__":
-    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
-        bt = BeliefTracker(os.path.join(grandfatherdir,
-                                        "model/graph/belief_graph.pkl"))
 
-        with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
-            while(True):
-                try:
-                    ipt = input("input:")
-                    print(ipt, file=logfile)
-                    resp = bt.kernel(ipt)
-                    print(resp)
-                    print(resp, file=logfile)
-                except Exception as e:
-                    print(e)
-                    print('error:', e, end='\n\n', file=logfile)
-                    break
+    bt = BeliefTracker("../../model/graph/belief_graph.pkl")
+
+    while(True):
+        ipt = input("input:")
+        resp = bt.kernel(ipt)
+        print(resp)

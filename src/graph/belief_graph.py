@@ -28,6 +28,7 @@ Belief Graph
 import pickle
 import os
 import sys
+import uuid
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
@@ -65,6 +66,9 @@ class Graph(Node, object):
         """
         return self.node_header[node_value]
 
+    def has_node_by_value(self, node_value):
+        return node_value in self.node_header
+
     def get_node_by_id(self, id):
         return self.id_node[id]
 
@@ -76,7 +80,7 @@ def load_belief_graph(path, output_model_path):
     with open(path, 'r') as f:
         for line in f:
             if line.startswith("-"):
-                line = line.strip("\n")
+                line = line.strip("\n").replace(" ", "").replace("\t", "")
                 print(line.strip("\n"))
                 value, id, slot, fields_, node_type = line.split("#")
                 fields = dict()
@@ -107,26 +111,42 @@ def load_belief_graph(path, output_model_path):
     with open(path, 'r') as f:
         for line in f:
             if line.startswith("+"):
-                line = line.strip("\n")
+                line = line.strip("\n").replace(" ", "").replace("\t", "")
                 print(line.strip("\n"))
-                parent_, children_ = line.split('#')
+                parent_, slot, value_type, children_ = line.split('#')
                 parent_ = parent_.replace("+", "")
                 parent, parent_id = parent_.split("/")
                 node = id_node[parent_id]
                 if parent != node.value:
                     raise ValueError("id")
-                slot = children_.split(":")[0]
-                c_ = children_.split(":")[1]
-                for c in c_.split(","):
-                    value, id = c.split("/")
-                    child_node = id_node[id]
-                    if value != child_node.value:
-                        raise ValueError("id")
-                    node.add_node(child_node)
+
+                for c in children_.split(","):
+                    splitted = c.split("/")
+                    if value_type is not "KEY":
+                        node.set_field_type(slot, value_type)
+
+                    if len(splitted) == 2:
+                        value = splitted[0]
+                        id = splitted[1]
+                        child_node = id_node[id]
+                        if value != child_node.value:
+                            raise ValueError("id")
+                        node.add_node(child_node)
+                    else:
+                        value = splitted[0]
+                        # property node
+                        id = str(uuid.uuid4())
+                        child_node = Node(value=value, fields=dict(),
+                                    slot=slot, id=id, node_type="property")
+                        if value not in node_header:
+                            node_header[value] = []
+                        node_header[value].append(child_node)
+                        node.add_node(child_node)
     with open(output_model_path, "wb") as omp:
         pickle.dump(belief_graph, omp)
 
 
 if __name__ == "__main__":
     load_belief_graph(
-        "/home/cb/work/memory_py/data/graph/belief_graph.txt", "/home/cb/work/memory_py/model/graph/belief_graph.pkl")
+        "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
+        "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
