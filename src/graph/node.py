@@ -36,6 +36,9 @@ class Node:
     NORMAL_NODE = "normal"
     PROPERTY_NODE = "property"
 
+    RANGE = "RANGE"
+    KEY = "KEY"
+
     def __init__(self, slot, value, fields, node_type, id):
         '''
         For now only api_node has more than one field
@@ -48,12 +51,24 @@ class Node:
         self.slot = slot  # slot aks slot value filling
         self.parent_node = None
         self.fields = fields  # is a dict, valued as prob
+        self.field_type = dict() # RANGE, KEY,...
         self.children = dict()  # value to chidren nodes
         self.node_type = node_type
         self.slot_to_values_mapper = dict()
         self.value_to_slot_mapper = dict()
         self.id = id  # globally uniq
         self.level = 0
+
+    def set_field_type(self, field, field_type):
+        self.field_type[field] = field_type
+
+    def get_field_type(self, field):
+        if field not in self.field_type:
+            return "KEY"
+        return self.field_type[field]
+
+    def has_field(self, field):
+        return field in self.fields
 
     def add_node(self, node):
         """
@@ -66,7 +81,8 @@ class Node:
         node_field = node.slot
         if node_field not in self.fields:
             raise ValueError(
-                'error: node must have field which is included in self.fields. Fix the graph file before continue')
+                'error: node must have field which is included in self.fields.'
+                ' Fix the graph file before continue')
         self.children[node_value] = node
         node.level = self.level + 1
         node.parent_node = self

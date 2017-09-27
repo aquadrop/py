@@ -23,26 +23,36 @@ See README.md to learn what this code has done!
 Also SEE https://stackoverflow.com/questions/38241410/tensorflow-remember-lstm-state-for-next-batch-stateful-lstm
 for special treatment for this code
 
-Belief Tracker
+Belief Graph
 """
 
-import re
-import requests
-
-import jieba
-
 import os
-dir_path = os.path.dirname(os.path.realpath(__file__))
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(parentdir)
+sys.path.append(grandfatherdir)
 
-jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
+# for pickle
+from graph.belief_graph import Graph
+from kernel.belief_tracker import BeliefTracker
 
 
-def jieba_cut(query, smart=True):
-    seg = jieba.cut(query, cut_all=not smart)
-    result = []
-    for s in seg:
-        result.append(s)
-    return result
+class MainKernel:
 
-if __name__ == "__main__":
-    print(' '.join(jieba_cut('苹果双卡单4G手机iphone8雲狐手机')))
+    def __init__(self, config):
+        self.config = config
+        self.belief_tracker = BeliefTracker(config['belief_graph'])
+
+    def kernel(self, q, user='solr'):
+        response = self.belief_tracker.kernel(q)
+        return response
+
+if __name__ == '__main__':
+    config = {"belief_graph": "../../model/graph/belief_graph.pkl"}
+    kernel = MainKernel(config)
+    while (True):
+        ipt = input("input:")
+        resp = kernel.kernel(ipt)
+        print(resp)
