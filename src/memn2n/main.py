@@ -200,9 +200,9 @@ def main(args):
         vocab_size=vocab_size,
         candidates_size=n_cand,
         sentence_size=sentence_size,
-        embedding_size=200,
+        embedding_size=300,
         candidates_vec=candidates_vec,
-        hops=3
+        hops=4
     )
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
