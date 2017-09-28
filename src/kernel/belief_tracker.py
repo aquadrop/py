@@ -146,19 +146,24 @@ class BeliefTracker:
         2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
             2.1 if fail, enter ambiguity state
         """
+
+        def has_child(values):
+            for v in values:
+                if self.search_node.has_child(v):
+                    return True
+            return False
+
         if not slot_values_marker:
             slot_values_marker = [0] * len(slot_values_list)
         # slot_values_list = list(set(slot_values_list))
 
         if self.machine_state == self.API_CALL_STATE:
-            self.machine_state = self.TRAVEL_STATE
-            self.move_to_node(self.belief_graph.get_root_node())
-            return self.update_belief_graph(slot_values_list, slot_values_marker)
-
-        if self.machine_state == self.API_CALL_STATE:
-            self.machine_state = self.TRAVEL_STATE
-            self.move_to_node(self.belief_graph.get_root_node())
-            return self.update_belief_graph(slot_values_list, slot_values_marker)
+            if has_child(slot_values_list):
+                # restart search node
+                self.move_to_node(self.search_node)
+            else:
+                self.move_to_node(self.belief_graph.get_root_node())
+                return self.update_belief_graph(slot_values_list, slot_values_marker)
 
         if self.machine_state == self.AMBIGUITY_STATE:
             for i, value in enumerate(slot_values_list):
