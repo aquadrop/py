@@ -20,6 +20,7 @@ from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
 from utils.query_util import *
+from memn2n.memn2n_session import memInfer
 
 
 class BeliefTracker:
@@ -52,7 +53,7 @@ class BeliefTracker:
         self.machine_state = None  # API_NODE, NORMAL_NODE
         self.filling_slots = dict()  # current slot
         self.required_slots = list()  # required slot obtained from api_node, ordered
-        self.numerical_slots = dict() # common like distance, size, price
+        self.numerical_slots = dict()  # common like distance, size, price
         self.ambiguity_slots = dict()
         self.wild_card = dict()
         # self.negative = False
@@ -119,7 +120,7 @@ class BeliefTracker:
         if self.search_node == self.belief_graph.get_root_node():
             self.rule_base_num_retreive(query)
         self.update_belief_graph(query=query,
-            slot_values_list=filtered_slot_values_list)
+                                 slot_values_list=filtered_slot_values_list)
         return self.issune_api()
 
     def unfold_slots_list(self, intention):
@@ -311,9 +312,10 @@ class BeliefTracker:
         ac_power_single = r"([-+]?\d*\.\d+|\d+)[P|匹]"
         price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
 
-        dual = {"tv.size": tv_size_dual, "tv.distance":tv_distance_dual, "ac.power":ac_power_dual, "price":price_dual}
+        dual = {"tv.size": tv_size_dual, "tv.distance": tv_distance_dual,
+                "ac.power": ac_power_dual, "price": price_dual}
         single = {"tv.size": tv_size_single, "tv.distance": tv_distance_single, "ac.power": ac_power_single,
-                "price": price_single}
+                  "price": price_single}
 
         query = str(new_cn2arab(query))
         flag = False
@@ -342,7 +344,6 @@ class BeliefTracker:
         if numbers:
             self.wild_card['price'] = numbers
 
-
     def range_extract(self, pattern, query, single):
         numbers = []
         match = re.match(pattern, query)
@@ -351,12 +352,15 @@ class BeliefTracker:
                 numbers = match.group(0)
                 numbers = float(re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0])
                 numbers = [numbers * 0.9, numbers * 1.1]
-                numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+                numbers = '[' + str(numbers[0]) + " TO " + \
+                    str(numbers[1]) + "]"
         else:
             if match:
                 numbers = match.group(0)
-                numbers = [float(r) for r in re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0:2]]
-                numbers = '[' + str(numbers[0]) + " TO " + str(numbers[1]) + "]"
+                numbers = [float(r) for r in re.findall(
+                    r"[-+]?\d*\.\d+|\d+", numbers)[0:2]]
+                numbers = '[' + str(numbers[0]) + " TO " + \
+                    str(numbers[1]) + "]"
         return numbers
 
     def rule_base_fill(self, query, slot):
@@ -591,22 +595,37 @@ class BeliefTracker:
 
 
 def test():
-    with open(os.path.join(grandfatherdir, "model/graph/belief_graph.pkl"), "rb") as input_file:
-        bt = BeliefTracker(os.path.join(grandfatherdir,
-                                        "model/graph/belief_graph.pkl"))
+    query = '你好'
 
-        with open(os.path.join(grandfatherdir, "log/test2.log"), 'a') as logfile:
-            while(True):
-                try:
-                    ipt = input("input:")
-                    print(ipt, file=logfile)
-                    resp = bt.kernel(ipt)
-                    print(resp)
-                    print(resp, file=logfile)
-                except Exception as e:
-                    traceback.print_exc()
-                    print('error:', e, end='\n\n', file=logfile)
-                    break
+    metadata_dir = os.path.join(
+        grandfatherdir, 'data/memn2n/processed/.metadata.pkl')
+    data_dir = os.path.join(
+        grandfatherdir, 'data/memn2n/processed/.data.pkl')
+    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+
+    memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
+    sess = memInfer.getSession()
+
+    reply = sess.reply(query)
+    print(reply)
+
+    # graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
+    # log_dir = os.path.join(grandfatherdir, "log/test2.log")
+    # bt = BeliefTracker(graph_dir)
+
+    # with open(log_dir, 'a') as logfile:
+    #     while(True):
+    #         try:
+    #             ipt = input("input:")
+    #             print(ipt, file=logfile)
+    #             resp = bt.kernel(ipt)
+    #             print(resp)
+    #             print(resp, file=logfile)
+    #         except Exception as e:
+    #             traceback.print_exc()
+    #             print('error:', e, end='\n\n', file=logfile)
+    #             break
 
 
 if __name__ == "__main__":

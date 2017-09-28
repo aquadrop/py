@@ -70,3 +70,10 @@ mapper = {
     'bye': '再见，谢谢光临！',
     'buy': buyQueryMapper
 }
+
+
+class Base(object):
+    def __init__(self, category, brand, price):
+        self.category = category
+        self.brand = brand
+        self.price = price
