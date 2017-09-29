@@ -1,0 +1,17 @@
+标题|title|key|brand,fr.type,fr.fr,category
+品类|category|key|冰箱
+品牌|brand|key|美的,海尔,西门子,康佳,海信,容声
+价格|price|range|500,1000,2000,3000,4000,5000
+类型|fr.type|key|对开门,多门,三门,双门,单门,迷你型,商用
+适用人数|fr.people|range|1,2,3,4,5,6,7
+制冷方式|fr.cool_type|key|风冷,直冷,风直冷
+容积|fr.vol|range|1,2,3,4,5,6,7,8,9
+宽度|fr.width|range|50,100,150,200
+高度|fr.height|range|50,100,150,200
+变频/定频|fr.fr|key|变频,非变频
+国家能效等级|fr.energy_lvl|key|1级,2级,3级,4级,5级
+控温方式|fr.control|key|电脑控温,机械控温
+位置|location|key|二楼
+优惠|discount|key|满1000减200,满2000减300,十一大促销
+国籍|nation|key|中国,国外
+上市时间|tmarket|key|2015,2016,2017

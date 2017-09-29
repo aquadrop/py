@@ -22,7 +22,6 @@ from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
 from utils.query_util import *
-from memn2n.memn2n_session import MemInfer
 
 
 class BeliefTracker:
@@ -48,7 +47,7 @@ class BeliefTracker:
 
         # keep tracker of user profile, for instance: name, location, gender
         self.user_slots = {}
-        # keep track of pushed product ids
+        # keep track of pushe   d product ids
         self.product_push_list = []
 
         self.score_stairs = [1, 4, 16, 64, 256]

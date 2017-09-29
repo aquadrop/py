@@ -1,0 +1,13 @@
+标题|title|key|brand,ac.power,ac.type,ac.fr,category
+品类|category|key|空调
+品牌|brand|key|三菱,松下,科龙,惠而浦,大金,目立,海尔,美的,卡萨帝,奥克斯,长虹,格力,莱克,艾美特,dyson,智高,爱仕达,格兰仕
+匹数|ac.power|key|1P,大1P,1.5P,2P,2.5P,3P,4P,5P,6P
+价格|price|range|1000,2000,3000,4000,5000,6000
+类型|ac.type|key|挂壁式,立柜式,移动式,中央
+运行模式|ac.mode|key|冷暖,单冷,冷暖电辅
+变频/定频|ac.fr|key|变频,定频
+国家能效等级|ac.energy_lvl|key|1级,2级,3级,4级,5级
+位置|location|key|三楼
+优惠|discount|key|满1000减200,满2000减300,十一大促销
+国籍|nation|key|中国,外国
+上市时间|tmarket|key|2015,2016,2017
