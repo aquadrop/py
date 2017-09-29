@@ -69,7 +69,7 @@ def prepare_data(args):
         'test': test,
         'val': val
     }
-    with open(P_DATA_DIR + '.data.pkl', 'wb') as f:
+    with open(P_DATA_DIR + 'data.pkl', 'wb') as f:
         pkl.dump(data_, f)
 
     ###
@@ -77,7 +77,7 @@ def prepare_data(args):
     metadata['candid2idx'] = candid2idx
     metadata['idx2candid'] = idx2candid
 
-    with open(P_DATA_DIR + '.metadata.pkl', 'wb') as f:
+    with open(P_DATA_DIR + 'metadata.pkl', 'wb') as f:
         pkl.dump(metadata, f)
 
 
@@ -273,6 +273,7 @@ def main(args):
 
 def launch_multiple_session():
     return
+
 
 # _______MAIN_______
 if __name__ == '__main__':

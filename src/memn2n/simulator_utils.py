@@ -71,9 +71,122 @@ mapper = {
     'buy': buyQueryMapper
 }
 
+name_map = {'base': '基类', 'tv': '电视', 'ac': '空调', 'phone': '手机'}
+template = '我要买[p]的[c]'
+
 
 class Base(object):
-    def __init__(self, category, brand, price):
-        self.category = category
-        self.brand = brand
-        self.price = price
+    def __init__(self):
+        self.name = 'base'
+        self.discount = ["满1000减200", "满2000减300", "十一大促销"]
+        self.property_map = dict()
+        self.necessary = dict()
+        self.other = dict()
+
+    def get_property(self):
+        return self.property_map
+
+
+class Tv(Base):
+    def __init__(self):
+        self.property_map = dict()
+        self.necessary = dict()
+        self.other = dict()
+        self.name = 'tv'
+        self.size = ["#number#"]
+        self.type = ["智能", "普通", "互联网"]
+        self.price = ["#number#"]
+        self.brand = ["索尼", "乐视", "三星", "海信", "创维", "TCL"]
+        self.distance = ["#number#"]
+        self.resolution = ["4K超高清", "全高清", "高清"]
+        self.panel = ["LED", "OLEC", "LCD", "等离子"]
+        self.power_level = ["#number#"]
+
+        # index represent priority
+        self.necessary_property = ['size', 'type', 'price']
+
+    def get_property(self):
+        self.necessary['size'] = self.size
+        self.necessary['type'] = self.type
+        self.necessary['price'] = self.price
+
+        self.other['brand'] = self.brand
+        self.other['distance'] = self.distance
+        self.other['resolution'] = self.resolution
+        self.other['panel'] = self.panel
+        self.other['power_level'] = self.power_level
+
+        self.property_map['necessary'] = self.necessary
+        self.property_map['other'] = self.other
+        # print(self.property_map)
+        return self.property_map
+
+
+class Phone(Base):
+    def __init__(self):
+        self.property_map = dict()
+        self.necessary = dict()
+        self.other = dict()
+        self.name = 'phone'
+        self.brand = ["华为", "oppo", "苹果", "vivo",
+                      "金立", "三星", "荣耀", "魅族", "moto", "小米"]
+        self.sys = ["android", "ios"]
+        self.net = ["全网通", "移动4G", "联通4G", "电信4G", "双卡双4G", "双卡单4G"]
+        self.feature = ["老人手机", "拍照神器", "女性手机", "儿童手机"]
+        self.color = ["红", "黑", "白", "深空灰", "玫瑰金"]
+        self.mem_size = ["16G", "32G", "64G", "128G", "256G"]
+        self.price = ["#number#"]
+
+        # index represent priority
+        self.necessary_property = ['price', 'brand']
+
+    def get_property(self):
+        self.necessary['price'] = self.price
+        self.necessary['brand'] = self.brand
+
+        self.other['sys'] = self.sys
+        self.other['net'] = self.net
+        self.other['feature'] = self.feature
+        self.other['color'] = self.color
+        self.other['mem_size'] = self.mem_size
+
+        self.property_map['necessary'] = self.necessary
+        self.property_map['other'] = self.other
+
+        return self.property_map
+
+
+class Ac(Base):
+    def __init__(self):
+        self.property_map = dict()
+        self.necessary = dict()
+        self.other = dict()
+        self.name = 'ac'
+        self.power = ["#number#"]
+        self.area = ["#number#"]
+        self.type = ["圆柱", "立式", "挂壁式", "立柜式", "中央空调"]
+        self.brand = ["三菱", "松下", "科龙", "惠而浦", "大金", "目立", "海尔", "美的", "卡萨帝",
+                      "奥克斯", "长虹", "格力", "莱克", "艾美特", "dyson", "智高", "爱仕达", "格兰仕"]
+        self.price = ["#number#"]
+        self.location = ["一楼", "二楼", "三楼", "地下一楼"]
+        self.fr = ["变频", "定频"]
+        self.cool_type = ["单冷", "冷暖"]
+
+        # index represent priority
+        self.necessary_property = ['type', 'power', 'price']
+
+    def get_property(self):
+        self.necessary['type'] = self.type
+        self.necessary['power'] = self.power
+        self.necessary['price'] = self.price
+
+        self.other['area'] = self.area
+        self.other['brand'] = self.brand
+        self.other['location'] = self.location
+        self.other['fr'] = self.fr
+        self.other['cool_type'] = self.cool_type
+
+        self.property_map['necessary'] = self.necessary
+        self.property_map['other'] = self.other
+
+        return self.property_map
