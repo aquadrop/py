@@ -20,6 +20,7 @@ from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
 from utils.query_util import *
+from memn2n import data_utils
 from memn2n.memn2n_session import memInfer
 
 
