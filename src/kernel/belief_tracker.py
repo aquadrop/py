@@ -13,6 +13,8 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 from SolrClient import SolrClient
 
 import sys
@@ -20,7 +22,7 @@ from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
 from utils.query_util import *
-from memn2n.memn2n_session import memInfer
+from memn2n.memn2n_session import MemInfer
 
 
 class BeliefTracker:
@@ -141,7 +143,7 @@ class BeliefTracker:
         if slot in self.required_slots:
             self.required_slots.remove(slot)
 
-    def update_belief_graph(self, slot_values_list, query=None, slot_values_marker=None):
+    def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
         1. if node is single, go directly
         2. if there are ambiguity nodes, try remove ambiguity resorting to slot_values_list AND search_parent_node
@@ -151,6 +153,7 @@ class BeliefTracker:
         def has_child(values):
             for v in values:
                 if self.search_node.has_child(v):
+                    self.rule_base_num_retreive(query)
                     return True
             return False
 
@@ -163,8 +166,10 @@ class BeliefTracker:
                 # restart search node
                 self.move_to_node(self.search_node)
             else:
+                self.machine_state = self.TRAVEL_STATE
                 self.move_to_node(self.belief_graph.get_root_node())
-                return self.update_belief_graph(slot_values_list, slot_values_marker)
+                return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                slot_values_marker=slot_values_marker, query=query)
 
         if self.machine_state == self.AMBIGUITY_STATE:
             for i, value in enumerate(slot_values_list):
@@ -174,11 +179,13 @@ class BeliefTracker:
                     slot_values_marker[i] = 1
                     self.machine_state = self.TRAVEL_STATE
                     self.move_to_node(self.ambiguity_slots[value])
-                    return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                    return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                    slot_values_marker=slot_values_marker, query=query)
             # ambiguity removal failed, abandon
             self.machine_state = self.TRAVEL_STATE
             self.move_to_node(self.belief_graph.get_root_node())
-            return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+            return self.update_belief_graph(slot_values_list=slot_values_list,
+                                            slot_values_marker=slot_values_marker, query=query)
 
         # session terminal end api_call_node
         # issune api_call_to_solr
@@ -186,18 +193,25 @@ class BeliefTracker:
 
         if self.search_node.is_api_node():
             self.fill_with_wild_card()
-            if self.machine_state == self.API_REQUEST_RULE_STATE:
-                state = self.rule_base_fill(query, self.required_slots[0])
+            # if self.machine_state == self.API_REQUEST_RULE_STATE:
+            #     if self.search_node.get_field_type(self.required_slots[0]) == Node.RANGE:
+            #         state = self.rule_base_fill(query, self.required_slots[0])
             self.machine_state = self.API_REQUEST_STATE
             if len(self.required_slots) == 0:
                 self.machine_state = self.API_CALL_STATE
                 return
-            if self.search_node.get_field_type(self.required_slots[0]):
-                self.machine_state = self.API_REQUEST_RULE_STATE
+            if self.search_node.get_field_type(self.required_slots[0]) == Node.RANGE:
+                # self.machine_state = self.API_REQUEST_RULE_STATE
+                self.rule_base_fill(query, self.required_slots[0])
+                if len(self.required_slots) == 0:
+                    self.machine_state = self.API_CALL_STATE
             for i, value in enumerate(slot_values_list):
                 if not self.belief_graph.has_node_by_value(value):
                     continue
                 if slot_values_marker[i] == 1:
+                    continue
+                if self.search_node.value == value:
+                    slot_values_marker[i] = 1
                     continue
                 if self.search_node.has_child(value):
                     # slot_values_marker[i] = 1
@@ -213,8 +227,8 @@ class BeliefTracker:
                     self.move_to_node(self.belief_graph.get_root_node())
                     self.machine_state = self.API_REQUEST_STATE
 
-                    return self.update_belief_graph(
-                        slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                    return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                    slot_values_marker=slot_values_marker, query=query)
             return
 
         # if property node, go up
@@ -228,7 +242,8 @@ class BeliefTracker:
                 slot_values_marker[slot_values_list.index(
                     parent_node.value)] = 1
             self.fill_slot(slot, value)
-            return self.update_belief_graph(slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+            return self.update_belief_graph(slot_values_list=slot_values_list,
+                                            slot_values_marker=slot_values_marker, query=query)
 
         for i, value in enumerate(slot_values_list):
             if slot_values_marker[i] == 1:
@@ -241,8 +256,8 @@ class BeliefTracker:
                 slot_values_marker[i] = 1
                 self.move_to_node(next_parent_search_node)
                 self.machine_state = self.API_REQUEST_STATE
-                return self.update_belief_graph(
-                    slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+                return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                slot_values_marker=slot_values_marker, query=query)
 
             # enter ambiguity state
             if len(candidate_nodes) > 1:
@@ -276,9 +291,8 @@ class BeliefTracker:
                     node = filtered_nodes[0]
                     self.machine_state = self.TRAVEL_STATE
                     self.move_to_node(node)
-                    return self.update_belief_graph(
-                        slot_values_list=slot_values_list,
-                        slot_values_marker=slot_values_marker)
+                    return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                    slot_values_marker=slot_values_marker, query=query)
                 elif len(filtered_nodes) > 1:
                     for node in filtered_nodes:
                         self.ambiguity_slots[node.parent_node.value] = node
@@ -291,8 +305,8 @@ class BeliefTracker:
             # go directly to ROOT
             self.move_to_node(self.belief_graph.get_root_node())
             self.machine_state = self.API_REQUEST_STATE
-            return self.update_belief_graph(
-                slot_values_list=slot_values_list, slot_values_marker=slot_values_marker)
+            return self.update_belief_graph(slot_values_list=slot_values_list,
+                                            slot_values_marker=slot_values_marker, query=query)
 
     def fill_with_wild_card(self):
         for key, value in self.wild_card.items():
@@ -302,15 +316,15 @@ class BeliefTracker:
         self.wild_card.clear()
 
     def rule_base_num_retreive(self, query):
-        tv_size_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸"
-        tv_distance_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米"
-        ac_power_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹]"
-        price_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元]"
+        tv_size_dual = r".*(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸).*"
+        tv_distance_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米.*"
+        ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹].*"
+        price_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元].*"
 
-        tv_size_single = r"([-+]?\d*\.\d+|\d+)寸"
-        tv_distance_single = r"([-+]?\d*\.\d+|\d+)米"
-        ac_power_single = r"([-+]?\d*\.\d+|\d+)[P|匹]"
-        price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
+        tv_size_single = r".*([-+]?\d*\.\d+|\d+)寸.*"
+        tv_distance_single = r".*([-+]?\d*\.\d+|\d+)米.*"
+        ac_power_single = r".*([-+]?\d*\.\d+|\d+)[P|匹].*"
+        price_single = r".*([-+]?\d*\.\d+|\d+)[块|元].*"
 
         dual = {"tv.size": tv_size_dual, "tv.distance": tv_distance_dual,
                 "ac.power": ac_power_dual, "price": price_dual}
@@ -369,15 +383,15 @@ class BeliefTracker:
         :param query: 我要买一个两千到三千的手机
         :return:
         """
-        if self.machine_state != self.API_REQUEST_RULE_STATE:
-            return
+        # if self.machine_state != self.API_REQUEST_RULE_STATE:
+        #     return
 
         query = str(new_cn2arab(query))
 
         remove_regex = r"\d+[个|只|条|部|本|台]"
         query = re.sub(remove_regex, '', query)
-        dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
-        single = r"[-+]?\d*\.\d+|\d+"
+        dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+).*"
+        single = r".*([-+]?\d*\.\d+|\d+).*"
 
         numbers = self.range_extract(dual, query, False)
         if numbers:
@@ -400,12 +414,15 @@ class BeliefTracker:
         facet_field = self.required_slots[0]
 
         def render_range(a, gap):
-            if len(a) == 1:
+            if len(a) == 0:
                 return []
             components = []
             p = 0
             if len(a) == 1:
                 components.append(str(a))
+            elif len(a) == 2:
+                components.append(str(a[0]))
+                components.append(str(a[1]))
             else:
                 for i in range(1, len(a)):
                     if a[i] - a[i - 1] > gap:
@@ -414,6 +431,8 @@ class BeliefTracker:
                         else:
                             components.append(str(a[p]) + "-" + str(a[i - 1]))
                         p = i
+                if len(components) == 0:
+                    components.append(str(a[1]) + "-" + str(a[-1]))
             return components
 
         if self.is_key_type(facet_field):
@@ -464,6 +483,8 @@ class BeliefTracker:
             return facet
 
     def issune_api(self):
+        if self.machine_state == self.TRAVEL_STATE:
+            return "api_greeting_search_normal"
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.required_slots[0]
             avails = self.retreive_avail_values()
@@ -473,7 +494,7 @@ class BeliefTracker:
             return "api_request_ambiguity_removal_" + param
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
-            param = "api_call_"
+            param = "api_call_search_"
             fill = []
             for key, value in self.filling_slots.items():
                 fill.append(key + ":" + str(value))
@@ -488,7 +509,7 @@ class BeliefTracker:
 
     def r_walk_with_pointer_with_clf(self, query):
         query = str(query)
-        if not query or len(query) == 1:
+        if not query:
             return 'invalid query'
         api = self.travel_with_clf(query)
         if not api:
@@ -581,6 +602,7 @@ class BeliefTracker:
         for t in tokens:
             if self.belief_graph.has_node_by_value(t):
                 slot_values_list.append(t)
+        slot_values_list = list(set(slot_values_list))
         probs = [1.0] * len(slot_values_list)
         return slot_values_list, probs
 
@@ -595,37 +617,37 @@ class BeliefTracker:
 
 
 def test():
-    query = '你好'
+    # query = '空调'
+    #
+    # metadata_dir = os.path.join(
+    #     grandfatherdir, 'data/memn2n/processed/metadata.pkl')
+    # data_dir = os.path.join(
+    #     grandfatherdir, 'data/memn2n/processed/data.pkl')
+    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    #
+    # memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
+    # sess = memInfer.getSession()
+    #
+    # reply = sess.reply(query)
+    # print(reply)
 
-    metadata_dir = os.path.join(
-        grandfatherdir, 'data/memn2n/processed/.metadata.pkl')
-    data_dir = os.path.join(
-        grandfatherdir, 'data/memn2n/processed/.data.pkl')
-    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
-
-    memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
-    sess = memInfer.getSession()
-
-    reply = sess.reply(query)
-    print(reply)
-
-    # graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
-    # log_dir = os.path.join(grandfatherdir, "log/test2.log")
-    # bt = BeliefTracker(graph_dir)
+    log_dir = os.path.join(grandfatherdir, "log/test2.log")
+    bt = BeliefTracker(graph_dir)
 
-    # with open(log_dir, 'a') as logfile:
-    #     while(True):
-    #         try:
-    #             ipt = input("input:")
-    #             print(ipt, file=logfile)
-    #             resp = bt.kernel(ipt)
-    #             print(resp)
-    #             print(resp, file=logfile)
-    #         except Exception as e:
-    #             traceback.print_exc()
-    #             print('error:', e, end='\n\n', file=logfile)
-    #             break
+    with open(log_dir, 'a') as logfile:
+        while(True):
+            try:
+                ipt = input("input:")
+                print(ipt, file=logfile)
+                resp = bt.kernel(ipt)
+                print(resp)
+                print(resp, file=logfile)
+            except Exception as e:
+                traceback.print_exc()
+                print('error:', e, end='\n\n', file=logfile)
+                break
 
 
 if __name__ == "__main__":

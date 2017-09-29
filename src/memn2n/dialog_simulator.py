@@ -22,6 +22,8 @@ import numpy as np
 from enum import Enum
 from collections import OrderedDict
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 from simulator_utils import mapper, buyQueryMapper
 
 
@@ -174,7 +176,7 @@ class DialogSimulator:
                     line = '\t'.join(line)
                     f.write(line + '\n')
                 f.write('\n')
-        with open('data/memn2n/candidates.txt', 'w') as f:
+        with open(dir_path + '/../../data/memn2n/candidates.txt', 'w') as f:
             for candidate in list(self.candidatesSet):
                 f.write(candidate + '\n')
 
@@ -215,18 +217,18 @@ class DialogSimulator:
 def main():
 
     userIntentFiles = {
-        'greet': 'data/memn2n/dialog_simulator/greet.txt',
-        'chat': 'data/memn2n/dialog_simulator/chat.txt',
-        'qa': 'data/memn2n/dialog_simulator/qa.txt',
-        'bye': 'data/memn2n/dialog_simulator/bye.txt',
-        'buy': 'data/memn2n/dialog_simulator/buy.txt'
+        'greet': dir_path + '/../../data/memn2n/dialog_simulator/greet.txt',
+        'chat': dir_path + '/../../data/memn2n/dialog_simulator/chat.txt',
+        'qa': dir_path + '/../../data/memn2n/dialog_simulator/qa.txt',
+        'bye': dir_path + '/../../data/memn2n/dialog_simulator/bye.txt',
+        'buy': dir_path + '/../../data/memn2n/dialog_simulator/buy.txt'
     }
 
     # dialogsFiles suppose to be a list : ['train','valid','test']
-    totalFile = 'data/memn2n/total.txt'
-    dialogsFiles = ['data/memn2n/train.txt',
-                    'data/memn2n/val.txt', 'data/memn2n/test.txt']
-    merchandisesFile = 'data/memn2n/dialog_simulator/merchandises.txt'
+    totalFile = dir_path + '/../../data/memn2n/total.txt'
+    dialogsFiles = [dir_path + '/../../data/memn2n/train.txt',
+                    dir_path + '/../../data/memn2n/val.txt', dir_path + '/../../data/memn2n/test.txt']
+    merchandisesFile = dir_path + '/../../data/memn2n/dialog_simulator/merchandises.txt'
     ds = DialogSimulator(userIntentFiles, totalFile,
                          dialogsFiles, merchandisesFile)
     ds.genDialog()

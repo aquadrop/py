@@ -8,13 +8,13 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n
+import memn2n_lstm as memn2n
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
-
-DATA_DIR = 'data/memn2n'
-P_DATA_DIR = 'data/memn2n/processed/'
+DATA_DIR = dir_path + '/../../data/memn2n'
+P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
 BATCH_SIZE = 16
-CKPT_DIR = 'model/memn2n/ckpt'
+CKPT_DIR = dir_path + '/../../model/memn2n/ckpt'
 
 
 '''
@@ -105,7 +105,7 @@ def parse_args(args):
                         help='you know what batch size means!')
     parser.add_argument('--epochs', required=False, type=int, default=200,
                         help='num iteration of training over train set')
-    parser.add_argument('--eval_interval', required=False, type=int, default=5,
+    parser.add_argument('--eval_interval', required=False, type=int, default=1,
                         help='num iteration of training over train set')
     parser.add_argument('--log_file', required=False, type=str, default='log.txt',
                         help='enter the name of the log file')
@@ -167,9 +167,9 @@ def main(args):
 
     # ELSE
     # read data and metadata from pickled files
-    with open(P_DATA_DIR + '.metadata.pkl', 'rb') as f:
+    with open(P_DATA_DIR + 'metadata.pkl', 'rb') as f:
         metadata = pkl.load(f)
-    with open(P_DATA_DIR + '.data.pkl', 'rb') as f:
+    with open(P_DATA_DIR + 'data.pkl', 'rb') as f:
         data_ = pkl.load(f)
 
     # read content of data and metadata
@@ -216,7 +216,7 @@ def main(args):
         # training and evaluation loop
         print('\n>> Training started!\n')
         # write log to file
-        log_handle = open('log/' + args['log_file'], 'w')
+        log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
         cost_total = 0.
         # best_validation_accuracy = 0.
         for i in range(epochs + 1):

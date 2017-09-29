@@ -33,24 +33,48 @@ grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
-
+import traceback
 # for pickle
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
-
+from memn2n.memn2n_session import MemInfer
 
 class MainKernel:
 
+    static_memory = None
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config['belief_graph'])
 
+        self._load_memory(config)
+        self.sess = self.memory.getSession()
+
+    def _load_memory(self, config):
+        if not MainKernel.static_memory:
+            self.memory = MemInfer(config)
+            MainKernel.static_memory = self.memory
+        else:
+            self.memory = MainKernel.static_memory
+
     def kernel(self, q, user='solr'):
-        response = self.belief_tracker.kernel(q)
+        api = self.sess.reply(q)
+        print(api)
+        if api.startswith('api_call_slot'):
+            response = self.belief_tracker.kernel(api + q)
+        else:
+            response = api
         return response
 
 if __name__ == '__main__':
-    config = {"belief_graph": "../../model/graph/belief_graph.pkl"}
+    # metadata_dir = os.path.join(
+    #     grandfatherdir, 'data/memn2n/processed/metadata.pkl')
+    # data_dir = os.path.join(
+    #     grandfatherdir, 'data/memn2n/processed/data.pkl')
+    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    config = {"belief_graph": "../../model/graph/belief_graph.pkl",
+              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt')}
     kernel = MainKernel(config)
     while (True):
         ipt = input("input:")

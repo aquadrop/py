@@ -6,8 +6,8 @@ import sys
 import pickle as pkl
 import tensorflow as tf
 
-import data_utils
-import memn2n
+import memn2n.data_utils
+import memn2n.memn2n
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -34,9 +34,9 @@ class Memn2nSession():
             self.nid = 1
             reply_msg = 'memory cleared!'
         else:
-            u = data_utils.tokenize(line)
+            u = memn2n.data_utils.tokenize(line)
             data = [(self.context, u, -1)]
-            s, q, a = data_utils.vectorize_data(data,
+            s, q, a = memn2n.data_utils.vectorize_data(data,
                                                 self.w2idx,
                                                 self.model._sentence_size,
                                                 1,
@@ -45,7 +45,7 @@ class Memn2nSession():
             preds = self.model.predict(s, q)
             r = self.idx2candid[preds[0]]
             reply_msg = r
-            r = data_utils.tokenize(r)
+            r = memn2n.data_utils.tokenize(r)
             u.append('$u')
             u.append('#' + str(self.nid))
             r.append('$r')
@@ -57,10 +57,10 @@ class Memn2nSession():
 
 
 class MemInfer:
-    def __init__(self, metadata_dir, data_dir, ckpt_dir):
-        self.metadata_dir = metadata_dir
-        self.data_dir = data_dir
-        self.ckpt_dir = ckpt_dir
+    def __init__(self, config):
+        self.metadata_dir = config['metadata_dir']
+        self.data_dir = config['data_dir']
+        self.ckpt_dir = config['ckpt_dir']
         self.model = self._loadModel()
 
     def _loadModel(self):
@@ -87,10 +87,10 @@ class MemInfer:
         candidate_sentence_size = metadata['candidate_sentence_size']
 
         # vectorize candidates
-        candidates_vec = data_utils.vectorize_candidates(
+        candidates_vec = memn2n.data_utils.vectorize_candidates(
             candidates, self.w2idx, candidate_sentence_size)
 
-        model = memn2n.MemN2NDialog(
+        model = memn2n.memn2n.MemN2NDialog(
             batch_size=16,
             vocab_size=vocab_size,
             candidates_size=self.n_cand,
