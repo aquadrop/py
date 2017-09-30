@@ -124,11 +124,10 @@ def main():
     ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
 
     memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
-    sess1 = memInfer.getSession()
-    sess2 = memInfer.getSession()
+    sess = memInfer.getSession()
 
-    print(sess1 == sess2)
-    print(id(sess1), id(sess2))
+    reply = sess.reply("你好")
+    print(reply)
 
 
 if __name__ == '__main__':
