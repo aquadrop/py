@@ -1,0 +1,16 @@
+标题|title|key|brand,phone.series,phone.color,phone.rmem,phone.net,category
+品类|category|key|手机
+品牌|brand|key|苹果,华为,小米,魅族,OPPO,VIVO,三星,诺基亚
+系列|phone.series|key|iphone,iphone6,iphone7,iphone8,iphonex,iphone6s,iphone7p,荣耀,galaxy,红米
+屏幕尺寸|phone.size|range|4,4.5,5,5.5,6
+价格|price|range|500,1000,2000,3000,4000,5000,6000
+操作系统|phone.sys|key|Android,IOS,YunOS,MIUI,Windows
+颜色|phone.color|key|黑色,白色,银灰色,金色,玫瑰金,蓝色,红色,绿色
+运行内存|phone.rmem|key|4G,8G,16G,32G,64G,128G,256G
+机身内存|phone.mmem|key|1G,2G,3G,4G,6G
+像素|phone.pixel|range|500,800,1000,1300,1500,1600,2000
+网络制式|phone.net|key|全网通,移动4G,联通4G,电信4G,双卡双4G,双卡单4G
+位置|location|key|三楼
+优惠|discount|key|满1000减200,满2000减300,十一大促销
+国籍|nation|key|中国,外国
+上市时间|tmarket|key|2015,2016,2017

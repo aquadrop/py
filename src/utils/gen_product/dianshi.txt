@@ -1,0 +1,15 @@
+标题|title|key|brand,tv.resolution,tv.type,category
+品类|category|key|电视
+品牌|brand|key|海信,索尼,创维,TCL,长虹,小米,海尔
+屏幕尺寸|tv.size|range|32,39,40,42,43,46,48,50,52,55,58,60,65,70
+价格|price|range|500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000
+类型|tv.type|key|曲面,OLED,4K超高清,超薄,VR,触控
+观看距离|tv.distance|range|1.5,2,2.5,3,3.5,4,5,6
+分辨率|tv.resolution|key|4K超高清,全高清,高清,普清
+显示屏类型|tv.panel|key|LED液晶,等离子,OLED,LCD液晶
+网络连接|tv.connect|key|有限,无线,有线+无线,不支持
+国家能效等级|tv.energy_lvl|key|1级,2级,3级,4级,5级
+位置|location|key|三楼
+优惠|discount|key|满1000减200,满2000减300,十一大促销
+国籍|nation|key|中国,外国
+上市时间|tmarket|key|2015,2016,2017

@@ -137,11 +137,11 @@ class BusinessSimulator(object):
         rows = len(dia[0])
         cols = len(dia)
 
-        with open(path, 'a') as f:
+        with open(path, 'a', encoding='utf-8') as f:
             for dialog in dialogs:
                 for i in range(rows):
                     for j in range(cols):
-                        f.write(dialog[j][i] + '//')
+                        f.write(dialog[j][i] + '#')
                     f.write('\n')
                 f.write('\n')
 
