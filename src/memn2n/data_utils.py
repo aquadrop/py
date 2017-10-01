@@ -36,11 +36,8 @@ def load_dialog(data_dir, candid_dic):
     val_file = os.path.join(data_dir, 'val.txt')
 
     train_data = get_dialogs(train_file, candid_dic)
-    print('train_data')
     test_data = get_dialogs(test_file, candid_dic)
-    print('train_data')
     val_data = get_dialogs(val_file, candid_dic)
-    print('train_data')
     return train_data, test_data, val_data
 
 

@@ -267,6 +267,7 @@ def main(args):
                 # best_validation_accuracy = val_acc
                 if val_acc > lowest_val_acc:
                     lowest_val_acc = val_acc
+                    print('saving model...', lowest_val_acc)
                     model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                      global_step=i)
         # close file

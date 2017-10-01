@@ -293,8 +293,16 @@ class BeliefTracker:
                     return self.update_belief_graph(slot_values_list=slot_values_list,
                                                     slot_values_marker=slot_values_marker, query=query)
                 elif len(filtered_nodes) > 1:
+                    parent_node_value = set()
                     for node in filtered_nodes:
-                        self.ambiguity_slots[node.parent_node.value] = node
+                        parent_node_value.add(node.parent_node.value)
+                    if len(parent_node_value) > 1:
+                        for node in filtered_nodes:
+                            self.ambiguity_slots[node.parent_node.value] = node
+                    # nice, differentiating at slots, not parent_nodes
+                    else:
+                        for node in filtered_nodes:
+                            self.ambiguity_slots[node.slot] = node
                     return
                 else:
                     self.machine_state = self.RESET_STATE
@@ -601,6 +609,9 @@ class BeliefTracker:
         for t in tokens:
             if self.belief_graph.has_node_by_value(t):
                 slot_values_list.append(t)
+            if self.machine_state == self.AMBIGUITY_STATE:
+                if self.belief_graph.has_slot(t):
+                    slot_values_list.append(t)
         slot_values_list = list(set(slot_values_list))
         probs = [1.0] * len(slot_values_list)
         return slot_values_list, probs
