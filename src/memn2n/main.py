@@ -8,7 +8,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n_lstm as memn2n
+import memn2n as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 DATA_DIR = dir_path + '/../../data/memn2n/train'
