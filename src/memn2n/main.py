@@ -64,7 +64,6 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
-    # print(metadata['idx2w'])
 
     ###
     # write data to file
