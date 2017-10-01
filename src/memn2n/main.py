@@ -8,7 +8,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n_lstm as memn2n
+import memn2n as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 DATA_DIR = dir_path + '/../../data/memn2n/train'
@@ -61,7 +61,7 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
-    print(metadata['idx2w'])
+    # print(metadata['idx2w'])
 
     ###
     # write data to file
@@ -183,7 +183,7 @@ def main(args):
 
     # gather more information from metadata
     sentence_size = metadata['sentence_size']
-    w2idx = metadata['w2idx']
+    w2idx = metadata['w2idx'] # is a list
     idx2w = metadata['idx2w']
     memory_size = metadata['memory_size']
     vocab_size = metadata['vocab_size']
@@ -217,6 +217,9 @@ def main(args):
     train, val, test, batches = data_utils.get_batches(
         train, val, test, metadata, batch_size=BATCH_SIZE)
 
+    # for t in train['q']:
+    #     print(recover_sentence(t, idx2w))
+
     if args['train']:
         # training starts here
         epochs = args['epochs']
@@ -236,9 +239,15 @@ def main(args):
                 a = train['a'][start:end]
                 cost_total += model.batch_fit(s, q, a)
 
+            lowest_val_acc = 0.8
             if i % eval_interval == 0 and i:
                 train_preds = batch_predict(model, train['s'], train['q'], len(
                     train['s']), batch_size=BATCH_SIZE)
+                # for i in range(len(train['q'])):
+                #     if train_preds[i] != train['a'][i]:
+                #         print(recover_sentence(train['q'][i], idx2w),
+                #               recover_cls(train_preds[i], idx2candid),
+                #               recover_cls(train['a'][i], idx2candid))
                 val_preds = batch_predict(model, val['s'], val['q'], len(
                     val['s']), batch_size=BATCH_SIZE)
                 train_acc = metrics.accuracy_score(
@@ -253,8 +262,10 @@ def main(args):
                 # save the best model, to disk
                 # if val_acc > best_validation_accuracy:
                 # best_validation_accuracy = val_acc
-                model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
-                                 global_step=i)
+                if val_acc > lowest_val_acc:
+                    lowest_val_acc = val_acc
+                    model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                                     global_step=i)
         # close file
         log_handle.close()
 
@@ -279,6 +290,17 @@ def main(args):
         elif args['ui']:
             return isess
 
+
+def recover_sentence(sentence_idx, idx2w):
+    sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]
+    return ','.join(sentence)
+
+
+def recover_cls(idx, idx2cls):
+    if not isinstance(idx, np.int64):
+        idx = idx[0]
+    result = idx2cls[idx]
+    return result
 
 def launch_multiple_session():
     return

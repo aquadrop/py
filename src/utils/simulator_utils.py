@@ -305,7 +305,7 @@ class Entity:
         if len(self.required_fields) > 0:
             return np.random.choice(self.required_fields)
         else:
-            return None
+            return ''
 
     def gen_response(self, required_field):
         asv, csv = self.random_property(required_field)
@@ -313,15 +313,18 @@ class Entity:
             [key + ':' + value for key, value in csv.items()])
         user_replay = ','.join(csv.values())
         # for_tree_api = ','.join([key + ':' + value for key, value in asv.items()])
-        for_tree_api = 'api_call_slot_' + ','.join(csv.values())
+        # for_tree_api = 'api_call_slot:' + ','.join(csv.values())
+        for_tree_api = 'api_call_slot:' + \
+            ','.join([key + ':' + value for key, value in csv.items()])
         new_required = self.get_new_required_field()
         if new_required:
-            # tree_render_api = 'api_call_request_' + new_required
-            tree_render_api = "(" + new_required + ")"
+            tree_render_api = 'api_call_request_' + new_required
+            # tree_render_api = "(" + new_required + ")"
         else:
             # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-            # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-            tree_render_api = ''
+            tree_render_api = 'api_call_search_' + \
+                ','.join([key + ':' + value for key, value in asv.items()])
+            # tree_render_api = ''
 
         return user_replay, current_slots, for_tree_api, tree_render_api, new_required
 
@@ -361,12 +364,12 @@ def build_corpus(entity, candidate_file, train, val, test):
     test_set = []
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
-    for i in range(500):
+    for i in range(2000):
         a, b, c, d, new_required = entity.gen_response(required)
         candidate = c
         # candidate = candidate.replace('api_call_request_', '').replace('api_call_tree_sn_', '')
         candidate_set.add(candidate)
-        line = a + '\t' + candidate
+        line = a + '\t' + candidate + '\t' + d
         mapper[which].append(line)
 
         if new_required:
@@ -422,6 +425,19 @@ if __name__ == '__main__':
                      '../../data/memn2n/train/val.txt',
                      '../../data/memn2n/train/test.txt')
 
+    # uniq candidates
+    candidates = set()
+    with open('../../data/memn2n/train/candidates.txt', 'r') as f:
+        for line in f:
+            candidates.add(line.strip('\n'))
+
+    candidates = set(candidates)
+    with open('../../data/memn2n/train/candidates.txt', 'w') as f:
+        for line in candidates:
+            f.writelines(line + '\n')
+
+# --------------------------------------------------------------------
+# generate complex dialogs
     outputFiles = {'train': '../../data/memn2n/train/complex_train.txt',
                    'val': '../../data/memn2n/train/complex_val.txt',
                    'test': '../../data/memn2n/train/complex_test.txt'
@@ -440,6 +456,7 @@ if __name__ == '__main__':
     candidatesFile = '../../data/memn2n/train/candidates.txt'
     dia = Dialogs(userIntentFiles, businessFiles, candidatesFile, outputFiles)
     dia.genDialog()
+# --------------------------------------------------------------------
 
     # phone = Phone('../../data/gen_product/shouji.txt')
     # phone.init_required_fields()
