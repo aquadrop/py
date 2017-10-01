@@ -212,7 +212,7 @@ class Dialogs:
 
         return candidatesSet
 
-    def genDialog(self):
+    def genDialog(self, complex_candidate_file):
         keys = self.businessDialogs.keys()
         frontKeys = ['greet', 'chat', 'qa']
         backKeys = ['bye']
@@ -225,21 +225,23 @@ class Dialogs:
                     for k in frontKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response)
-                        frontDialog.append(query + '\t' + response)
+                        self.candidatesSet.add(response + '\n')
+                        frontDialog.append(
+                            query + '\t' + response + '\t' + 'placeholder')
                     frontDialog.extend(dialog)
                     dialog = frontDialog
                     backDialog = list()
                     for k in backKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response)
-                        backDialog.append(query + '\t' + response)
+                        self.candidatesSet.add(response + '\n')
+                        backDialog.append(
+                            query + '\t' + response + '\t' + 'placeholder')
                     dialog.extend(backDialog)
                     for l in dialog:
                         f.write(l + '\n')
                     f.write('\n')
-        with open(self.candidatesFile, 'w') as f:
+        with open(complex_candidate_file, 'w') as f:
             for line in self.candidatesSet:
                 f.write(line + '\n')
 
@@ -255,10 +257,10 @@ class Entity:
         self.accumulate_slot_values = dict()
         with open(data_file, 'r', encoding='utf-8') as infile:
             line = infile.readline()
-            title = line.strip('\n').split("|")[2].split(',')
+            title = line.strip('\n').split("|")[3].split(',')
             for line in infile:
                 line = line.replace(' ', '').strip('\n')
-                a, b, ft, c = line.split("|")
+                _, a, b, ft, c = line.split("|")
                 self.profile[b] = c.split(",")
                 self.field_type[b] = ft
                 self.field_trans[b] = a
@@ -431,11 +433,11 @@ if __name__ == '__main__':
         for line in f:
             candidates.add(line.strip('\n'))
 
-    candidates = set(candidates)
-    with open('../../data/memn2n/train/complex/candidates.txt', 'w') as f:
-        for line in candidates:
-            f.writelines(line + '\n')
-
+    # candidates = set(candidates)
+    # with open('../../data/memn2n/train/complex/candidates.txt', 'w') as f:
+    #     for line in candidates:
+    #         f.writelines(line + '\n')
+    complex_candidate_file = '../../data/memn2n/train/complex/candidates.txt'
 # --------------------------------------------------------------------
 # generate complex dialogs
     outputFiles = {'train': '../../data/memn2n/train/complex/train.txt',
@@ -455,7 +457,7 @@ if __name__ == '__main__':
                      '../../data/memn2n/train/test.txt']
     candidatesFile = '../../data/memn2n/train/candidates.txt'
     dia = Dialogs(userIntentFiles, businessFiles, candidatesFile, outputFiles)
-    dia.genDialog()
+    dia.genDialog(complex_candidate_file)
 # --------------------------------------------------------------------
 
     # phone = Phone('../../data/gen_product/shouji.txt')

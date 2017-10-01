@@ -145,10 +145,12 @@ def load_belief_graph(path, output_model_path):
     with open(output_model_path, "wb") as omp:
         pickle.dump(belief_graph, omp)
 
+
 def load_belief_graph_from_tables(files):
     belief_graph = None
     node_header = {}
     id_node = {}
+    # stage 1, build node
     for f in files:
         with open(f, 'r') as inpt:
             for line in inpt:
@@ -158,9 +160,30 @@ def load_belief_graph_from_tables(files):
                     node = Node(value=slot_value, fields=dict(),
                                       slot=slot, id=_id, node_type="property")
                     id_node[_id] = node
-                    
+                    if slot_value not in node_header:
+                        node_header[slot_value] = []
+                    node_header[slot_value].append(node)
                 if node == '*':
                     node.fields = dict()
+
+    for f in files:
+        with open(f, 'r') as inpt:
+            for line in inpt:
+                if note == '-':
+                    note, cn, slot, node_type, slot_value = line.split('|')
+                    nodes = node_header[slot_value]
+                    if len(nodes) > 1 or len(nodes) == 0:
+                        raise ValueError('non property node value should be uniq')
+                    else:
+                        node = nodes[0]
+                if note == '+':
+                    note, cn, slot, node_type, slot_value = line.split('|')
+                    names = slot_value.split(',')
+                    for name in names:
+                        node = Node(value=slot_value, fields=dict(),
+                                    slot=slot, id=_id, node_type="property")
+
+
 
 
 if __name__ == "__main__":

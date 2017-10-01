@@ -30,13 +30,17 @@ def load_candidates(candidates_f=CANDID_PATH):
 
 
 def load_dialog(data_dir, candid_dic):
+
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
 
     train_data = get_dialogs(train_file, candid_dic)
+    print('train_data')
     test_data = get_dialogs(test_file, candid_dic)
+    print('train_data')
     val_data = get_dialogs(val_file, candid_dic)
+    print('train_data')
     return train_data, test_data, val_data
 
 
@@ -60,6 +64,7 @@ def parse_dialogs_per_response(lines, candid_dic):
         line = line.strip()
         if line:
             if '\t' in line:
+                # print(line)
                 u, r, salt = line.split('\t')
                 a = candid_dic[r]
                 u = tokenize(u)
