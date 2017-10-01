@@ -177,7 +177,7 @@ class MemN2NDialog(object):
     def _inference(self, stories, queries):
         with tf.variable_scope(self._name):
             q_emb = tf.nn.embedding_lookup(self.A, queries)
-            u_0 = tf.reduce_sum(q_emb, 1)
+            # u_0 = tf.reduce_sum(q_emb, 1)
 
             def get_cell(size):
                 cell = tf.contrib.rnn.LSTMCell(size, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
@@ -193,7 +193,7 @@ class MemN2NDialog(object):
             u_0_lstm = encoder_state[N_LAYER - 1][1]
             # print(u_0_lstm)
             # self.u_0_sum = u_0
-            u = [u_0]
+            u = [u_0_lstm]
             for _ in range(self._hops):
                 m_emb = tf.nn.embedding_lookup(self.A, stories)
                 m = tf.reduce_sum(m_emb, 2)
