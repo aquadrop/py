@@ -124,6 +124,7 @@ class Tv(Base):
         # print(self.property_map)
         return self.property_map
 
+
 class Ac(Base):
     def __init__(self):
         self.property_map = dict()
@@ -140,25 +141,6 @@ class Ac(Base):
         self.fr = ["变频", "定频"]
         self.cool_type = ["单冷", "冷暖"]
 
-<<<<<<< HEAD
-=======
-class Ac(Base):
-    def __init__(self):
-        self.property_map = dict()
-        self.necessary = dict()
-        self.other = dict()
-        self.name = 'ac'
-        self.power = ["#number#"]
-        self.area = ["#number#"]
-        self.type = ["圆柱", "立式", "挂壁式", "立柜式", "中央空调"]
-        self.brand = ["三菱", "松下", "科龙", "惠而浦", "大金", "目立", "海尔", "美的", "卡萨帝",
-                      "奥克斯", "长虹", "格力", "莱克", "艾美特", "dyson", "智高", "爱仕达", "格兰仕"]
-        self.price = ["#number#"]
-        self.location = ["一楼", "二楼", "三楼", "地下一楼"]
-        self.fr = ["变频", "定频"]
-        self.cool_type = ["单冷", "冷暖"]
-
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
         # index represent priority
         self.necessary_property = ['type', 'power', 'price']
 
@@ -178,8 +160,6 @@ class Ac(Base):
 
         return self.property_map
 
-<<<<<<< HEAD
-=======
 
 class Dialogs:
     def __init__(self, userIntentFiles, businessFiles, candidatesFile, outputFiles):
@@ -269,7 +249,6 @@ class Dialogs:
                     f.write(line + '\n')
 
 
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 class Entity:
     def __init__(self, data_file):
         # index represent priority
@@ -335,12 +314,6 @@ class Entity:
 
     def gen_response(self, required_field):
         asv, csv = self.random_property(required_field)
-<<<<<<< HEAD
-        current_slots = ','.join([key + ':' + value for key, value in csv.items()])
-        user_replay = ','.join(csv.values())
-        for_tree_api = 'api_call_tree_sn_' + ','.join([key + ':' + value for key, value in csv.items()])
-        # for_tree_api = 'api_call_tree_sn_' + ','.join(csv.values())
-=======
         current_slots = ','.join(
             [key + ':' + value for key, value in csv.items()])
         user_replay = ','.join(csv.values())
@@ -348,21 +321,15 @@ class Entity:
         # for_tree_api = 'api_call_slot:' + ','.join(csv.values())
         for_tree_api = 'api_call_slot:' + \
             ','.join([key + ':' + value for key, value in csv.items()])
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
         new_required = self.get_new_required_field()
         if new_required:
             tree_render_api = 'api_call_request_' + new_required
             # tree_render_api = "(" + new_required + ")"
         else:
             # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-<<<<<<< HEAD
-            # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-            tree_render_api = ''
-=======
             tree_render_api = 'api_call_search_' + \
                 ','.join([key + ':' + value for key, value in asv.items()])
             # tree_render_api = ''
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
         return user_replay, current_slots, for_tree_api, tree_render_api, new_required
 
@@ -388,11 +355,7 @@ class Entity:
             return value
 
         if self.field_type[field] == 'range':
-<<<<<<< HEAD
-            return self.field_trans[field] + 'range'
-=======
             return 'range'
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
         else:
             return np.random.choice(self.profile[field])
 
@@ -404,41 +367,6 @@ def build_corpus(entity, candidate_file, train, val, test):
     train_set = []
     val_set = []
     test_set = []
-<<<<<<< HEAD
-    mapper = {'train':train_set, 'val':val_set, 'test':test_set}
-    which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
-    for i in range(500):
-        a, b, c, d, new_required = entity.gen_response(required)
-        candidate = c + '+' + d
-        # candidate = candidate.replace('api_call_request_', '').replace('api_call_tree_sn_', '')
-        candidate_set.add(candidate)
-        line = a + '\t' + candidate
-        mapper[which].append(line)
-
-        if new_required:
-            required = new_required
-        else:
-            required = 'category'
-            entity.init_required_fields()
-            mapper[which].append('')
-            which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
-
-    with open(train, 'a') as f:
-        for line in mapper['train']:
-            f.writelines(line + '\n')
-
-    with open(val, 'a') as f:
-        for line in mapper['val']:
-            f.writelines(line + '\n')
-
-    with open(test, 'a') as f:
-        for line in mapper['test']:
-            f.writelines(line + '\n')
-
-    with open(candidate_file, 'a') as f:
-        for line in candidate_set:
-            f.writelines(line + '\n')
-=======
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     for i in range(2000):
@@ -481,7 +409,6 @@ def delete_file(file_path):
     except:
         pass
 
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
 if __name__ == '__main__':
 
@@ -490,14 +417,12 @@ if __name__ == '__main__':
                   '../../data/gen_product/bingxiang.txt',
                   '../../data/gen_product/dianshi.txt']
 
-<<<<<<< HEAD
-=======
     delete_file('../../data/memn2n/train/candidates.txt')
     delete_file('../../data/memn2n/train/train.txt')
     delete_file('../../data/memn2n/train/val.txt')
     delete_file('../../data/memn2n/train/test.txt')
 
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
+
     for data_file in data_files:
         entity = Entity(data_file)
         build_corpus(entity,
@@ -506,8 +431,6 @@ if __name__ == '__main__':
                      '../../data/memn2n/train/val.txt',
                      '../../data/memn2n/train/test.txt')
 
-<<<<<<< HEAD
-=======
     # uniq candidates
     candidates = set()
     with open('../../data/memn2n/train/candidates.txt', 'r') as f:
@@ -542,21 +465,5 @@ if __name__ == '__main__':
 
     dia.genDialog(new_candidates_file)
 # --------------------------------------------------------------------
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
-    # phone = Phone('../../data/gen_product/shouji.txt')
-    # phone.init_required_fields()
-    # required = 'category'
-    # for i in range(400):
-    #     a, b, c, d, new_required= phone.gen_response(required)
-    #     print(a, b, c, d)
-    #     if new_required:
-    #         required = new_required
-    #     else:
-    #         required = 'category'
-    #         phone.init_required_fields()
-<<<<<<< HEAD
     #         print('------------------')
-=======
-    #         print('------------------')
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
