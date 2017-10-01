@@ -208,11 +208,13 @@ class Dialogs:
         candidatesSet = set()
         with open(candidatesFile, 'r') as f:
             for line in f:
-                candidatesSet.add(line)
+                line = line.strip()
+                if line:
+                    candidatesSet.add(line)
 
         return candidatesSet
 
-    def genDialog(self):
+    def genDialog(self, new_candidates_file):
         keys = self.businessDialogs.keys()
         frontKeys = ['greet', 'chat', 'qa']
         backKeys = ['bye']
@@ -225,7 +227,7 @@ class Dialogs:
                     for k in frontKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response + '\n')
+                        self.candidatesSet.add(response)
                         frontDialog.append(
                             query + '\t' + response + '\t' + 'placeholder')
                     frontDialog.extend(dialog)
@@ -234,16 +236,17 @@ class Dialogs:
                     for k in backKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response + '\n')
+                        self.candidatesSet.add(response)
                         backDialog.append(
                             query + '\t' + response + '\t' + 'placeholder')
                     dialog.extend(backDialog)
                     for l in dialog:
                         f.write(l + '\n')
                     f.write('\n')
-        with open('../../data/memn2n/train/complex/candidates.txt', 'w') as f:
+        with open(new_candidates_file, 'w') as f:
             for line in self.candidatesSet:
-                f.write(line)
+                if line.strip():
+                    f.write(line + '\n')
 
 
 class Entity:
@@ -440,6 +443,7 @@ if __name__ == '__main__':
 
 # --------------------------------------------------------------------
 # generate complex dialogs
+    new_candidates_file = '../../data/memn2n/train/complex/candidates.txt'
     outputFiles = {'train': '../../data/memn2n/train/complex/train.txt',
                    'val': '../../data/memn2n/train/complex/val.txt',
                    'test': '../../data/memn2n/train/complex/test.txt'
@@ -457,7 +461,7 @@ if __name__ == '__main__':
                      '../../data/memn2n/train/test.txt']
     candidatesFile = '../../data/memn2n/train/candidates.txt'
     dia = Dialogs(userIntentFiles, businessFiles, candidatesFile, outputFiles)
-    dia.genDialog()
+    dia.genDialog(new_candidates_file)
 # --------------------------------------------------------------------
 
     # phone = Phone('../../data/gen_product/shouji.txt')
