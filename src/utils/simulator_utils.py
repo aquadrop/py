@@ -208,7 +208,7 @@ class Dialogs:
         candidatesSet = set()
         with open(candidatesFile, 'r') as f:
             for line in f:
-                candidatesSet.add(line)
+                candidatesSet.add(line.strip('\n'))
 
         return candidatesSet
 
@@ -241,7 +241,7 @@ class Dialogs:
                     f.write('\n')
         with open(self.candidatesFile, 'w') as f:
             for line in self.candidatesSet:
-                f.write(line)
+                f.write(line + '\n')
 
 
 class Entity:
@@ -432,15 +432,15 @@ if __name__ == '__main__':
             candidates.add(line.strip('\n'))
 
     candidates = set(candidates)
-    with open('../../data/memn2n/train/candidates.txt', 'w') as f:
+    with open('../../data/memn2n/train/complex/candidates.txt', 'w') as f:
         for line in candidates:
             f.writelines(line + '\n')
 
 # --------------------------------------------------------------------
 # generate complex dialogs
-    outputFiles = {'train': '../../data/memn2n/train/complex_train.txt',
-                   'val': '../../data/memn2n/train/complex_val.txt',
-                   'test': '../../data/memn2n/train/complex_test.txt'
+    outputFiles = {'train': '../../data/memn2n/train/complex/train.txt',
+                   'val': '../../data/memn2n/train/complex/val.txt',
+                   'test': '../../data/memn2n/train/complex/test.txt'
                    }
 
     userIntentFiles = {

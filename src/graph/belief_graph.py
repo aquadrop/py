@@ -145,6 +145,23 @@ def load_belief_graph(path, output_model_path):
     with open(output_model_path, "wb") as omp:
         pickle.dump(belief_graph, omp)
 
+def load_belief_graph_from_tables(files):
+    belief_graph = None
+    node_header = {}
+    id_node = {}
+    for f in files:
+        with open(f, 'r') as inpt:
+            for line in inpt:
+                if note == '-':
+                    note, cn, slot, node_type, slot_value = line.split('|')
+                    _id = str(uuid.uuid4())
+                    node = Node(value=slot_value, fields=dict(),
+                                      slot=slot, id=_id, node_type="property")
+                    id_node[_id] = node
+                    
+                if node == '*':
+                    node.fields = dict()
+
 
 if __name__ == "__main__":
     load_belief_graph(
