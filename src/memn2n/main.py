@@ -11,7 +11,7 @@ import data_utils
 import memn2n as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-DATA_DIR = dir_path + '/../../data/memn2n/train'
+DATA_DIR = dir_path + '/../../data/memn2n/train/complex'
 P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
 BATCH_SIZE = 16
 EMBEDDING_SIZE = 300
