@@ -45,4 +45,8 @@ def jieba_cut(query, smart=True):
     return result
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     print(' '.join(jieba_cut('华为num元手机')))
+=======
+    print(' '.join(jieba_cut('华为num元手机Windows')))
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2

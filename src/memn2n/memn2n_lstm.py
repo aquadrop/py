@@ -6,7 +6,11 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 RNN_SIZE = 4
+<<<<<<< HEAD
 N_LAYER = 4
+=======
+N_LAYER = 2
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
 
 def zero_nil_slot(t, name=None):
@@ -177,7 +181,11 @@ class MemN2NDialog(object):
     def _inference(self, stories, queries):
         with tf.variable_scope(self._name):
             q_emb = tf.nn.embedding_lookup(self.A, queries)
+<<<<<<< HEAD
             # self.u_0 = tf.reduce_sum(q_emb, 1)
+=======
+            # u_0 = tf.reduce_sum(q_emb, 1)
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
             def get_cell(size):
                 cell = tf.contrib.rnn.LSTMCell(size, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
@@ -197,6 +205,7 @@ class MemN2NDialog(object):
             for _ in range(self._hops):
                 m_emb = tf.nn.embedding_lookup(self.A, stories)
                 m = tf.reduce_sum(m_emb, 2)
+
                 # hack to get around no reduce_dot
                 u_temp = tf.transpose(tf.expand_dims(u[-1], -1), [0, 2, 1])
                 dotted = tf.reduce_sum(m * u_temp, 2)

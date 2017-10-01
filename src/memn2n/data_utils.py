@@ -32,6 +32,7 @@ def load_candidates(candidates_f=CANDID_PATH):
 
 
 def load_dialog(data_dir, candid_dic):
+
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
@@ -62,10 +63,11 @@ def parse_dialogs_per_response(lines, candid_dic):
         line = line.strip()
         if line:
             if '\t' in line:
-                u, r = line.split('\t')
+                # print(line)
+                u, r, salt = line.split('\t')
                 a = candid_dic[r]
                 u = tokenize(u)
-                r = tokenize(r)
+                r = tokenize(r + " " + salt)
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
@@ -87,6 +89,7 @@ def build_vocab(data, candidates, memory_size=50):
     vocab |= reduce(lambda x, y: x | y, (set(candidate)
                                          for candidate in candidates))
     vocab = sorted(vocab)
+    # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     max_story_size = max(map(len, (s for s, _, _ in data)))
     mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
@@ -154,7 +157,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         # print(lm)
         lq = max(0, sentence_size - len(query))
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
-
+        # print(query)
         S.append(np.array(ss))
         Q.append(np.array(q))
         A.append(np.array(answer))

@@ -8,8 +8,9 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n_lstm as memn2n
+import memn2n as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
+<<<<<<< HEAD
 
 DATA_DIR = dir_path + '/../../data/memn2n/train'
 P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
@@ -17,6 +18,17 @@ BATCH_SIZE = 16
 EMBEDDING_SIZE = 300
 CKPT_DIR = dir_path + '/../../model/memn2n/ckpt'
 
+=======
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+print(dir_path)
+DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
+P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+BATCH_SIZE = 16
+EMBEDDING_SIZE = 300
+CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
+HOPS = 3
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
 '''
     dictionary of models
@@ -61,7 +73,11 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
+<<<<<<< HEAD
     print(metadata['idx2w'])
+=======
+    # print(metadata['idx2w'])
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
     ###
     # write data to file
@@ -183,7 +199,7 @@ def main(args):
 
     # gather more information from metadata
     sentence_size = metadata['sentence_size']
-    w2idx = metadata['w2idx']
+    w2idx = metadata['w2idx']  # is a list
     idx2w = metadata['idx2w']
     memory_size = metadata['memory_size']
     vocab_size = metadata['vocab_size']
@@ -193,13 +209,21 @@ def main(args):
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
+<<<<<<< HEAD
     hops = 4
+=======
+
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
     print('candidate_size:', n_cand)
     print('candidate_sentence_size:', candidate_sentence_size)
+<<<<<<< HEAD
     print('hops:', hops)
+=======
+    print('hops:', HOPS)
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
     print('---- end ----')
     ###
     # create model
@@ -211,11 +235,18 @@ def main(args):
         sentence_size=sentence_size,
         embedding_size=EMBEDDING_SIZE,
         candidates_vec=candidates_vec,
+<<<<<<< HEAD
         hops=hops
+=======
+        hops=HOPS
+>>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
     )
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
         train, val, test, metadata, batch_size=BATCH_SIZE)
+
+    # for t in train['q']:
+    #     print(recover_sentence(t, idx2w))
 
     if args['train']:
         # training starts here
@@ -236,9 +267,15 @@ def main(args):
                 a = train['a'][start:end]
                 cost_total += model.batch_fit(s, q, a)
 
+            lowest_val_acc = 0.8
             if i % eval_interval == 0 and i:
                 train_preds = batch_predict(model, train['s'], train['q'], len(
                     train['s']), batch_size=BATCH_SIZE)
+                # for i in range(len(train['q'])):
+                #     if train_preds[i] != train['a'][i]:
+                #         print(recover_sentence(train['q'][i], idx2w),
+                #               recover_cls(train_preds[i], idx2candid),
+                #               recover_cls(train['a'][i], idx2candid))
                 val_preds = batch_predict(model, val['s'], val['q'], len(
                     val['s']), batch_size=BATCH_SIZE)
                 train_acc = metrics.accuracy_score(
@@ -253,8 +290,10 @@ def main(args):
                 # save the best model, to disk
                 # if val_acc > best_validation_accuracy:
                 # best_validation_accuracy = val_acc
-                model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
-                                 global_step=i)
+                if val_acc > lowest_val_acc:
+                    lowest_val_acc = val_acc
+                    model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                                     global_step=i)
         # close file
         log_handle.close()
 
@@ -278,6 +317,18 @@ def main(args):
                 print('>> ' + isess.reply(query))
         elif args['ui']:
             return isess
+
+
+def recover_sentence(sentence_idx, idx2w):
+    sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]
+    return ','.join(sentence)
+
+
+def recover_cls(idx, idx2cls):
+    if not isinstance(idx, np.int64):
+        idx = idx[0]
+    result = idx2cls[idx]
+    return result
 
 
 def launch_multiple_session():
