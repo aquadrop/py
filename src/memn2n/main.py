@@ -10,13 +10,15 @@ from sklearn import metrics
 import data_utils
 import memn2n as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
-
-DATA_DIR = dir_path + '/../../data/memn2n/train'
-P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+print(dir_path)
+DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
+P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 BATCH_SIZE = 16
 EMBEDDING_SIZE = 300
-CKPT_DIR = dir_path + '/../../model/memn2n/ckpt'
-
+CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
+HOPS = 3
 
 '''
     dictionary of models
@@ -183,7 +185,7 @@ def main(args):
 
     # gather more information from metadata
     sentence_size = metadata['sentence_size']
-    w2idx = metadata['w2idx'] # is a list
+    w2idx = metadata['w2idx']  # is a list
     idx2w = metadata['idx2w']
     memory_size = metadata['memory_size']
     vocab_size = metadata['vocab_size']
@@ -193,13 +195,13 @@ def main(args):
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
-    hops = 4
+
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
     print('candidate_size:', n_cand)
     print('candidate_sentence_size:', candidate_sentence_size)
-    print('hops:', hops)
+    print('hops:', HOPS)
     print('---- end ----')
     ###
     # create model
@@ -211,7 +213,7 @@ def main(args):
         sentence_size=sentence_size,
         embedding_size=EMBEDDING_SIZE,
         candidates_vec=candidates_vec,
-        hops=hops
+        hops=HOPS
     )
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
@@ -301,6 +303,7 @@ def recover_cls(idx, idx2cls):
         idx = idx[0]
     result = idx2cls[idx]
     return result
+
 
 def launch_multiple_session():
     return
