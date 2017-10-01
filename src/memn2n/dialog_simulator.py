@@ -215,7 +215,7 @@ class DialogSimulator:
 
 
 def main():
-
+    print(dir_path)
     userIntentFiles = {
         'greet': dir_path + '/../../data/memn2n/dialog_simulator/greet.txt',
         'chat': dir_path + '/../../data/memn2n/dialog_simulator/chat.txt',

@@ -124,6 +124,7 @@ class Tv(Base):
         # print(self.property_map)
         return self.property_map
 
+
 class Ac(Base):
     def __init__(self):
         self.property_map = dict()
@@ -159,6 +160,90 @@ class Ac(Base):
 
         return self.property_map
 
+
+class Dialogs:
+    def __init__(self, userIntentFiles, businessFiles, candidatesFile, outputFiles):
+        self.data = self.loadData(userIntentFiles)
+        self.businessDialogs = self.loadBusiness(businessFiles)
+        self.candidatesSet = self.loadCandidates(candidatesFile)
+        self.outputFiles = outputFiles
+        self.candidatesFile = candidatesFile
+
+    def loadData(self, userIntentFiles):
+        greetFile = userIntentFiles['greet']
+        chatFile = userIntentFiles['chat']
+        qaFile = userIntentFiles['qa']
+        byeFile = userIntentFiles['bye']
+
+        files = [greetFile, chatFile, qaFile, byeFile]
+        data = dict()
+        for file in files:
+            name, _ = os.path.splitext(os.path.basename(file))
+            with open(file, 'r') as f:
+                lines = f.readlines()
+            data[name] = [l.strip() for l in lines]
+
+        return data
+
+    def loadBusiness(self, businessFiles):
+        businessDialogs = dict()
+        for file in businessFiles:
+            name, _ = os.path.splitext(os.path.basename(file))
+            dialogs = list()
+            with open(file, 'r') as f:
+                lines = f.readlines()
+            dialog = list()
+            for line in lines:
+                if line == '\n':
+                    dialogs.append(dialog)
+                    dialog = list()
+                else:
+                    dialog.append(line.strip())
+
+            businessDialogs[name] = dialogs
+
+        return businessDialogs
+
+    def loadCandidates(self, candidatesFile):
+        candidatesSet = set()
+        with open(candidatesFile, 'r') as f:
+            for line in f:
+                candidatesSet.add(line)
+
+        return candidatesSet
+
+    def genDialog(self):
+        keys = self.businessDialogs.keys()
+        frontKeys = ['greet', 'chat', 'qa']
+        backKeys = ['bye']
+        for key in keys:
+            print(key)
+            businessDialogs = self.businessDialogs[key]
+            with open(self.outputFiles[key], 'w') as f:
+                for dialog in businessDialogs:
+                    frontDialog = list()
+                    for k in frontKeys:
+                        query = np.random.choice(self.data[k])
+                        response = mapper[k]
+                        self.candidatesSet.add(response)
+                        frontDialog.append(query + '\t' + response)
+                    frontDialog.extend(dialog)
+                    dialog = frontDialog
+                    backDialog = list()
+                    for k in backKeys:
+                        query = np.random.choice(self.data[k])
+                        response = mapper[k]
+                        self.candidatesSet.add(response)
+                        backDialog.append(query + '\t' + response)
+                    dialog.extend(backDialog)
+                    for l in dialog:
+                        f.write(l + '\n')
+                    f.write('\n')
+        with open(self.candidatesFile, 'w') as f:
+            for line in self.candidatesSet:
+                f.write(line)
+
+
 class Entity:
     def __init__(self, data_file):
         # index represent priority
@@ -173,7 +258,7 @@ class Entity:
             title = line.strip('\n').split("|")[2].split(',')
             for line in infile:
                 line = line.replace(' ', '').strip('\n')
-                a, b, ft,c = line.split("|")
+                a, b, ft, c = line.split("|")
                 self.profile[b] = c.split(",")
                 self.field_type[b] = ft
                 self.field_trans[b] = a
@@ -224,18 +309,21 @@ class Entity:
 
     def gen_response(self, required_field):
         asv, csv = self.random_property(required_field)
-        current_slots = ','.join([key + ':' + value for key, value in csv.items()])
+        current_slots = ','.join(
+            [key + ':' + value for key, value in csv.items()])
         user_replay = ','.join(csv.values())
         # for_tree_api = ','.join([key + ':' + value for key, value in asv.items()])
         # for_tree_api = 'api_call_slot:' + ','.join(csv.values())
-        for_tree_api = 'api_call_slot:' + ','.join([key + ':' + value for key, value in csv.items()])
+        for_tree_api = 'api_call_slot:' + \
+            ','.join([key + ':' + value for key, value in csv.items()])
         new_required = self.get_new_required_field()
         if new_required:
             tree_render_api = 'api_call_request_' + new_required
             # tree_render_api = "(" + new_required + ")"
         else:
             # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-            tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
+            tree_render_api = 'api_call_search_' + \
+                ','.join([key + ':' + value for key, value in asv.items()])
             # tree_render_api = ''
 
         return user_replay, current_slots, for_tree_api, tree_render_api, new_required
@@ -274,7 +362,7 @@ def build_corpus(entity, candidate_file, train, val, test):
     train_set = []
     val_set = []
     test_set = []
-    mapper = {'train':train_set, 'val':val_set, 'test':test_set}
+    mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     for i in range(2000):
         a, b, c, d, new_required = entity.gen_response(required)
@@ -290,7 +378,8 @@ def build_corpus(entity, candidate_file, train, val, test):
             required = 'category'
             entity.init_required_fields()
             mapper[which].append('')
-            which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+            which = np.random.choice(
+                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
 
     with open(train, 'a') as f:
         for line in mapper['train']:
@@ -314,6 +403,7 @@ def delete_file(file_path):
         os.remove(file_path)
     except:
         pass
+
 
 if __name__ == '__main__':
 
@@ -346,6 +436,27 @@ if __name__ == '__main__':
         for line in candidates:
             f.writelines(line + '\n')
 
+# --------------------------------------------------------------------
+# generate complex dialogs
+    outputFiles = {'train': '../../data/memn2n/train/complex_train.txt',
+                   'val': '../../data/memn2n/train/complex_val.txt',
+                   'test': '../../data/memn2n/train/complex_test.txt'
+                   }
+
+    userIntentFiles = {
+        'greet': '../../data/memn2n/dialog_simulator/greet.txt',
+        'chat': '../../data/memn2n/dialog_simulator/chat.txt',
+        'qa': '../../data/memn2n/dialog_simulator/qa.txt',
+        'bye': '../../data/memn2n/dialog_simulator/bye.txt'
+    }
+
+    businessFiles = ['../../data/memn2n/train/train.txt',
+                     '../../data/memn2n/train/val.txt',
+                     '../../data/memn2n/train/test.txt']
+    candidatesFile = '../../data/memn2n/train/candidates.txt'
+    dia = Dialogs(userIntentFiles, businessFiles, candidatesFile, outputFiles)
+    dia.genDialog()
+# --------------------------------------------------------------------
 
     # phone = Phone('../../data/gen_product/shouji.txt')
     # phone.init_required_fields()
