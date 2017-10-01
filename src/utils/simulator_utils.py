@@ -225,21 +225,23 @@ class Dialogs:
                     for k in frontKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response)
-                        frontDialog.append(query + '\t' + response)
+                        self.candidatesSet.add(response + '\n')
+                        frontDialog.append(
+                            query + '\t' + response + '\t' + 'placeholder')
                     frontDialog.extend(dialog)
                     dialog = frontDialog
                     backDialog = list()
                     for k in backKeys:
                         query = np.random.choice(self.data[k])
                         response = mapper[k]
-                        self.candidatesSet.add(response)
-                        backDialog.append(query + '\t' + response)
+                        self.candidatesSet.add(response + '\n')
+                        backDialog.append(
+                            query + '\t' + response + '\t' + 'placeholder')
                     dialog.extend(backDialog)
                     for l in dialog:
                         f.write(l + '\n')
                     f.write('\n')
-        with open(self.candidatesFile, 'w') as f:
+        with open('../../data/memn2n/train/complex/candidates.txt', 'w') as f:
             for line in self.candidatesSet:
                 f.write(line)
 
@@ -438,9 +440,9 @@ if __name__ == '__main__':
 
 # --------------------------------------------------------------------
 # generate complex dialogs
-    outputFiles = {'train': '../../data/memn2n/train/complex_train.txt',
-                   'val': '../../data/memn2n/train/complex_val.txt',
-                   'test': '../../data/memn2n/train/complex_test.txt'
+    outputFiles = {'train': '../../data/memn2n/train/complex/train.txt',
+                   'val': '../../data/memn2n/train/complex/val.txt',
+                   'test': '../../data/memn2n/train/complex/test.txt'
                    }
 
     userIntentFiles = {
