@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 buyQueryMapper = {
     'ask': {
@@ -123,107 +124,6 @@ class Tv(Base):
         # print(self.property_map)
         return self.property_map
 
-
-class Phone():
-    def __init__(self, data_file):
-        # index represent priority
-        self.necessary_property = ['category', 'price', 'brand','discount','nation']
-        self.required_fields = []
-        self.profile = dict()
-        self.field_type = dict()
-        self.accumulate_slot_values = dict()
-        with open(data_file, 'r', encoding='utf-8') as infile:
-            line = infile.readline()
-            title = line.strip('\n').split("|")[2].split(',')
-            for line in infile:
-                line = line.replace(' ', '').strip('\n')
-                a, b, ft,c = line.split("|")
-                self.profile[b] = c.split(",")
-                self.field_type[b] = ft
-
-    def init_required_fields(self):
-        self.required_fields = []
-        num = np.random.randint(0, 3)
-        options = []
-        for key, value in self.profile.items():
-            if key not in self.necessary_property:
-                options.append(key)
-        self.required_fields.extend(self.necessary_property)
-        options = np.random.choice(options, num).tolist()
-        self.required_fields.extend(options)
-        remove_list = ['discount', 'tmarket', 'nation']
-        for rl in remove_list:
-            if rl in self.required_fields:
-                self.required_fields.remove(rl)
-
-    def random_property(self, required_field):
-        current_slot_values = {}
-        num_avail = len(self.required_fields) - 1
-        user_reply = self.random_property_value(required_field)
-        self.accumulate_slot_values[required_field] = user_reply
-        current_slot_values[required_field] = user_reply
-        self.required_fields.remove(required_field)
-        num_avail = min([num_avail, 2])
-        if num_avail == 0:
-            return self.accumulate_slot_values, current_slot_values
-        random_num = np.random.randint(0, num_avail)
-
-        for i in range(random_num):
-            field = np.random.choice(self.required_fields)
-            self.accumulate_slot_values[field] = self.random_property_value(field)
-            current_slot_values[field] = self.random_property_value(field)
-            self.required_fields.remove(field)
-
-        return self.accumulate_slot_values, current_slot_values
-
-    def get_new_required_field(self):
-        if len(self.required_fields) > 0:
-            return np.random.choice(self.required_fields)
-        else:
-            return None
-
-    def gen_response(self, required_field):
-        asv, csv = self.random_property(required_field)
-        current_slots = ','.join([key + ':' + value for key, value in csv.items()])
-        user_replay = ''.join(csv.values())
-        for_tree_api = 'api_call_tree_sn_' + ','.join([key + ':' + value for key, value in asv.items()])
-        new_required = self.get_new_required_field()
-        if new_required:
-            tree_render_api = 'api_call_request_' + new_required
-        else:
-            tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
-
-        return user_replay, current_slots, for_tree_api, tree_render_api, new_required
-
-    def random_property_value(self, field):
-        if field == 'price':
-            value = '<num>'
-            if np.random.uniform() < 0.3:
-                if np.random.uniform() < 0.5:
-                    value += '元'
-                else:
-                    value += '块'
-
-            return value
-
-        if field == 'ac.power':
-            value = '<num>'
-
-            if np.random.uniform() < 0.5:
-                value += 'P'
-            else:
-                value += '匹'
-
-            return value
-
-        if self.field_type[field] == 'range':
-            return field + 'num'
-        else:
-            return np.random.choice(self.profile[field])
-
-
-
-
 class Ac(Base):
     def __init__(self):
         self.property_map = dict()
@@ -259,16 +159,191 @@ class Ac(Base):
 
         return self.property_map
 
-if __name__ == '__main__':
-    phone = Phone('../../data/gen_product/shouji.txt')
-    phone.init_required_fields()
+class Entity:
+    def __init__(self, data_file):
+        # index represent priority
+        self.necessary_property = ['category', 'price', 'brand']
+        self.required_fields = []
+        self.profile = dict()
+        self.field_type = dict()
+        self.field_trans = dict()
+        self.accumulate_slot_values = dict()
+        with open(data_file, 'r', encoding='utf-8') as infile:
+            line = infile.readline()
+            title = line.strip('\n').split("|")[2].split(',')
+            for line in infile:
+                line = line.replace(' ', '').strip('\n')
+                a, b, ft,c = line.split("|")
+                self.profile[b] = c.split(",")
+                self.field_type[b] = ft
+                self.field_trans[b] = a
+
+    def init_required_fields(self):
+        self.required_fields = []
+        self.accumulate_slot_values = dict()
+        num = np.random.randint(0, 3)
+        options = []
+        for key, value in self.profile.items():
+            if key not in self.necessary_property:
+                options.append(key)
+        self.required_fields.extend(self.necessary_property)
+        options = np.random.choice(options, num).tolist()
+        self.required_fields.extend(options)
+        remove_list = ['discount', 'tmarket', 'nation', 'location']
+        for rl in remove_list:
+            if rl in self.required_fields:
+                self.required_fields.remove(rl)
+
+    def random_property(self, required_field):
+        current_slot_values = {}
+        num_avail = len(self.required_fields) - 1
+        user_reply = [self.random_property_value(required_field)]
+        self.accumulate_slot_values[required_field] = user_reply[0]
+        current_slot_values[required_field] = user_reply[0]
+        self.required_fields.remove(required_field)
+        num_avail = min([num_avail, 2])
+        if num_avail == 0:
+            return self.accumulate_slot_values, current_slot_values
+        random_num = np.random.randint(0, num_avail)
+
+        for i in range(random_num):
+            field = np.random.choice(self.required_fields)
+            rnd = self.random_property_value(field)
+            user_reply.append(rnd)
+            self.accumulate_slot_values[field] = rnd
+            current_slot_values[field] = rnd
+            self.required_fields.remove(field)
+
+        return self.accumulate_slot_values, current_slot_values
+
+    def get_new_required_field(self):
+        if len(self.required_fields) > 0:
+            return np.random.choice(self.required_fields)
+        else:
+            return None
+
+    def gen_response(self, required_field):
+        asv, csv = self.random_property(required_field)
+        current_slots = ','.join([key + ':' + value for key, value in csv.items()])
+        user_replay = ','.join(csv.values())
+        # for_tree_api = ','.join([key + ':' + value for key, value in asv.items()])
+        for_tree_api = 'api_call_slot_' + ','.join(csv.values())
+        new_required = self.get_new_required_field()
+        if new_required:
+            # tree_render_api = 'api_call_request_' + new_required
+            tree_render_api = "(" + new_required + ")"
+        else:
+            # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
+            # tree_render_api = 'api_call_search_' + ','.join([key + ':' + value for key, value in asv.items()])
+            tree_render_api = ''
+
+        return user_replay, current_slots, for_tree_api, tree_render_api, new_required
+
+    def random_property_value(self, field):
+        if field == 'price':
+            value = 'range'
+            # if np.random.uniform() < 0.3:
+            #     if np.random.uniform() < 0.5:
+            #         value += '元'
+            #     else:
+            #         value += '块'
+
+            return value
+
+        if field == 'ac.power':
+            value = 'range'
+
+            # if np.random.uniform() < 0.5:
+            #     value += 'P'
+            # else:
+            #     value += '匹'
+
+            return value
+
+        if self.field_type[field] == 'range':
+            return 'range'
+        else:
+            return np.random.choice(self.profile[field])
+
+
+def build_corpus(entity, candidate_file, train, val, test):
+    entity.init_required_fields()
     required = 'category'
-    for i in range(400):
-        a, b, c, d, new_required= phone.gen_response(required)
-        print(a, b, c, d)
+    candidate_set = set()
+    train_set = []
+    val_set = []
+    test_set = []
+    mapper = {'train':train_set, 'val':val_set, 'test':test_set}
+    which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+    for i in range(500):
+        a, b, c, d, new_required = entity.gen_response(required)
+        candidate = c
+        # candidate = candidate.replace('api_call_request_', '').replace('api_call_tree_sn_', '')
+        candidate_set.add(candidate)
+        line = a + '\t' + candidate
+        mapper[which].append(line)
+
         if new_required:
             required = new_required
         else:
             required = 'category'
-            phone.init_required_fields()
-            print('------------------')
+            entity.init_required_fields()
+            mapper[which].append('')
+            which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+
+    with open(train, 'a') as f:
+        for line in mapper['train']:
+            f.writelines(line + '\n')
+
+    with open(val, 'a') as f:
+        for line in mapper['val']:
+            f.writelines(line + '\n')
+
+    with open(test, 'a') as f:
+        for line in mapper['test']:
+            f.writelines(line + '\n')
+
+    with open(candidate_file, 'a') as f:
+        for line in candidate_set:
+            f.writelines(line + '\n')
+
+
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+    except:
+        pass
+
+if __name__ == '__main__':
+
+    data_files = ['../../data/gen_product/shouji.txt',
+                  '../../data/gen_product/kongtiao.txt',
+                  '../../data/gen_product/bingxiang.txt',
+                  '../../data/gen_product/dianshi.txt']
+
+    delete_file('../../data/memn2n/train/candidates.txt')
+    delete_file('../../data/memn2n/train/train.txt')
+    delete_file('../../data/memn2n/train/val.txt')
+    delete_file('../../data/memn2n/train/test.txt')
+
+    for data_file in data_files:
+        entity = Entity(data_file)
+        build_corpus(entity,
+                     '../../data/memn2n/train/candidates.txt',
+                     '../../data/memn2n/train/train.txt',
+                     '../../data/memn2n/train/val.txt',
+                     '../../data/memn2n/train/test.txt')
+
+
+    # phone = Phone('../../data/gen_product/shouji.txt')
+    # phone.init_required_fields()
+    # required = 'category'
+    # for i in range(400):
+    #     a, b, c, d, new_required= phone.gen_response(required)
+    #     print(a, b, c, d)
+    #     if new_required:
+    #         required = new_required
+    #     else:
+    #         required = 'category'
+    #         phone.init_required_fields()
+    #         print('------------------')

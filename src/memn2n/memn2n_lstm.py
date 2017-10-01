@@ -5,7 +5,7 @@ import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-RNN_SIZE = 300
+RNN_SIZE = 4
 N_LAYER = 2
 
 
@@ -184,16 +184,20 @@ class MemN2NDialog(object):
                 return cell
 
             with tf.variable_scope("encoder") as scope:
-                encoder_cell = tf.contrib.rnn.MultiRNNCell([get_cell(RNN_SIZE) for _ in range(N_LAYER)])
+                encoder_cell = tf.contrib.rnn.MultiRNNCell([get_cell(self._embedding_size) for _ in range(N_LAYER)])
                 encoder_output, encoder_state = tf.nn.dynamic_rnn(encoder_cell, q_emb,
                                                                   # sequence_length=self.encoder_inputs_length,
                                                                   dtype=tf.float32)
-            self.u_0_lstm = [u for u in encoder_state[1]][1]
+            # print(encoder_state[1][1].get_shape())
+            # self.encoder_state = encoder_state
+            u_0_lstm = encoder_state[N_LAYER - 1][1]
+            # print(u_0_lstm)
             # self.u_0_sum = u_0
-            u = [self.u_0_lstm]
+            u = [u_0]
             for _ in range(self._hops):
                 m_emb = tf.nn.embedding_lookup(self.A, stories)
                 m = tf.reduce_sum(m_emb, 2)
+
                 # hack to get around no reduce_dot
                 u_temp = tf.transpose(tf.expand_dims(u[-1], -1), [0, 2, 1])
                 dotted = tf.reduce_sum(m * u_temp, 2)
@@ -234,9 +238,12 @@ class MemN2NDialog(object):
         feed_dict = {self._stories: stories,
                      self._queries: queries, self._answers: answers,
                      self.encoder_inputs_length: encoder_inputs_length}
-        loss, _, a = self._sess.run(
-            [self.loss_op, self.train_op, self.u_0_lstm], feed_dict=feed_dict)
-        # print(a)
+        # loss, _, a, b= self._sess.run(
+        #     [self.loss_op, self.train_op, self.encoder_state, self.u_0], feed_dict=feed_dict)
+        loss, _= self._sess.run(
+            [self.loss_op, self.train_op], feed_dict=feed_dict)
+        # print(a, '***', b)
+        # print('\n')
         return loss
 
     def predict(self, stories, queries):

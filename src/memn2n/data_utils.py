@@ -1,10 +1,12 @@
 DATA_DIR = 'data/'
 CANDID_PATH = 'data/candidates.txt'
-STOP_WORDS = set(["！", "？", "，", "。", ",", "，"])
+STOP_WORDS = set(["！", "？", "，", "。", ",", "，", '_', '(', ')'])
 
 import re
 import os
 import jieba
+
+jieba.load_userdict('../../data/dict/ext1.dic')
 
 from itertools import chain
 from six.moves import range, reduce

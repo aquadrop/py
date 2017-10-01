@@ -11,9 +11,10 @@ import data_utils
 import memn2n_lstm as memn2n
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-DATA_DIR = dir_path + '/../../data/memn2n'
+DATA_DIR = dir_path + '/../../data/memn2n/train'
 P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
 BATCH_SIZE = 16
+EMBEDDING_SIZE = 300
 CKPT_DIR = dir_path + '/../../model/memn2n/ckpt'
 
 
@@ -60,6 +61,7 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
+    print(metadata['idx2w'])
 
     ###
     # write data to file
@@ -191,7 +193,14 @@ def main(args):
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
-
+    hops = 4
+    print('---- memory config ----')
+    print('memory_size:', memory_size)
+    print('vocab_size:', vocab_size)
+    print('candidate_size:', n_cand)
+    print('candidate_sentence_size:', candidate_sentence_size)
+    print('hops:', hops)
+    print('---- end ----')
     ###
     # create model
     # model = model['memn2n']( # why?
@@ -200,9 +209,9 @@ def main(args):
         vocab_size=vocab_size,
         candidates_size=n_cand,
         sentence_size=sentence_size,
-        embedding_size=300,
+        embedding_size=EMBEDDING_SIZE,
         candidates_vec=candidates_vec,
-        hops=4
+        hops=hops
     )
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
