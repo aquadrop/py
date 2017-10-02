@@ -45,4 +45,4 @@ def jieba_cut(query, smart=True):
     return result
 
 if __name__ == "__main__":
-    print(' '.join(jieba_cut('华为num元手机Windows')))
+    print(' '.join(jieba_cut('华为num元手机phone.mmem')))

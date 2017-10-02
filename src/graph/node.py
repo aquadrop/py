@@ -32,12 +32,12 @@ import uuid
 
 class Node:
 
-    API_NODE = "api"
+    API_NODE = "category"
     NORMAL_NODE = "normal"
     PROPERTY_NODE = "property"
 
-    RANGE = "RANGE"
-    KEY = "KEY"
+    RANGE = "range"
+    KEY = "key"
 
     def __init__(self, slot, value, fields, node_type, id):
         '''

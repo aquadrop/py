@@ -38,10 +38,11 @@ class BeliefTracker:
     REQUEST_PROPERTY_STATE = "request_property_state"
     RESET_STATE = "reset_state"
 
-    def __init__(self, graph_path):
+    def __init__(self, config):
+        self.config = config
         self.gbdt = None
         self.state_cleared = True
-        self._load_graph(graph_path)
+        self._load_graph(config['graph_path'])
         # self._load_clf(clf_path)
         self.search_node = self.belief_graph.get_root_node()
 
@@ -293,8 +294,16 @@ class BeliefTracker:
                     return self.update_belief_graph(slot_values_list=slot_values_list,
                                                     slot_values_marker=slot_values_marker, query=query)
                 elif len(filtered_nodes) > 1:
+                    parent_node_value = set()
                     for node in filtered_nodes:
-                        self.ambiguity_slots[node.parent_node.value] = node
+                        parent_node_value.add(node.parent_node.value)
+                    if len(parent_node_value) > 1:
+                        for node in filtered_nodes:
+                            self.ambiguity_slots[node.parent_node.value] = node
+                    # nice, differentiating at slots, not parent_nodes
+                    else:
+                        for node in filtered_nodes:
+                            self.ambiguity_slots[node.slot] = node
                     return
                 else:
                     self.machine_state = self.RESET_STATE
@@ -407,7 +416,9 @@ class BeliefTracker:
     def is_key_type(self, slot):
         return self.search_node.get_field_type(slot) == Node.KEY
 
-    def retreive_avail_values(self):
+    def solr_facet(self):
+        if self.config['solr.facet'] != 'on':
+            return ['facet is off']
         node = self.search_node
         fill = []
         facet_field = self.required_slots[0]
@@ -486,7 +497,7 @@ class BeliefTracker:
             return "api_greeting_search_normal"
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.required_slots[0]
-            avails = self.retreive_avail_values()
+            avails = self.solr_facet()
             return "api_request_value_of_" + slot + "#avail_values: " + str(avails)
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
@@ -601,6 +612,9 @@ class BeliefTracker:
         for t in tokens:
             if self.belief_graph.has_node_by_value(t):
                 slot_values_list.append(t)
+            if self.machine_state == self.AMBIGUITY_STATE:
+                if self.belief_graph.has_slot(t):
+                    slot_values_list.append(t)
         slot_values_list = list(set(slot_values_list))
         probs = [1.0] * len(slot_values_list)
         return slot_values_list, probs
@@ -631,11 +645,14 @@ def test():
     # print(reply)
 
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    config = dict()
+    config['graph_path'] = graph_dir
+    config['solr.facet'] = 'off'
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
-    bt = BeliefTracker(graph_dir)
+    bt = BeliefTracker(config)
 
-    with open(log_dir, 'a') as logfile:
+    with open(log_dir, 'a', encoding='utf-8') as logfile:
         while(True):
             try:
                 ipt = input("input:")
