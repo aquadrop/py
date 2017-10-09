@@ -179,7 +179,7 @@ class Dialogs:
         data = dict()
         for file in files:
             name, _ = os.path.splitext(os.path.basename(file))
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             data[name] = [l.strip() for l in lines]
 
@@ -190,7 +190,7 @@ class Dialogs:
         for file in businessFiles:
             name, _ = os.path.splitext(os.path.basename(file))
             dialogs = list()
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             dialog = list()
             for line in lines:
@@ -206,7 +206,7 @@ class Dialogs:
 
     def loadCandidates(self, candidatesFile):
         candidatesSet = set()
-        with open(candidatesFile, 'r') as f:
+        with open(candidatesFile, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -221,29 +221,31 @@ class Dialogs:
         for key in keys:
             print(key)
             businessDialogs = self.businessDialogs[key]
-            with open(self.outputFiles[key], 'w') as f:
+            with open(self.outputFiles[key], 'w', encoding='utf-8') as f:
                 for dialog in businessDialogs:
                     frontDialog = list()
                     for k in frontKeys:
-                        query = np.random.choice(self.data[k])
-                        response = mapper[k]
-                        self.candidatesSet.add(response)
-                        frontDialog.append(
-                            query + '\t' + response + '\t' + 'placeholder')
+                        if np.random.uniform() < 0.25:
+                            query = np.random.choice(self.data[k])
+                            response = mapper[k]
+                            self.candidatesSet.add(response)
+                            frontDialog.append(
+                                query + '\t' + response + '\t' + 'placeholder' + '\n')
                     frontDialog.extend(dialog)
                     dialog = frontDialog
                     backDialog = list()
                     for k in backKeys:
-                        query = np.random.choice(self.data[k])
-                        response = mapper[k]
-                        self.candidatesSet.add(response)
-                        backDialog.append(
-                            query + '\t' + response + '\t' + 'placeholder')
+                        if np.random.uniform() < 0.25:
+                            query = np.random.choice(self.data[k])
+                            response = mapper[k]
+                            self.candidatesSet.add(response)
+                            backDialog.append(
+                                query + '\t' + response + '\t' + 'placeholder' + '\n')
                     dialog.extend(backDialog)
                     for l in dialog:
                         f.write(l + '\n')
                     f.write('\n')
-        with open(new_candidates_file, 'w') as f:
+        with open(new_candidates_file, 'w', encoding='utf-8') as f:
             for line in self.candidatesSet:
                 if line.strip():
                     f.write(line + '\n')
@@ -386,19 +388,19 @@ def build_corpus(entity, candidate_file, train, val, test):
             which = np.random.choice(
                 ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
 
-    with open(train, 'a') as f:
+    with open(train, 'a', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
 
-    with open(val, 'a') as f:
+    with open(val, 'a', encoding='utf-8') as f:
         for line in mapper['val']:
             f.writelines(line + '\n')
 
-    with open(test, 'a') as f:
+    with open(test, 'a', encoding='utf-8') as f:
         for line in mapper['test']:
             f.writelines(line + '\n')
 
-    with open(candidate_file, 'a') as f:
+    with open(candidate_file, 'a', encoding='utf-8') as f:
         for line in candidate_set:
             f.writelines(line + '\n')
 
@@ -422,6 +424,7 @@ if __name__ == '__main__':
     delete_file('../../data/memn2n/train/val.txt')
     delete_file('../../data/memn2n/train/test.txt')
 
+
     for data_file in data_files:
         entity = Entity(data_file)
         build_corpus(entity,
@@ -432,7 +435,7 @@ if __name__ == '__main__':
 
     # uniq candidates
     candidates = set()
-    with open('../../data/memn2n/train/candidates.txt', 'r') as f:
+    with open('../../data/memn2n/train/candidates.txt', 'r', encoding='utf-8') as f:
         for line in f:
             candidates.add(line.strip('\n'))
 
@@ -456,24 +459,13 @@ if __name__ == '__main__':
         'bye': '../../data/memn2n/dialog_simulator/bye.txt'
     }
 
-    businessFiles = ['../../data/memn2n/train/train.txt',
-                     '../../data/memn2n/train/val.txt',
-                     '../../data/memn2n/train/test.txt']
-    candidatesFile = '../../data/memn2n/train/candidates.txt'
+    businessFiles = ['../../data/memn2n/train/tree/train.txt',
+                     '../../data/memn2n/train/tree/val.txt',
+                     '../../data/memn2n/train/tree/test.txt']
+    candidatesFile = '../../data/memn2n/train/tree/candidates.txt'
     dia = Dialogs(userIntentFiles, businessFiles, candidatesFile, outputFiles)
 
     dia.genDialog(new_candidates_file)
 # --------------------------------------------------------------------
 
-    # phone = Phone('../../data/gen_product/shouji.txt')
-    # phone.init_required_fields()
-    # required = 'category'
-    # for i in range(400):
-    #     a, b, c, d, new_required= phone.gen_response(required)
-    #     print(a, b, c, d)
-    #     if new_required:
-    #         required = new_required
-    #     else:
-    #         required = 'category'
-    #         phone.init_required_fields()
     #         print('------------------')
