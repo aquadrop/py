@@ -13,7 +13,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
+DATA_DIR = grandfatherdir + '/data/memn2n/train/base'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 BATCH_SIZE = 16
 EMBEDDING_SIZE = 300
@@ -95,7 +95,7 @@ def parse_args(args):
         description='Train Model for Goal Oriented Dialog Task : bAbI(6)')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-i', '--infer', action='store_true',
-                       help='perform inference in an interactive session')
+                       help='perform inference in an base session')
     group.add_argument('--ui', action='store_true',
                        help='interact through web app(flask); do not call this from cmd line')
     group.add_argument('-t', '--train', action='store_true',
@@ -280,9 +280,9 @@ def main(args):
         if ckpt and ckpt.model_checkpoint_path:
             print('\n>> restoring checkpoint from', ckpt.model_checkpoint_path)
             model.saver.restore(model._sess, ckpt.model_checkpoint_path)
-        # interactive(model, idx2candid, w2idx, sentence_size, BATCH_SIZE, n_cand, memory_size)
+        # base(model, idx2candid, w2idx, sentence_size, BATCH_SIZE, n_cand, memory_size)
 
-        # create an interactive session instance
+        # create an base session instance
         isess = InteractiveSession(
             model, idx2candid, w2idx, n_cand, memory_size)
 
