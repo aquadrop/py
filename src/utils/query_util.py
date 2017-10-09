@@ -32,6 +32,14 @@ import requests
 import jieba
 
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(parentdir)
+sys.path.append(grandfatherdir)
+
+from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
@@ -44,5 +52,84 @@ def jieba_cut(query, smart=True):
         result.append(s)
     return result
 
+
+def rule_base_num_retreive(query):
+    inch_dual = r".*(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸).*"
+    meter_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米.*"
+    # ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹].*"
+    price_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元].*"
+
+    inch_single = r".*([-+]?\d*\.\d+|\d+)寸.*"
+    meter_single = r".*([-+]?\d*\.\d+|\d+)米.*"
+    # ac_power_single = r".*([-+]?\d*\.\d+|\d+)[P|匹].*"
+    price_single = r".*([-+]?\d*\.\d+|\d+)[块|元].*"
+
+    dual = {"_inch_": inch_dual, "_meter_": meter_dual,
+            "price": price_dual}
+    single = {"_inch_": inch_single, "_meter_": meter_single,
+              "price": price_single}
+
+    wild_card = dict()
+    query = str(new_cn2arab(query))
+    flag = False
+    for key, value in dual.items():
+        render, numbers = range_extract(value, query, False, True)
+        if numbers:
+            flag = True
+            wild_card[key] = numbers
+
+    for key, value in single.items():
+        render, numbers = range_extract(value, query, True, True)
+        if numbers:
+            flag = True
+            wild_card[key] = numbers
+
+    if flag:
+        return render, wild_card
+    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
+    price_single_default = r"([-+]?\d*\.\d+|\d+)"
+    remove_regex = r"\d+[个|只|条|部|本|台]"
+    query = re.sub(remove_regex, '', query)
+    render, numbers = range_extract(price_dual_default, query, False, True)
+    if numbers:
+        wild_card['price'] = numbers
+        return render, wild_card
+    render, numbers = range_extract(price_single_default, query, True, True)
+    if numbers:
+        wild_card['price'] = numbers
+    return render, wild_card
+
+
+def range_extract(pattern, query, single, range_render=False):
+    """
+
+    :param pattern:
+    :param query:
+    :param single:
+    :return:
+    """
+    numbers = []
+    match = re.match(pattern, query)
+    if range_render:
+        range_rendered_query = re.sub(pattern, 'range', query)
+    else:
+        range_rendered_query = query
+    if single:
+        if match:
+            numbers = match.group(0)
+            numbers = float(re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0])
+            numbers = [numbers * 0.9, numbers * 1.1]
+            numbers = '[' + str(numbers[0]) + " TO " + \
+                str(numbers[1]) + "]"
+    else:
+        if match:
+            numbers = match.group(0)
+            numbers = [float(r) for r in re.findall(
+                r"[-+]?\d*\.\d+|\d+", numbers)[0:2]]
+            numbers = '[' + str(numbers[0]) + " TO " + \
+                str(numbers[1]) + "]"
+    return range_rendered_query, numbers
+
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
+    print(rule_base_num_retreive('华为num元手机phone.mmem'))

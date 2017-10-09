@@ -8,7 +8,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 RNN_SIZE = 4
 N_LAYER = 2
 
-
 def zero_nil_slot(t, name=None):
     """
     Overwrites the nil_slot (first row) of the input Tensor with zeros.

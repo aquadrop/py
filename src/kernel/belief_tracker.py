@@ -4,6 +4,7 @@ Belief Tracker
 import traceback
 import pickle
 import re
+import json
 
 import os
 import sys
@@ -38,11 +39,16 @@ class BeliefTracker:
     REQUEST_PROPERTY_STATE = "request_property_state"
     RESET_STATE = "reset_state"
 
+    VIRTUAL = 'virtual_category'
+    API = 'category'
+    PROPERTY = 'property'
+    AMBIGUITY_PICK = 'ambiguity_removal'
+
     def __init__(self, config):
         self.config = config
         self.gbdt = None
         self.state_cleared = True
-        self._load_graph(config['graph_path'])
+        self._load_graph(config['belief_graph'])
         # self._load_clf(clf_path)
         self.search_node = self.belief_graph.get_root_node()
 
@@ -54,10 +60,12 @@ class BeliefTracker:
         self.score_stairs = [1, 4, 16, 64, 256]
         self.machine_state = None  # API_NODE, NORMAL_NODE
         self.filling_slots = dict()  # current slot
-        self.required_slots = list()  # required slot obtained from api_node, ordered
+        self.requested_slots = list()  # required slot obtained from api_node, ordered
         self.numerical_slots = dict()  # common like distance, size, price
         self.ambiguity_slots = dict()
         self.wild_card = dict()
+        self.place_holder = dict()
+
         # self.negative = False
         # self.negative_clf = Negative_Clf()
         # self.simple = SimpleQAKernel()
@@ -72,6 +80,14 @@ class BeliefTracker:
         response = self.r_walk_with_pointer_with_clf(
             query=query)
         return response
+
+    def memory_kernel(self, query_mapper, wild_card=None):
+        if isinstance(query_mapper, str):
+            query_mapper = json.loads(query_mapper, encoding='utf-8')
+
+        self.wild_card = wild_card
+        self.color_graph(query_mapper)
+        return self.issue_api()
 
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
@@ -123,7 +139,7 @@ class BeliefTracker:
             self.rule_base_num_retreive(query)
         self.update_belief_graph(query=query,
                                  slot_values_list=filtered_slot_values_list)
-        return self.issune_api()
+        return self.issue_api() + '@@' + self.issue_class()
 
     def unfold_slots_list(self, intention):
         """
@@ -135,13 +151,143 @@ class BeliefTracker:
 
     def move_to_node(self, node):
         self.search_node = node
-        self.required_slots = self.search_node.gen_required_slot_fields()
+        # self.clear_memory()
         self.filling_slots.clear()
+        self.requested_slots = self.search_node.gen_required_slot_fields()
+        self.fill_slot(node.slot, node.value)
 
     def fill_slot(self, slot, value):
         self.filling_slots[slot] = value
-        if slot in self.required_slots:
-            self.required_slots.remove(slot)
+        if slot in self.requested_slots:
+            self.requested_slots.remove(slot)
+
+    def clear_memory(self):
+        self.filling_slots.clear()
+        self.requested_slots.clear()
+        self.machine_state = self.TRAVEL_STATE
+        self.search_node = self.belief_graph.get_root_node()
+        # self.requested_slots.append(self.API)
+
+    def graph_render(self, value_list, required_field):
+        """
+        Rool Based will be introduced
+        :param value_list:
+        :param required_field:
+        :return:
+        """
+        field_type = self.belief_graph.get_field_type(required_field)
+        pass
+
+    def get_requested_field(self):
+        if len(self.requested_slots) == 0:
+            return None
+        return self.requested_slots[0]
+
+    # a tree rendering process...
+    def color_graph(self, slot_values_mapper, values_marker=None):
+        """
+        gen api_call_ambiguity_...
+            api_call_request_brand...
+        see wiki: https://github.com/aquadrop/memory_py/wiki
+        :param slot_values_mapper: {"entity":[entities], "slot1":"value1", "slot2":"value2"}
+        :param values_marker:
+        :return:
+        """
+
+        if not values_marker:
+            values_marker = [0] * len(slot_values_mapper)
+
+        if self.machine_state == self.AMBIGUITY_STATE:
+            flag = True
+            if self.AMBIGUITY_PICK in slot_values_mapper:
+                self.machine_state = self.API_REQUEST_STATE
+                value = slot_values_mapper[self.AMBIGUITY_PICK]
+                if value in self.ambiguity_slots:
+                    nodes = self.ambiguity_slots[value]
+                    if len(nodes) == 1:
+                        self.move_to_node(nodes[0].parent_node)
+                        self.fill_slot(nodes[0].slot, nodes[0].value)
+                        self.ambiguity_slots.clear()
+                    else:
+                        flag = False
+                        self.ambiguity_slots.clear()
+                        for node in nodes:
+                            # self.machine_state = self.AMBIGUITY_STATE
+                            self.ambiguity_slots[node.slot] = [node]
+            else:
+                # fail to remove ambiguity
+                self.machine_state = self.API_REQUEST_STATE
+                self.ambiguity_slots.clear()
+            if self.AMBIGUITY_PICK in self.requested_slots and flag:
+                self.requested_slots.remove(self.AMBIGUITY_PICK)
+            # del slot_values_mapper[self.AMBIGUITY_PICK]
+        # look for virtual memory
+        if self.VIRTUAL in slot_values_mapper:
+            self.machine_state = self.API_REQUEST_STATE
+            value = slot_values_mapper[self.VIRTUAL]
+            node = self.belief_graph.get_nodes_by_value(value)[0]
+            self.move_to_node(node)
+
+        # look for api memory
+        if self.API in slot_values_mapper:
+            self.machine_state = self.API_REQUEST_STATE
+            value = slot_values_mapper[self.API]
+            node = self.belief_graph.get_nodes_by_value(value)[0]
+            self.move_to_node(node)
+
+        for key, value in slot_values_mapper.items():
+            if key == self.VIRTUAL or key == self.API or key == self.AMBIGUITY_PICK:
+                # checked
+                continue
+            if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
+                # value is range
+                self.fill_slot(key, value)
+                continue
+            if key == 'entity':
+                nodes = self.belief_graph.get_nodes_by_value(value)
+            else:
+                nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
+            if len(nodes) == 1:
+                node = nodes[0]
+                #
+                if node.has_ancestor_by_value(self.search_node.value):
+                    if node.parent_node != self.search_node:
+                        # move to parent node if relation is grand
+                        self.move_to_node(node.parent_node)
+                    self.fill_slot(node.slot, node.value)
+            else:
+                filtered = []
+                # ambiguity state, 删除非self.search_node节点
+                for i, node in enumerate(nodes):
+                    if node.has_ancestor_by_value(self.search_node.value):
+                        filtered.append(node)
+                if len(filtered) == 1:
+                    self.fill_slot(node.slot, node.value)
+                else:
+                    # enter ambiguity state
+                    # self.machine_state = self.AMBIGUITY_STATE
+                    self.requested_slots.insert(0, self.AMBIGUITY_PICK)
+                    parent_values = set()
+                    for node in filtered:
+                        parent_values.add(node.parent_node.value)
+                    if len(parent_values) > 1:
+                        for node in filtered:
+                            if node.parent_node.value not in self.ambiguity_slots:
+                                self.ambiguity_slots[node.parent_node.value] = []
+                            self.ambiguity_slots[node.parent_node.value].append(node)
+                    else:
+                        for node in filtered:
+                            self.ambiguity_slots[node.slot] = [node]
+
+        if len(self.requested_slots) == 0:
+            self.machine_state = self.API_CALL_STATE
+            # placeholder
+            for key, holder in self.place_holder.items():
+                self.filling_slots[key] = holder
+        else:
+            self.machine_state = self.API_REQUEST_STATE
+            if self.requested_slots[0] == self.AMBIGUITY_PICK:
+                self.machine_state = self.AMBIGUITY_STATE
 
     def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
@@ -177,12 +323,24 @@ class BeliefTracker:
                     continue
                 if value in self.ambiguity_slots:
                     slot_values_marker[i] = 1
-                    self.machine_state = self.TRAVEL_STATE
-                    self.move_to_node(self.ambiguity_slots[value])
-                    return self.update_belief_graph(slot_values_list=slot_values_list,
-                                                    slot_values_marker=slot_values_marker, query=query)
+                    nodes = self.ambiguity_slots[value]
+                    if len(nodes) == 1:
+                        node = nodes[0]
+                        self.machine_state = self.TRAVEL_STATE
+                        self.move_to_node(node)
+                        return self.update_belief_graph(slot_values_list=slot_values_list,
+                                                        slot_values_marker=slot_values_marker, query=query)
+                    else:
+                        self.ambiguity_slots.clear()
+                        for node in nodes:
+                            self.ambiguity_slots[node.slot] = [node]
+                        # return self.update_belief_graph(slot_values_list=slot_values_list,
+                        #                                 slot_values_marker=slot_values_marker, query=query)
+                        return
+
             # ambiguity removal failed, abandon
             self.machine_state = self.TRAVEL_STATE
+            self.ambiguity_slots.clear()
             self.move_to_node(self.belief_graph.get_root_node())
             return self.update_belief_graph(slot_values_list=slot_values_list,
                                             slot_values_marker=slot_values_marker, query=query)
@@ -194,16 +352,16 @@ class BeliefTracker:
         if self.search_node.is_api_node():
             self.fill_with_wild_card()
             # if self.machine_state == self.API_REQUEST_RULE_STATE:
-            #     if self.search_node.get_field_type(self.required_slots[0]) == Node.RANGE:
-            #         state = self.rule_base_fill(query, self.required_slots[0])
+            #     if self.search_node.get_field_type(self.requested_slots[0]) == Node.RANGE:
+            #         state = self.rule_base_fill(query, self.requested_slots[0])
             self.machine_state = self.API_REQUEST_STATE
-            if len(self.required_slots) == 0:
+            if len(self.requested_slots) == 0:
                 self.machine_state = self.API_CALL_STATE
                 return
-            if self.search_node.get_field_type(self.required_slots[0]) == Node.RANGE:
+            if self.search_node.get_field_type(self.requested_slots[0]) == Node.RANGE:
                 # self.machine_state = self.API_REQUEST_RULE_STATE
-                self.rule_base_fill(query, self.required_slots[0])
-                if len(self.required_slots) == 0:
+                self.rule_base_fill(query, self.requested_slots[0])
+                if len(self.requested_slots) == 0:
                     self.machine_state = self.API_CALL_STATE
             for i, value in enumerate(slot_values_list):
                 if not self.belief_graph.has_node_by_value(value):
@@ -218,7 +376,7 @@ class BeliefTracker:
                     slot = self.search_node.get_slot_by_value(value)
                     self.fill_slot(slot, value)
 
-                    if len(self.required_slots) == 0:
+                    if len(self.requested_slots) == 0:
                         self.machine_state = self.API_CALL_STATE
                 else:
                     if self.search_node.has_ancestor_by_value(value):
@@ -294,16 +452,19 @@ class BeliefTracker:
                     return self.update_belief_graph(slot_values_list=slot_values_list,
                                                     slot_values_marker=slot_values_marker, query=query)
                 elif len(filtered_nodes) > 1:
+                    self.machine_state = self.AMBIGUITY_STATE
                     parent_node_value = set()
                     for node in filtered_nodes:
                         parent_node_value.add(node.parent_node.value)
                     if len(parent_node_value) > 1:
                         for node in filtered_nodes:
-                            self.ambiguity_slots[node.parent_node.value] = node
+                            if node.parent_node.value not in self.ambiguity_slots:
+                                self.ambiguity_slots[node.parent_node.value] = []
+                            self.ambiguity_slots[node.parent_node.value].append(node)
                     # nice, differentiating at slots, not parent_nodes
                     else:
                         for node in filtered_nodes:
-                            self.ambiguity_slots[node.slot] = node
+                            self.ambiguity_slots[node.slot] = [node]
                     return
                 else:
                     self.machine_state = self.RESET_STATE
@@ -421,7 +582,7 @@ class BeliefTracker:
             return ['facet is off']
         node = self.search_node
         fill = []
-        facet_field = self.required_slots[0]
+        facet_field = self.requested_slots[0]
 
         def render_range(a, gap):
             if len(a) == 0:
@@ -492,13 +653,15 @@ class BeliefTracker:
             facet = render_range(ranges, 1)
             return facet
 
-    def issune_api(self):
+    def issue_class(self):
         if self.machine_state == self.TRAVEL_STATE:
             return "api_greeting_search_normal"
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
-            slot = self.required_slots[0]
-            avails = self.solr_facet()
-            return "api_request_value_of_" + slot + "#avail_values: " + str(avails)
+            fill = []
+            for key, value in self.filling_slots.items():
+                fill.append(key + ":" + str(value))
+            fill.append(self.search_node.slot + ":" + self.search_node.value)
+            return "api_call_slot_" + ','.join(fill)
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
             return "api_request_ambiguity_removal_" + param
@@ -512,6 +675,32 @@ class BeliefTracker:
             node = self.search_node
             while node.value != self.belief_graph.ROOT:
                 fill.append(node.slot + ":" + node.value)
+                node = node.parent_node
+            return param + ",".join(fill)
+        if self.machine_state == self.RESET_STATE:
+            return "reset_requested"
+
+    def issue_api(self):
+        if self.machine_state == self.TRAVEL_STATE:
+            return "api_greeting_search_normal"
+        if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
+            slot = self.requested_slots[0]
+            avails = self.solr_facet()
+            return "api_call_request_" + slot + "#avail_values: " + str(avails)
+        if self.machine_state == self.AMBIGUITY_STATE:
+            param = ','.join(self.ambiguity_slots.keys())
+            return "api_call_request_ambiguity_removal_" + param
+        if self.machine_state == self.API_CALL_STATE:
+            # first filling slots
+            param = "api_call_search_"
+            fill = []
+            for key, value in self.filling_slots.items():
+                fill.append(key + ":" + str(value))
+
+            node = self.search_node
+            while node.value != self.belief_graph.ROOT:
+                if node.slot != 'virtual_category':
+                    fill.append(node.slot + ":" + node.value)
                 node = node.parent_node
             return param + ",".join(fill)
         if self.machine_state == self.RESET_STATE:
@@ -646,7 +835,7 @@ def test():
 
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
     config = dict()
-    config['graph_path'] = graph_dir
+    config['belief_graph'] = graph_dir
     config['solr.facet'] = 'off'
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
@@ -657,7 +846,7 @@ def test():
             try:
                 ipt = input("input:")
                 print(ipt, file=logfile)
-                resp = bt.kernel(ipt)
+                resp = bt.memory_kernel(ipt)
                 print(resp)
                 print(resp, file=logfile)
             except Exception as e:

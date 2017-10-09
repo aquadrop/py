@@ -13,7 +13,6 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-print(dir_path)
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 BATCH_SIZE = 16
@@ -64,7 +63,6 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
-    # print(metadata['idx2w'])
 
     ###
     # write data to file
@@ -110,7 +108,7 @@ def parse_args(args):
                         help='you know what batch size means!')
     parser.add_argument('--epochs', required=False, type=int, default=200,
                         help='num iteration of training over train set')
-    parser.add_argument('--eval_interval', required=False, type=int, default=1,
+    parser.add_argument('--eval_interval', required=False, type=int, default=5,
                         help='num iteration of training over train set')
     parser.add_argument('--log_file', required=False, type=str, default='log.txt',
                         help='enter the name of the log file')
@@ -234,6 +232,7 @@ def main(args):
         log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
         cost_total = 0.
         # best_validation_accuracy = 0.
+        lowest_val_acc = 0.8
         for i in range(epochs + 1):
 
             for start, end in batches:
@@ -242,34 +241,35 @@ def main(args):
                 a = train['a'][start:end]
                 cost_total += model.batch_fit(s, q, a)
 
-            lowest_val_acc = 0.8
-            if i % eval_interval == 0 and i:
-                train_preds = batch_predict(model, train['s'], train['q'], len(
-                    train['s']), batch_size=BATCH_SIZE)
-                # for i in range(len(train['q'])):
-                #     if train_preds[i] != train['a'][i]:
-                #         print(recover_sentence(train['q'][i], idx2w),
-                #               recover_cls(train_preds[i], idx2candid),
-                #               recover_cls(train['a'][i], idx2candid))
-                val_preds = batch_predict(model, val['s'], val['q'], len(
-                    val['s']), batch_size=BATCH_SIZE)
-                train_acc = metrics.accuracy_score(
-                    np.array(train_preds), train['a'])
-                val_acc = metrics.accuracy_score(val_preds, val['a'])
-                print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                      format(i, train_acc, val_acc))
-                log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
-                                                        cost_total / (eval_interval * len(batches))))
-                cost_total = 0.  # empty cost
-                #
-                # save the best model, to disk
-                # if val_acc > best_validation_accuracy:
-                # best_validation_accuracy = val_acc
-                if val_acc > lowest_val_acc:
-                    lowest_val_acc = val_acc
-                    print('saving model...', lowest_val_acc)
-                    model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
-                                     global_step=i)
+            if i % 1 == 0 and i:
+                print('stage...', i)
+                if i % eval_interval == 0 and i:
+                    train_preds = batch_predict(model, train['s'], train['q'], len(
+                        train['s']), batch_size=BATCH_SIZE)
+                    # for i in range(len(train['q'])):
+                    #     if train_preds[i] != train['a'][i]:
+                    #         print(recover_sentence(train['q'][i], idx2w),
+                    #               recover_cls(train_preds[i], idx2candid),
+                    #               recover_cls(train['a'][i], idx2candid))
+                    val_preds = batch_predict(model, val['s'], val['q'], len(
+                        val['s']), batch_size=BATCH_SIZE)
+                    train_acc = metrics.accuracy_score(
+                        np.array(train_preds), train['a'])
+                    val_acc = metrics.accuracy_score(val_preds, val['a'])
+                    print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
+                          format(i, train_acc, val_acc))
+                    log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
+                                                            cost_total / (eval_interval * len(batches))))
+                    cost_total = 0.  # empty cost
+                    #
+                    # save the best model, to disk
+                    # if val_acc > best_validation_accuracy:
+                    # best_validation_accuracy = val_acc
+                    if train_acc > lowest_val_acc:
+                        print('saving model...', train_acc, lowest_val_acc)
+                        lowest_val_acc = train_acc
+                        model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                                         global_step=i)
         # close file
         log_handle.close()
 

@@ -45,7 +45,8 @@ class Graph(Node, object):
         # value is a list of nodes that share the same.
         self.node_header = dict()
         self.id_node = dict()
-        self.slots = set()
+        self.slots = dict()
+        self.slots_trans = dict()
 
     def get_node_connected_slots(self, value):
         """
@@ -60,12 +61,31 @@ class Graph(Node, object):
     def get_root_node(self):
         return self.node_header[self.ROOT][0]
 
+    def get_field_type(self, field):
+        return self.slots[field]
+
+    def get_nodes_by_slot(self, slot):
+        field_nodes = []
+        for key, nodes in self.node_header.items():
+            for node in nodes:
+                if node.slot == slot:
+                    field_nodes.append(node)
+        return field_nodes
+
     def get_nodes_by_value(self, node_value):
         """
         get_nodes_by_value("苹果")...
         return a listraw
         """
         return self.node_header[node_value]
+
+    def get_nodes_by_value_and_field(self, value, field):
+        nodes = self.get_nodes_by_value(value)
+        filtered = []
+        for node in nodes:
+            if node.slot == field:
+                filtered.append(node)
+        return filtered
 
     def has_node_by_value(self, node_value):
         return node_value in self.node_header
@@ -156,7 +176,7 @@ def load_belief_graph_from_tables(files, output_file):
     belief_graph = None
     node_header = {}
     id_node = {}
-    slots = set()
+    slots = dict()
     # stage 1, build node
     for f in files:
         with open(f, 'r', encoding='utf-8') as inpt:
@@ -164,18 +184,18 @@ def load_belief_graph_from_tables(files, output_file):
                 line = line.strip('\n').replace(' ', '')
                 note, cn, slot, node_type, slot_value = line.split('|')
                 if note == '-':
-                    slots.add(slot)
+                    slots[slot] = node_type
                     _id = str(uuid.uuid4())
                     # node = Node(value=slot_value, fields=dict(),
                     #                   slot=slot, id=_id, node_type="property")
                     if slot_value == "ROOT":
                         node = Graph(
-                            value=slot_value, fields=dict(), slot=slot, id=id, node_type=node_type)
+                            value=slot_value, fields=dict(), slot=slot, id=id, node_type=slot)
                         if not belief_graph:
                             belief_graph = node
                     else:
                         node = Node(value=slot_value, fields=dict(),
-                                    slot=slot, id=id, node_type=node_type)
+                                    slot=slot, id=id, node_type=slot)
                     if slot_value not in node_header:
                         node_header[slot_value] = []
                     node_header[slot_value].append(node)
@@ -202,8 +222,14 @@ def load_belief_graph_from_tables(files, output_file):
                     else:
                         node = nodes[0]
                 if note == '+':
-                    slots.add(slot)
-                    note, cn, slot, node_type, slot_value = line.split('|')
+                    slots[slot] = node_type
+                    note, cn, slot, value_type, slot_value = line.split('|')
+                    node.set_node_slot_trans(slot, cn)
+                    belief_graph.slots_trans[slot] = cn
+                    if value_type != Node.KEY:
+                        # print(slot)
+                        node.set_field_type(slot, value_type)
+                        continue
                     names = slot_value.split(',')
                     for name in names:
                         if 'category' in slot:
@@ -238,6 +264,8 @@ if __name__ == "__main__":
                    '../../data/gen_product/kongtiao.txt',
                    '../../data/gen_product/root.txt',
                    '../../data/gen_product/shouji.txt',
-                   '../../data/gen_product/pc.txt']
+                   '../../data/gen_product/pc.txt',
+                   '../../data/gen_product/grocery.txt',
+                   '../../data/gen_product/fruits.txt']
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
