@@ -57,7 +57,11 @@ def gen_sessions(belief_tracker, output_files):
             picked_fields = np.random.choice(fields, n)
             for f in picked_fields:
                 value = random_property_value(f, node)
-                slot_values_mapper[f] = value
+                # weird
+                if value != 'range' and belief_graph.is_entity_value(value):
+                    slot_values_mapper['entity'] = value
+                else:
+                    slot_values_mapper[f] = value
             return slot_values_mapper
 
         my_search_node = belief_tracker.search_node
@@ -70,8 +74,13 @@ def gen_sessions(belief_tracker, output_files):
         picked_fields.append(required_field)
         for f in picked_fields:
             value = random_property_value(f, my_search_node)
-            slot_values_mapper[f] = value
-
+            # weird
+            if value != 'range' and belief_graph.is_entity_value(value):
+                slot_values_mapper['entity'] = value
+            else:
+                slot_values_mapper[f] = value
+        if 'entity' in slot_values_mapper and not slot_values_mapper['entity']:
+            print()
         return slot_values_mapper
 
     def gen_ambiguity_response(availables):
@@ -79,7 +88,10 @@ def gen_sessions(belief_tracker, output_files):
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
-        slot_values_mapper['ambiguity_removal'] = pick
+        if len(belief_graph.get_nodes_by_value(pick)) > 1:
+            slot_values_mapper[belief_graph.get_nodes_by_value(pick)[0].slot] = pick
+        else:
+            slot_values_mapper['ambiguity_removal'] = pick
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
         #
         # fields = list(my_search_node.fields.keys())
@@ -91,7 +103,6 @@ def gen_sessions(belief_tracker, output_files):
         # for f in picked_fields:
         #     value = random_property_value(f, my_search_node)
         #     slot_values_mapper[f] = value
-
         return slot_values_mapper
 
     def gen_ambiguity_initial():
@@ -156,7 +167,7 @@ def gen_sessions(belief_tracker, output_files):
         if 'brand' in slot_values_mapper:
             lang += slot_values_mapper['brand'] + np.random.choice(['的',''], p=[0.7, 0.3])
         if 'price' in slot_values_mapper:
-            lang += np.random.choice(['价格', '价位']) + slot_values_mapper['price']
+            lang += np.random.choice(['价格', '价位', '']) + slot_values_mapper['price']
             if np.random.uniform() < 0.3:
                 if np.random.uniform() < 0.5:
                     lang += '元'
@@ -173,7 +184,7 @@ def gen_sessions(belief_tracker, output_files):
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
                 else:
-                    lang += np.random.choice(['', trans], p=[0.8, 0.2]) + 'range'
+                    lang += trans + 'range'
             else:
                 lang += v + ","
 
@@ -196,6 +207,8 @@ def gen_sessions(belief_tracker, output_files):
     test_set = []
     val_set = []
 
+    train_gbdt = set()
+
     container = []
     duplicate_removal = set()
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
@@ -209,8 +222,17 @@ def gen_sessions(belief_tracker, output_files):
         else:
             slot_values_mapper = gen_random_slot_values(required_field=requested)
         belief_tracker.color_graph(slot_values_mapper)
-        requested = belief_tracker.get_requested_field()
         user_reply = render_lang(slot_values_mapper, fresh)
+        if not fresh:
+            gbdt =  'plugin:' + 'api_call_slot' + ','\
+                    + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+                    + '#' + requested + '$' + user_reply
+        else:
+            gbdt = 'plugin:' + 'api_call_slot' + ','\
+                + ','.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
+                   + '#' + user_reply
+        requested = belief_tracker.get_requested_field()
+        train_gbdt.add(gbdt)
         fresh = False
         cls = render_cls(slot_values_mapper)
         candidates.add(cls)
@@ -230,15 +252,16 @@ def gen_sessions(belief_tracker, output_files):
             if bulk not in duplicate_removal:
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
-                for a in container:
-                    print(a)
+                # for a in container:
+                #     print(a)
             else:
                 print('# duplicate #')
             which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
             container = []
             # print(line)
             i += 1
-            if i >= 2000:
+            print(i)
+            if i >= 10000:
                 break
 
     print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
@@ -258,6 +281,28 @@ def gen_sessions(belief_tracker, output_files):
         for line in candidates:
             f.writelines(line + '\n')
 
+    with open(output_files[4], 'w', encoding='utf-8') as f:
+        for line in train_gbdt:
+            f.writelines(line + '\n')
+        # hello
+        with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
+                  'r', encoding='utf-8') as hl:
+            for line in hl:
+                line = "plugin:api_call_greet" + '#' + line.strip('\n')
+                f.writelines(line + '\n')
+        # chat
+        with open(grandfatherdir + '/data/memn2n/dialog_simulator/chat.txt',
+                  'r', encoding='utf-8') as hl:
+            for line in hl:
+                line = "plugin:api_call_base" + '#' + line.strip('\n')
+                f.writelines(line + '\n')
+        # qa
+        with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
+                  'r', encoding='utf-8') as hl:
+            for line in hl:
+                line = "plugin:api_call_qa" + '#' + line.strip('\n')
+                f.writelines(line + '\n')
+
 
 if __name__ == "__main__":
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
@@ -271,6 +316,7 @@ if __name__ == "__main__":
     output_files = ['../../data/memn2n/train/tree/candidates.txt',
                     '../../data/memn2n/train/tree/train.txt',
                      '../../data/memn2n/train/tree/val.txt',
-                     '../../data/memn2n/train//tree/test.txt']
+                     '../../data/memn2n/train/tree/test.txt',
+                    '../../data/memn2n/train/gbdt/train.txt']
 
     gen_sessions(bt, output_files)

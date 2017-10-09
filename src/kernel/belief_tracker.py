@@ -262,8 +262,8 @@ class BeliefTracker:
                     if node.has_ancestor_by_value(self.search_node.value):
                         filtered.append(node)
                 if len(filtered) == 1:
-                    self.fill_slot(node.slot, node.value)
-                else:
+                    self.fill_slot(filtered[0].slot, filtered[0].value)
+                elif len(filtered) > 1:
                     # enter ambiguity state
                     # self.machine_state = self.AMBIGUITY_STATE
                     self.requested_slots.insert(0, self.AMBIGUITY_PICK)
@@ -278,6 +278,10 @@ class BeliefTracker:
                     else:
                         for node in filtered:
                             self.ambiguity_slots[node.slot] = [node]
+                else:
+                    # swith branch
+                    self.move_to_node(self.belief_graph.get_root_node())
+                    return self.color_graph(slot_values_mapper)
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
@@ -288,6 +292,11 @@ class BeliefTracker:
             self.machine_state = self.API_REQUEST_STATE
             if self.requested_slots[0] == self.AMBIGUITY_PICK:
                 self.machine_state = self.AMBIGUITY_STATE
+
+    def use_wild_card(self):
+        # fill price
+        if 'price' in self.filling_slots:
+            self.filling_slots['price'] = self.wild_card['price']
 
     def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
