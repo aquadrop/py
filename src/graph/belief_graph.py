@@ -47,6 +47,19 @@ class Graph(Node, object):
         self.id_node = dict()
         self.slots = dict()
         self.slots_trans = dict()
+<<<<<<< HEAD
+=======
+
+    def is_entity_value(self, value):
+        if len(self.node_header[value]) == 1:
+            return False
+        nodes = self.node_header[value]
+        slots = [node.slot for node in nodes]
+        if len(set(slots)) == 1:
+            return False
+        else:
+            return True
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
     def get_node_connected_slots(self, value):
         """
@@ -77,6 +90,8 @@ class Graph(Node, object):
         get_nodes_by_value("苹果")...
         return a listraw
         """
+        if node_value not in self.node_header:
+            return []
         return self.node_header[node_value]
 
     def get_nodes_by_value_and_field(self, value, field):
