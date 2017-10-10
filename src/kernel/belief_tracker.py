@@ -185,7 +185,7 @@ class BeliefTracker:
         return self.requested_slots[0]
 
     # a tree rendering process...
-    def color_graph(self, query, slot_values_mapper, values_marker=None):
+    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True):
         """
         gen api_call_ambiguity_...
             api_call_request_brand...
@@ -193,6 +193,7 @@ class BeliefTracker:
         :param slot_values_mapper: {"entity":[entities], "slot1":"value1", "slot2":"value2"}
         :param values_marker:
         :param query
+        :param range_render
         :return:
         """
 
@@ -244,8 +245,10 @@ class BeliefTracker:
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
                 # use rule base for range
-                self.rule_base_fill(query, key)
-                # self.fill_slot(key, value)
+                if range_render:
+                    self.rule_base_fill(query, key)
+                else:
+                    self.fill_slot(key, value)
                 continue
             if key == 'entity':
                 nodes = self.belief_graph.get_nodes_by_value(value)
@@ -707,7 +710,7 @@ class BeliefTracker:
             return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
-            return "api_call_request_ambiguity_removal_" + param
+            return "api_call_request_ambiguity_removal_" + param, []
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_search_"

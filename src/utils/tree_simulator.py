@@ -82,7 +82,7 @@ def gen_sessions(belief_tracker, output_files):
         return slot_values_mapper
 
     def gen_ambiguity_response(availables):
-        availables = availables.replace('api_call_request_ambiguity_removal_', '').split(",")
+        availables = availables[0].replace('api_call_request_ambiguity_removal_', '').split(",")
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
@@ -102,6 +102,27 @@ def gen_sessions(belief_tracker, output_files):
         #     value = random_property_value(f, my_search_node)
         #     slot_values_mapper[f] = value
         return slot_values_mapper
+
+    def render_rhetorical(slot):
+        """
+        'user': {
+            'brand': ['你们这都有什么牌子？', '品牌都有哪些？'],
+            'category': ['你们这儿都卖什么种类？', '种类都有哪些？'],
+            'price': ['都有哪些价格？', '都有什么价啊？']
+        },
+        :param slot:
+        :return:
+        """
+        template = ["你们这都有什么<fill>", "<fill>都有哪些","你们这儿都卖什么<fill>"]
+        trans = belief_graph.slots_trans[slot]
+        t = np.random.choice(template)
+        if np.random.uniform() < 0.5:
+            t = t.replace("<fill>", trans)
+        else:
+            t = t.replace("<fill>", "")
+        cls = "api_call_rhetorical_" + slot
+        return t, cls
+
 
     def gen_ambiguity_initial():
         slot_values_mapper = dict()
@@ -195,7 +216,7 @@ def gen_sessions(belief_tracker, output_files):
         return 'api_call_slot_' + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])
 
     def render_api(api):
-        return api.split('#')[0]
+        return api[0]
 
     requested = get_requested_field()
     i = 0
@@ -219,18 +240,23 @@ def gen_sessions(belief_tracker, output_files):
             slot_values_mapper = gen_ambiguity_response(belief_tracker.issue_api())
         else:
             slot_values_mapper = gen_random_slot_values(required_field=requested)
-        belief_tracker.color_graph(slot_values_mapper)
+        belief_tracker.color_graph(slot_values_mapper=slot_values_mapper, range_render=False)
         user_reply = render_lang(slot_values_mapper, fresh)
         if not fresh:
             gbdt =  'plugin:' + 'api_call_slot' + ','\
-                    + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+                    + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
                     + '#' + requested + '$' + user_reply
         else:
             gbdt = 'plugin:' + 'api_call_slot' + ','\
-                + ','.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
+                + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
                    + '#' + user_reply
         requested = belief_tracker.get_requested_field()
         train_gbdt.add(gbdt)
+        if requested and requested != 'ambiguity_removal':
+            if np.random.uniform() < 0.25:
+                reh, cls = render_rhetorical(requested)
+                rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
+                train_gbdt.add(rhetorical)
         fresh = False
         cls = render_cls(slot_values_mapper)
         candidates.add(cls)
@@ -288,17 +314,17 @@ def gen_sessions(belief_tracker, output_files):
             for line in hl:
                 line = "plugin:api_call_greet" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
-        # chat
-        with open(grandfatherdir + '/data/memn2n/dialog_simulator/chat.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = "plugin:api_call_base" + '#' + line.strip('\n')
-                f.writelines(line + '\n')
         # qa
         with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
                   'r', encoding='utf-8') as hl:
             for line in hl:
                 line = "plugin:api_call_qa" + '#' + line.strip('\n')
+                f.writelines(line + '\n')
+        # chat
+        with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
+                  'r', encoding='utf-8') as hl:
+            for line in hl:
+                line = line.strip('\n')
                 f.writelines(line + '\n')
 
 if __name__ == "__main__":
