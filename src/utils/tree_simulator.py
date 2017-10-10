@@ -45,7 +45,8 @@ def gen_sessions(belief_tracker, output_files):
                 nodes = belief_graph.get_nodes_by_slot(required_field)
                 node = np.random.choice(nodes)
             else:
-                children_names = belief_tracker.search_node.get_children_names_by_slot(required_field)
+                children_names = belief_tracker.search_node.get_children_names_by_slot(
+                    required_field)
                 # choose one
                 name = np.random.choice(children_names)
                 slot = belief_tracker.search_node.get_slot_by_value(name)
@@ -67,7 +68,8 @@ def gen_sessions(belief_tracker, output_files):
         my_search_node = belief_tracker.search_node
 
         fields = list(belief_tracker.requested_slots)
-        n = np.random.randint(0, np.min([len(fields), num_rnd_external_max]) + 1)
+        n = np.random.randint(
+            0, np.min([len(fields), num_rnd_external_max]) + 1)
 
         picked_fields = np.random.choice(fields, n).tolist()
         # append required fields
@@ -175,7 +177,8 @@ def gen_sessions(belief_tracker, output_files):
             return np.random.choice(search_node.get_children_names_by_slot(field))
 
     def get_requested_field():
-        requested = np.random.choice(['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
+        requested = np.random.choice(
+            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
         return requested
 
     def render_lang(slot_values_mapper, fresh):
@@ -225,7 +228,6 @@ def gen_sessions(belief_tracker, output_files):
     train_set = []
     test_set = []
     val_set = []
-
     train_gbdt = set()
 
     container = []

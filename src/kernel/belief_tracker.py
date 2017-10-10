@@ -244,11 +244,11 @@ class BeliefTracker:
                 continue
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
-                # use rule base for range
                 if range_render:
                     self.rule_base_fill(query, key)
                 else:
                     self.fill_slot(key, value)
+                # self.fill_slot(key, value)
                 continue
             if key == 'entity':
                 nodes = self.belief_graph.get_nodes_by_value(value)
@@ -307,7 +307,6 @@ class BeliefTracker:
         # if 'tv.distance' in self.filling_slots:
         #     self.filling_slots['tv.distance'] = self.wild_card['_meter_']
         # if 'pc.size' in self.filling_slots:
-
 
     def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
@@ -717,7 +716,6 @@ class BeliefTracker:
             fill = []
             for key, value in self.filling_slots.items():
                 fill.append(key + ":" + str(value))
-
             # node = self.search_node
             # while node.value != self.belief_graph.ROOT:
             #     if node.slot != 'virtual_category':
