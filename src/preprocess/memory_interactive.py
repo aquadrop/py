@@ -107,7 +107,8 @@ def interactive(file_, write_file_):
     # with open(write_file_,'w') as f:
     #     json.dump(D, f, ensure_ascii=False)
 
-def process_simple(input_file, output_file):
+
+def process_gbdt_simple(input_file, output_file):
     with open(input_file, 'r', encoding='utf-8') as f:
         flag = 0
         cls_mapper = dict()
@@ -145,8 +146,52 @@ def process_simple(input_file, output_file):
                     line = 'plugin:api_call_base,index:' + hashlib.md5(key.encode()).hexdigest() + "#" + key
                 wf.writelines(line + '\n')
 
+
+def process_memory_simple(input_file, output_file):
+    with open(input_file, 'r', encoding='utf-8') as f:
+        flag = 0
+        cls_mapper = dict()
+        brother_mapper = dict()
+        last_r = None
+        d = []
+        D = []
+        index = 1
+        for line in f:
+            line = line.strip('\n')
+            if not line:
+                if len(d) > 0:
+                    D.append(d)
+                d = []
+                flag = 0
+                continue
+            if flag == 0:
+                gs = line.split('/')[0]
+                if gs not in cls_mapper:
+                    cls_mapper[gs] = 'api_call_base_' + str(index)
+                    index += 1
+                flag = 1
+                continue
+            if flag == 1:
+                line = gs + '\t' +cls_mapper[gs] + '\t' + line.strip('\n').split('/')[0]
+                flag = 0
+                d.append(line)
+
+        with open(output_file, 'w', encoding='utf-8') as wf:
+            for data in D:
+                for line in data:
+                    wf.writelines(line + '\n')
+                wf.writelines('\n')
+
+        with open('candidates.txt', 'w', encoding='utf-8') as wf:
+            for v in cls_mapper.values():
+                wf.writelines(v + '\n')
+
+
+
+
 if __name__ == '__main__':
-    process_simple('interactive.txt', 'interactive_gbdt.txt')
+    # process_gbdt_simple('interactive.txt', 'interactive_gbdt.txt')
+    process_memory_simple('interactive.txt', 'interactive_memory.txt')
     # D1 = interactive('整理后的客服接待语料.txt','base-all.txt')
     # D2 = interactive('2017互动话术汇总版4.10.txt','train.txt')
     #
