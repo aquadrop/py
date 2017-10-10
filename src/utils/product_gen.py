@@ -165,10 +165,12 @@ def phone_product_gen(product_file, data_file):
     title = []
     with open(data_file, 'r') as infile:
         line = infile.readline()
-        title = line.strip('\n').split("|")[2].split(',')
+        title = line.strip('\n').split("|")[4].split(',')
         for line in infile:
             line = line.replace(' ', '').strip('\n')
-            a, b, c = line.split("|")
+            mark, a, b, _, c = line.split("|")
+            if mark == '*':
+                continue
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
@@ -190,6 +192,8 @@ def phone_product_gen(product_file, data_file):
                 ac["phone.series"] = np.random.choice("荣耀,P9".split(","))
             if ac["brand"] == "三星":
                 ac["phone.series"] = np.random.choice("galaxy,s7".split(","))
+            if ac["brand"] == "小米":
+                ac["phone.series"] = np.random.choice("红米".split(","))
             tt = []
             for t in title:
                 tt.append(ac[t])
@@ -201,11 +205,12 @@ def phone_product_gen(product_file, data_file):
 
 def update_solr(solr_file):
 
-    with open(solr_file, 'rb') as data_file:
+    with open(solr_file, 'r', encoding='utf-8') as data_file:
         for line in data_file:
-            line = "[" + line.decode("utf-8") + "]"
-            line = str.encode(line)
+            line = "[" + line + "]"
+            # line = str.encode(line)
             print(line)
+            line = str.encode(line)
             req = urllib.request.Request(url='http://localhost:11403/solr/category/update?commit=true',
                                   data=line)
             headers = {"content-type": "text/json"}
@@ -217,12 +222,12 @@ def update_solr(solr_file):
 
 
 if __name__ == "__main__":
-    # phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
+    phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
     # ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
     # tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
     print('updating')
     # update_solr("../../data/raw/product_tv.txt")
     # update_solr("../../data/raw/product_ac.txt")
-    # update_solr("../../data/raw/product_phone.txt")
-    fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
-    update_solr("../../data/raw/product_fr.txt")
+    update_solr("../../data/raw/product_phone.txt")
+    # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
+    # update_solr("../../data/raw/product_fr.txt")

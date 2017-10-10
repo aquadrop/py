@@ -35,7 +35,7 @@ import inspect
 import json
 
 import uuid
-
+import hashlib
 import re
 
 topic_sign = ['一.','二.','三.','四.','五.','六.','七.']
@@ -84,17 +84,17 @@ def interactive(file_, write_file_):
         D.append(data)
     newD = []
     mapper = dict()
+    gbdt = []
     last_g = ''
+    index = 0
     for data in D:
         for d in data:
             if d.startswith('G:'):
-                g = d.replace('G:', '').strip('\n')
-                more = g.split('/')
-                for m in more:
-                    mapper[m] = more[0]
-                # if g not in mapper:
-                #     mapper[g] = 'api_call_base_' + str(index)
-                #     index += 1
+                gs = d.replace('G:', '').strip('\n').split('/')
+                for g in gs:
+                    if g not in mapper:
+                        mapper[g] = 'api_call_base_' + str(index)
+                    index += 1
             if d.startswith('B'):
                 b = d.replace('B:', '').strip('\n')
                 if g == last_g:
@@ -107,18 +107,51 @@ def interactive(file_, write_file_):
     # with open(write_file_,'w') as f:
     #     json.dump(D, f, ensure_ascii=False)
 
+def process_simple(input_file, output_file):
+    with open(input_file, 'r', encoding='utf-8') as f:
+        flag = 0
+        cls_mapper = dict()
+        brother_mapper = dict()
+        last_r = None
+        for line in f:
+            line = line.strip('\n')
+            if not line:
+                flag = 0
+                last_r = None
+                continue
+            if flag == 0:
+                gs = line.split('/')
+                if len(gs) > 1:
+                    for i in range(1, len(gs)):
+                        brother_mapper[gs[i]] = gs[0]
+                flag = 1
+                continue
+            if flag == 1:
+                for g in gs:
+                    r = line.split('/')
+                    if last_r:
+                        for lr in last_r:
+                            cls_mapper[lr + '$' + g] = r
+                    else:
+                        cls_mapper[g] = r
+                last_r = line.split('/')
+                flag = 0
+
+        with open(output_file, 'w', encoding='utf-8') as wf:
+            for key, value in cls_mapper.items():
+                if len(value) == 1:
+                    line = value[0] + '#' + key
+                else:
+                    line = 'plugin:api_call_base,index:' + hashlib.md5(key.encode()).hexdigest() + "#" + key
+                wf.writelines(line + '\n')
 
 if __name__ == '__main__':
-    D1, c1 = interactive('整理后的客服接待语料.txt','base-all.txt')
-    D2, c2 = interactive('2017互动话术汇总版4.10.txt','train.txt')
-
-    with open('train.txt','w', encoding='utf-8') as f:
-        for a in D1:
-            f.writelines(a + '\n')
-        for a in D2:
-            f.writelines(a + '\n')
-
-    c1.update(c2)
-    with open('candidates.txt','w', encoding='utf-8') as f:
-        for a in c1:
-            f.writelines(a + '\n')
+    process_simple('interactive.txt', 'interactive_gbdt.txt')
+    # D1 = interactive('整理后的客服接待语料.txt','base-all.txt')
+    # D2 = interactive('2017互动话术汇总版4.10.txt','train.txt')
+    #
+    # with open('train.txt','w', encoding='utf-8') as f:
+    #     for a in D1:
+    #         f.writelines(a + '\n')
+    #     for a in D2:
+    #         f.writelines(a + '\n')

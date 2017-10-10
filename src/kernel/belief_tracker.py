@@ -81,13 +81,14 @@ class BeliefTracker:
             query=query)
         return response
 
-    def memory_kernel(self, query_mapper, wild_card=None):
+    def memory_kernel(self, query, query_mapper):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
 
-        self.wild_card = wild_card
-        self.color_graph(query_mapper)
-        return self.issue_api()
+        self.color_graph(query, query_mapper)
+        # self.use_wild_card(wild_card)
+        api, avails = self.issue_api()
+        return api, avails
 
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
@@ -184,13 +185,15 @@ class BeliefTracker:
         return self.requested_slots[0]
 
     # a tree rendering process...
-    def color_graph(self, slot_values_mapper, values_marker=None):
+    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True):
         """
         gen api_call_ambiguity_...
             api_call_request_brand...
         see wiki: https://github.com/aquadrop/memory_py/wiki
         :param slot_values_mapper: {"entity":[entities], "slot1":"value1", "slot2":"value2"}
         :param values_marker:
+        :param query
+        :param range_render
         :return:
         """
 
@@ -241,7 +244,11 @@ class BeliefTracker:
                 continue
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
-                self.fill_slot(key, value)
+                # use rule base for range
+                if range_render:
+                    self.rule_base_fill(query, key)
+                else:
+                    self.fill_slot(key, value)
                 continue
             if key == 'entity':
                 nodes = self.belief_graph.get_nodes_by_value(value)
@@ -281,7 +288,7 @@ class BeliefTracker:
                 else:
                     # swith branch
                     self.move_to_node(self.belief_graph.get_root_node())
-                    return self.color_graph(slot_values_mapper)
+                    return self.color_graph(query, slot_values_mapper)
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
@@ -293,10 +300,14 @@ class BeliefTracker:
             if self.requested_slots[0] == self.AMBIGUITY_PICK:
                 self.machine_state = self.AMBIGUITY_STATE
 
-    def use_wild_card(self):
+    def use_wild_card(self, wild_card):
         # fill price
         if 'price' in self.filling_slots:
-            self.filling_slots['price'] = self.wild_card['price']
+            self.filling_slots['price'] = wild_card['price']
+        # if 'tv.distance' in self.filling_slots:
+        #     self.filling_slots['tv.distance'] = self.wild_card['_meter_']
+        # if 'pc.size' in self.filling_slots:
+
 
     def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
@@ -559,6 +570,7 @@ class BeliefTracker:
         """
         rule based,匹配数字到价格等slot
         :param query: 我要买一个两千到三千的手机
+        :param slot
         :return:
         """
         # if self.machine_state != self.API_REQUEST_RULE_STATE:
@@ -691,14 +703,14 @@ class BeliefTracker:
 
     def issue_api(self):
         if self.machine_state == self.TRAVEL_STATE:
-            return "api_greeting_search_normal"
+            return "api_greeting_search_normal", []
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.requested_slots[0]
             avails = self.solr_facet()
-            return "api_call_request_" + slot + "#avail_values: " + str(avails)
+            return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
-            return "api_call_request_ambiguity_removal_" + param
+            return "api_call_request_ambiguity_removal_" + param, []
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_search_"
@@ -706,14 +718,14 @@ class BeliefTracker:
             for key, value in self.filling_slots.items():
                 fill.append(key + ":" + str(value))
 
-            node = self.search_node
-            while node.value != self.belief_graph.ROOT:
-                if node.slot != 'virtual_category':
-                    fill.append(node.slot + ":" + node.value)
-                node = node.parent_node
-            return param + ",".join(fill)
+            # node = self.search_node
+            # while node.value != self.belief_graph.ROOT:
+            #     if node.slot != 'virtual_category':
+            #         fill.append(node.slot + ":" + node.value)
+            #     node = node.parent_node
+            return param + ",".join(fill), []
         if self.machine_state == self.RESET_STATE:
-            return "reset_requested"
+            return "reset_requested", []
 
     def r_walk_with_pointer_with_clf(self, query):
         query = str(query)

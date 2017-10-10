@@ -56,17 +56,17 @@ def jieba_cut(query, smart=True):
 def rule_base_num_retreive(query):
     inch_dual = r".*(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸).*"
     meter_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米.*"
-    # ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹].*"
+    ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹].*"
     price_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元].*"
 
     inch_single = r".*([-+]?\d*\.\d+|\d+)寸.*"
     meter_single = r".*([-+]?\d*\.\d+|\d+)米.*"
-    # ac_power_single = r".*([-+]?\d*\.\d+|\d+)[P|匹].*"
+    ac_power_single = r".*([-+]?\d*\.\d+|\d+)[P|匹].*"
     price_single = r".*([-+]?\d*\.\d+|\d+)[块|元].*"
 
-    dual = {"_inch_": inch_dual, "_meter_": meter_dual,
+    dual = {"_inch_": inch_dual, "_meter_": meter_dual, "ac.power": ac_power_dual,
             "price": price_dual}
-    single = {"_inch_": inch_single, "_meter_": meter_single,
+    single = {"_inch_": inch_single, "_meter_": meter_single, "ac.power": ac_power_single,
               "price": price_single}
 
     wild_card = dict()
@@ -86,8 +86,8 @@ def rule_base_num_retreive(query):
 
     if flag:
         return render, wild_card
-    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)"
-    price_single_default = r"([-+]?\d*\.\d+|\d+)"
+    price_dual_default = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸).*"
+    price_single_default = r".*([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸).*"
     remove_regex = r"\d+[个|只|条|部|本|台]"
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
