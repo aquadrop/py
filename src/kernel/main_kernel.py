@@ -65,17 +65,20 @@ class MainKernel:
             self.memory = MainKernel.static_memory
 
     def kernel(self, q, user='solr'):
-        query, wild_card = self.range_render(q)
+        rande_rendered, wild_card = self.range_render(q)
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
-            api = self.gbdt_reply(q, requested)
+            api = self.gbdt_reply(rande_rendered, requested)
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response = self.belief_tracker.memory_kernel(api, wild_card)
+                response, avails = self.belief_tracker.memory_kernel(q, api)
             else:
                 response = api['plugin']
-            return self.render_response(response.split('#')[0])
+                avails = []
+            if len(avails) == 0:
+                return self.render_response(response)
+            return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
             api = self.sess.reply(q)
             if api.startswith('api_call_slot'):
@@ -107,12 +110,12 @@ class MainKernel:
         if response.startswith('api_call_request_'):
             if response.startswith('api_call_request_ambiguity_removal_'):
                 params = response.replace('api_call_request_ambiguity_removal_', '')
-                response = '你要哪一个呢,' + params
-                return response
+                rendered = '你要哪一个呢,' + params
+                return rendered + "@@" + response
             params = response.replace('api_call_request_', '')
             params = self.belief_tracker.belief_graph.slots_trans[params]
-            response = '什么' + params
-            return response
+            rendered = '什么' + params
+            return rendered + "@@" + response
         return response
 
     def api_call_slot_json_render(self, api):
@@ -131,7 +134,7 @@ if __name__ == '__main__':
     #     grandfatherdir, 'data/memn2n/processed/data.pkl')
     # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'off',
+              "solr.facet": 'on',
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
