@@ -83,35 +83,42 @@ def interactive(file_, write_file_):
     if len(data) > 1:
         D.append(data)
     newD = []
-    index = 1
     mapper = dict()
     last_g = ''
     for data in D:
         for d in data:
             if d.startswith('G:'):
                 g = d.replace('G:', '').strip('\n')
-                if g not in mapper:
-                    mapper[g] = 'api_call_base_' + str(index)
-                    index += 1
+                more = g.split('/')
+                for m in more:
+                    mapper[m] = more[0]
+                # if g not in mapper:
+                #     mapper[g] = 'api_call_base_' + str(index)
+                #     index += 1
             if d.startswith('B'):
                 b = d.replace('B:', '').strip('\n')
                 if g == last_g:
                     continue
                 last_g = g
-                newD.append(g + '\t' + mapper[g] + '\t' + b)
+                newD.append(g + '\t' + g + '\t' + b)
         newD.append('')
 
-    return newD
+    return newD, mapper
     # with open(write_file_,'w') as f:
     #     json.dump(D, f, ensure_ascii=False)
 
 
 if __name__ == '__main__':
-    D1 = interactive('整理后的客服接待语料.txt','base-all.txt')
-    D2 = interactive('2017互动话术汇总版4.10.txt','train.txt')
+    D1, c1 = interactive('整理后的客服接待语料.txt','base-all.txt')
+    D2, c2 = interactive('2017互动话术汇总版4.10.txt','train.txt')
 
     with open('train.txt','w', encoding='utf-8') as f:
         for a in D1:
             f.writelines(a + '\n')
         for a in D2:
+            f.writelines(a + '\n')
+
+    c1.update(c2)
+    with open('candidates.txt','w', encoding='utf-8') as f:
+        for a in c1:
             f.writelines(a + '\n')
