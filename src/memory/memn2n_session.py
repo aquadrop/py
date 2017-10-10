@@ -1,17 +1,22 @@
 """ 
 Memory Session
 """
-import os
-import sys
+
 import pickle as pkl
 import tensorflow as tf
 
-import memn2n.data_utils
-import memn2n.memn2n
+import os
+import sys
 
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
+
+import utils.query_util as query_util
+import memory.memn2n as memn2n
+import memory.data_utils as data_utils
 
 
 class Memn2nSession():
@@ -34,9 +39,9 @@ class Memn2nSession():
             self.nid = 1
             reply_msg = 'memory cleared!'
         else:
-            u = memn2n.data_utils.tokenize(line)
+            u = data_utils.tokenize(line)
             data = [(self.context, u, -1)]
-            s, q, a = memn2n.data_utils.vectorize_data(data,
+            s, q, a = data_utils.vectorize_data(data,
                                                 self.w2idx,
                                                 self.model._sentence_size,
                                                 1,
@@ -45,11 +50,11 @@ class Memn2nSession():
             preds = self.model.predict(s, q)
             r = self.idx2candid[preds[0]]
             reply_msg = r
-            r = memn2n.data_utils.tokenize(r)
+            r = data_utils.tokenize(r)
             u.append('$u')
-            u.append('#' + str(self.nid))
+            # u.append('#' + str(self.nid))
             r.append('$r')
-            r.append('#' + str(self.nid))
+            # r.append('#' + str(self.nid))
             self.context.append(u)
             self.context.append(r)
             self.nid += 1
@@ -61,9 +66,9 @@ class MemInfer:
         self.metadata_dir = config['metadata_dir']
         self.data_dir = config['data_dir']
         self.ckpt_dir = config['ckpt_dir']
-        self.model = self._loadModel()
+        self.model = self._load_model()
 
-    def _loadModel(self):
+    def _load_model(self):
 
         with open(self.metadata_dir, 'rb') as f:
             metadata = pkl.load(f)
@@ -87,17 +92,25 @@ class MemInfer:
         candidate_sentence_size = metadata['candidate_sentence_size']
 
         # vectorize candidates
-        candidates_vec = memn2n.data_utils.vectorize_candidates(
+        candidates_vec = data_utils.vectorize_candidates(
             candidates, self.w2idx, candidate_sentence_size)
+        HOPS = 3
+        print('---- memory config ----')
+        print('memory_size:', self.memory_size)
+        print('vocab_size:', vocab_size)
+        print('candidate_size:', self.n_cand)
+        print('candidate_sentence_size:', candidate_sentence_size)
+        print('hops:', HOPS)
+        print('---- end ----')
 
-        model = memn2n.memn2n.MemN2NDialog(
+        model = memn2n.MemN2NDialog(
             batch_size=16,
             vocab_size=vocab_size,
             candidates_size=self.n_cand,
             sentence_size=sentence_size,
             embedding_size=300,
             candidates_vec=candidates_vec,
-            hops=4
+            hops=HOPS
         )
 
         ckpt = tf.train.get_checkpoint_state(self.ckpt_dir)
@@ -107,26 +120,27 @@ class MemInfer:
 
         return model
 
-    def getSession(self):
+    def get_session(self):
         sess = Memn2nSession(
             self.model, self.idx2candid, self.w2idx, self.n_cand, self.memory_size)
         return sess
 
-    def memInfer(self, sess, query):
+    def mem_infer(self, sess, query):
         return sess.reply(query)
 
 
 def main():
     metadata_dir = os.path.join(
-        grandfatherdir, 'data/memn2n/processed/.metadata.pkl')
+        grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     data_dir = os.path.join(
-        grandfatherdir, 'data/memn2n/processed/.data.pkl')
+        grandfatherdir, 'data/memn2n/processed/data.pkl')
     ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    config = {"metadata_dir": metadata_dir,
+              "data_dir": data_dir, "ckpt_dir": ckpt_dir}
+    mi = MemInfer(config)
+    sess = mi.get_session()
 
-    memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
-    sess = memInfer.getSession()
-
-    reply = sess.reply("你好")
+    reply = sess.reply("手机")
     print(reply)
 
 

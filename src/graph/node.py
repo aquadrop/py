@@ -32,12 +32,12 @@ import uuid
 
 class Node:
 
-    API_NODE = "api"
+    API_NODE = "category"
     NORMAL_NODE = "normal"
     PROPERTY_NODE = "property"
 
-    RANGE = "RANGE"
-    KEY = "KEY"
+    RANGE = "range"
+    KEY = "key"
 
     def __init__(self, slot, value, fields, node_type, id):
         '''
@@ -56,15 +56,31 @@ class Node:
         self.node_type = node_type
         self.slot_to_values_mapper = dict()
         self.value_to_slot_mapper = dict()
+        self.fields_trans = dict()
         self.id = id  # globally uniq
         self.level = 0
+
+    def get_node_by_value(self, value):
+        return self.children[value]
+
+    def set_node_slot_trans(self, field, trans):
+        if field not in self.fields:
+            raise ValueError(
+                'translation field error: node must have field which is included in self.fields.'
+                ' Fix the graph file before continue;', field, self.fields)
+        self.fields_trans[field] = trans
+
+    def get_node_slot_trans(self, field):
+        if field in self.fields_trans:
+            return self.fields_trans[field]
+        return None
 
     def set_field_type(self, field, field_type):
         self.field_type[field] = field_type
 
     def get_field_type(self, field):
         if field not in self.field_type:
-            return "KEY"
+            return Node.KEY
         return self.field_type[field]
 
     def has_field(self, field):
@@ -82,7 +98,7 @@ class Node:
         if node_field not in self.fields:
             raise ValueError(
                 'error: node must have field which is included in self.fields.'
-                ' Fix the graph file before continue')
+                ' Fix the graph file before continue;', node_field, self.fields)
         self.children[node_value] = node
         node.level = self.level + 1
         node.parent_node = self
@@ -199,6 +215,13 @@ class Node:
 
     def get_parent_node(self):
         return self.parent_node
+
+    def get_children_names_by_slot(self, slot):
+        children_names = []
+        for key, value in self.children.items():
+            if self.value_to_slot_mapper[key] == slot:
+                children_names.append(key)
+        return children_names
 
     def get_children_names(self, max_num, required_only):
         children_names = []

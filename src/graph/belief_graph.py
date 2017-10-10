@@ -45,6 +45,8 @@ class Graph(Node, object):
         # value is a list of nodes that share the same.
         self.node_header = dict()
         self.id_node = dict()
+        self.slots = dict()
+        self.slots_trans = dict()
 
     def get_node_connected_slots(self, value):
         """
@@ -59,6 +61,17 @@ class Graph(Node, object):
     def get_root_node(self):
         return self.node_header[self.ROOT][0]
 
+    def get_field_type(self, field):
+        return self.slots[field]
+
+    def get_nodes_by_slot(self, slot):
+        field_nodes = []
+        for key, nodes in self.node_header.items():
+            for node in nodes:
+                if node.slot == slot:
+                    field_nodes.append(node)
+        return field_nodes
+
     def get_nodes_by_value(self, node_value):
         """
         get_nodes_by_value("苹果")...
@@ -66,17 +79,29 @@ class Graph(Node, object):
         """
         return self.node_header[node_value]
 
+    def get_nodes_by_value_and_field(self, value, field):
+        nodes = self.get_nodes_by_value(value)
+        filtered = []
+        for node in nodes:
+            if node.slot == field:
+                filtered.append(node)
+        return filtered
+
     def has_node_by_value(self, node_value):
         return node_value in self.node_header
 
     def get_node_by_id(self, id):
         return self.id_node[id]
 
+    def has_slot(self, slot):
+        return slot in self.slots
+
 
 def load_belief_graph(path, output_model_path):
     belief_graph = None
     node_header = {}
     id_node = {}
+    slots = []
     with open(path, 'r') as f:
         for line in f:
             if line.startswith("-"):
@@ -85,6 +110,7 @@ def load_belief_graph(path, output_model_path):
                 value, id, slot, fields_, node_type = line.split("#")
                 fields = dict()
                 value = value.replace("-", "")
+
                 if fields_:
                     for fi in fields_.split(","):
                         field = fi.split(":")[0]
@@ -146,7 +172,100 @@ def load_belief_graph(path, output_model_path):
         pickle.dump(belief_graph, omp)
 
 
+def load_belief_graph_from_tables(files, output_file):
+    belief_graph = None
+    node_header = {}
+    id_node = {}
+    slots = dict()
+    # stage 1, build node
+    for f in files:
+        with open(f, 'r', encoding='utf-8') as inpt:
+            for line in inpt:
+                line = line.strip('\n').replace(' ', '')
+                note, cn, slot, node_type, slot_value = line.split('|')
+                if note == '-':
+                    slots[slot] = node_type
+                    _id = str(uuid.uuid4())
+                    # node = Node(value=slot_value, fields=dict(),
+                    #                   slot=slot, id=_id, node_type="property")
+                    if slot_value == "ROOT":
+                        node = Graph(
+                            value=slot_value, fields=dict(), slot=slot, id=id, node_type=slot)
+                        if not belief_graph:
+                            belief_graph = node
+                    else:
+                        node = Node(value=slot_value, fields=dict(),
+                                    slot=slot, id=id, node_type=slot)
+                    if slot_value not in node_header:
+                        node_header[slot_value] = []
+                    node_header[slot_value].append(node)
+                    id_node[_id] = node
+                if note == '*':
+                    tokens = slot_value.split(",")
+                    for t in tokens:
+                        a, b = t.split(":")
+                        node.fields[a] = float(b)
+                    # node.fields = dict()
+    belief_graph.id_node = id_node
+    belief_graph.node_header = node_header
+    belief_graph.slots = slots
+    for f in files:
+        with open(f, 'r', encoding='utf-8') as inpt:
+            for line in inpt:
+                line = line.strip('\n').replace(' ', '')
+                note, cn, slot, node_type, slot_value = line.split('|')
+                if note == '-':
+                    nodes = node_header[slot_value]
+                    # print(slot_value, len(nodes))
+                    if len(nodes) > 1 or len(nodes) == 0:
+                        raise ValueError('non property node value should be unique')
+                    else:
+                        node = nodes[0]
+                if note == '+':
+                    slots[slot] = node_type
+                    note, cn, slot, value_type, slot_value = line.split('|')
+                    node.set_node_slot_trans(slot, cn)
+                    belief_graph.slots_trans[slot] = cn
+                    if value_type != Node.KEY:
+                        # print(slot)
+                        node.set_field_type(slot, value_type)
+                        continue
+                    names = slot_value.split(',')
+                    for name in names:
+                        if 'category' in slot:
+                            nodes = node_header[name]
+                            if len(nodes) > 1 or len(nodes) == 0:
+                                raise ValueError('non property node value should be unique')
+                            else:
+                                child_node = nodes[0]
+                            node.add_node(child_node)
+                            continue
+                        _id = str(uuid.uuid4())
+                        child_node = Node(value=name, fields=dict(),
+                                    slot=slot, id=_id, node_type="property")
+                        node.add_node(child_node)
+                        if name not in node_header:
+                            node_header[name] = []
+                        node_header[name].append(child_node)
+                        id_node[id] = child_node
+
+    with open(output_file, "wb") as omp:
+        pickle.dump(belief_graph, omp)
+
+
 if __name__ == "__main__":
-    load_belief_graph(
-        "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
-        "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+    # load_belief_graph(
+    #     "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
+    #     "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+    table_files = ['../../data/gen_product/bingxiang.txt',
+                   '../../data/gen_product/dianshi.txt',
+                   '../../data/gen_product/digitals.txt',
+                   '../../data/gen_product/homewares.txt',
+                   '../../data/gen_product/kongtiao.txt',
+                   '../../data/gen_product/root.txt',
+                   '../../data/gen_product/shouji.txt',
+                   '../../data/gen_product/pc.txt',
+                   '../../data/gen_product/grocery.txt',
+                   '../../data/gen_product/fruits.txt']
+    output_file = "../../model/graph/belief_graph.pkl"
+    load_belief_graph_from_tables(table_files, output_file)

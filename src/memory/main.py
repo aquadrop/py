@@ -1,5 +1,6 @@
 import argparse
 import pickle as pkl
+import gensim
 import sys
 import os
 
@@ -9,26 +10,18 @@ from sklearn import metrics
 
 import data_utils
 import memn2n as memn2n
+import memn2n2 as memn2n2
 dir_path = os.path.dirname(os.path.realpath(__file__))
-<<<<<<< HEAD
 
-DATA_DIR = dir_path + '/../../data/memn2n/train'
-P_DATA_DIR = dir_path + '/../../data/memn2n/processed/'
-BATCH_SIZE = 16
-EMBEDDING_SIZE = 300
-CKPT_DIR = dir_path + '/../../model/memn2n/ckpt'
-
-=======
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-print(dir_path)
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
-BATCH_SIZE = 16
+W2V_DIR = grandfatherdir + '/model/w2v/'
+BATCH_SIZE = 64
 EMBEDDING_SIZE = 300
 CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 HOPS = 3
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
 
 '''
     dictionary of models
@@ -73,12 +66,7 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
-<<<<<<< HEAD
-    print(metadata['idx2w'])
-=======
-    # print(metadata['idx2w'])
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
-
+    print(metadata['w2idx'])
     ###
     # write data to file
     data_ = {
@@ -94,6 +82,24 @@ def prepare_data(args):
     # save metadata to disk
     metadata['candid2idx'] = candid2idx
     metadata['idx2candid'] = idx2candid
+
+    # # build embeddings
+    # w2idx = metadata['w2idx']
+    # print('Loading word2vec...')
+    # w2v_model = gensim.models.Word2Vec.load(
+    #     os.path.join(W2V_DIR, 'dic_18_unk_short.bin'))
+
+    # embeddings = list()
+    # for word, _ in w2idx.items():
+    #     if w2v_model.__contains__(word.strip()):
+    #         vector = w2v_model.__getitem__(word.strip())
+    #     else:
+    #         # print('unk:', word)
+    #         vector = w2v_model.__getitem__('unk')
+    #     # print(type(vector))
+    #     embeddings.append(vector)
+    # embeddings = np.asarray(embeddings)
+    # metadata['embeddings'] = embeddings
 
     with open(P_DATA_DIR + 'metadata.pkl', 'wb') as f:
         pkl.dump(metadata, f)
@@ -123,7 +129,7 @@ def parse_args(args):
                         help='you know what batch size means!')
     parser.add_argument('--epochs', required=False, type=int, default=200,
                         help='num iteration of training over train set')
-    parser.add_argument('--eval_interval', required=False, type=int, default=1,
+    parser.add_argument('--eval_interval', required=False, type=int, default=5,
                         help='num iteration of training over train set')
     parser.add_argument('--log_file', required=False, type=str, default='log.txt',
                         help='enter the name of the log file')
@@ -152,7 +158,9 @@ class InteractiveSession():
             reply_msg = 'memory cleared!'
         else:
             u = data_utils.tokenize(line)
+            print('context:', self.context)
             data = [(self.context, u, -1)]
+            print('data:', data)
             s, q, a = data_utils.vectorize_data(data,
                                                 self.w2idx,
                                                 self.model._sentence_size,
@@ -164,12 +172,14 @@ class InteractiveSession():
             reply_msg = r
             r = data_utils.tokenize(r)
             u.append('$u')
-            u.append('#' + str(self.nid))
+            # u.append('#' + str(self.nid))
             r.append('$r')
-            r.append('#' + str(self.nid))
+            # r.append('#' + str(self.nid))
             self.context.append(u)
             self.context.append(r)
+            print('context:', self.context)
             self.nid += 1
+
         return reply_msg
 
 
@@ -205,29 +215,22 @@ def main(args):
     vocab_size = metadata['vocab_size']
     n_cand = metadata['n_cand']
     candidate_sentence_size = metadata['candidate_sentence_size']
+    # embeddings = metadata['embeddings']
 
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
-<<<<<<< HEAD
-    hops = 4
-=======
-
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
+    # print('w2idx:', w2idx)
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
     print('candidate_size:', n_cand)
     print('candidate_sentence_size:', candidate_sentence_size)
-<<<<<<< HEAD
-    print('hops:', hops)
-=======
     print('hops:', HOPS)
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
     print('---- end ----')
     ###
     # create model
-    # model = model['memn2n']( # why?
+    # model = model['memn2n'](  # why?
     model = memn2n.MemN2NDialog(
         batch_size=BATCH_SIZE,
         vocab_size=vocab_size,
@@ -235,12 +238,20 @@ def main(args):
         sentence_size=sentence_size,
         embedding_size=EMBEDDING_SIZE,
         candidates_vec=candidates_vec,
-<<<<<<< HEAD
-        hops=hops
-=======
         hops=HOPS
->>>>>>> f85622548b95cf2266e06c14114b25432bd12fa2
     )
+
+    # model = memn2n2.MemN2NDialog(
+    #     batch_size=BATCH_SIZE,
+    #     vocab_size=vocab_size,
+    #     candidates_size=n_cand,
+    #     sentence_size=sentence_size,
+    #     embedding_size=EMBEDDING_SIZE,
+    #     candidates_vec=candidates_vec,
+    #     embeddings=embeddings,
+    #     hops=HOPS
+    # )
+
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
         train, val, test, metadata, batch_size=BATCH_SIZE)
@@ -259,41 +270,45 @@ def main(args):
         log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
         cost_total = 0.
         # best_validation_accuracy = 0.
+        lowest_val_acc = 0.8
         for i in range(epochs + 1):
 
             for start, end in batches:
                 s = train['s'][start:end]
                 q = train['q'][start:end]
+                # print(len(q))
                 a = train['a'][start:end]
                 cost_total += model.batch_fit(s, q, a)
 
-            lowest_val_acc = 0.8
-            if i % eval_interval == 0 and i:
-                train_preds = batch_predict(model, train['s'], train['q'], len(
-                    train['s']), batch_size=BATCH_SIZE)
-                # for i in range(len(train['q'])):
-                #     if train_preds[i] != train['a'][i]:
-                #         print(recover_sentence(train['q'][i], idx2w),
-                #               recover_cls(train_preds[i], idx2candid),
-                #               recover_cls(train['a'][i], idx2candid))
-                val_preds = batch_predict(model, val['s'], val['q'], len(
-                    val['s']), batch_size=BATCH_SIZE)
-                train_acc = metrics.accuracy_score(
-                    np.array(train_preds), train['a'])
-                val_acc = metrics.accuracy_score(val_preds, val['a'])
-                print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                      format(i, train_acc, val_acc))
-                log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
-                                                        cost_total / (eval_interval * len(batches))))
-                cost_total = 0.  # empty cost
-                #
-                # save the best model, to disk
-                # if val_acc > best_validation_accuracy:
-                # best_validation_accuracy = val_acc
-                if val_acc > lowest_val_acc:
-                    lowest_val_acc = val_acc
-                    model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
-                                     global_step=i)
+            if i % 1 == 0 and i:
+                print('stage...', i)
+                if i % eval_interval == 0 and i:
+                    train_preds = batch_predict(model, train['s'], train['q'], len(
+                        train['s']), batch_size=BATCH_SIZE)
+                    # for i in range(len(train['q'])):
+                    #     if train_preds[i] != train['a'][i]:
+                    #         print(recover_sentence(train['q'][i], idx2w),
+                    #               recover_cls(train_preds[i], idx2candid),
+                    #               recover_cls(train['a'][i], idx2candid))
+                    val_preds = batch_predict(model, val['s'], val['q'], len(
+                        val['s']), batch_size=BATCH_SIZE)
+                    train_acc = metrics.accuracy_score(
+                        np.array(train_preds), train['a'])
+                    val_acc = metrics.accuracy_score(val_preds, val['a'])
+                    print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
+                          format(i, train_acc, val_acc))
+                    log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
+                                                            cost_total / (eval_interval * len(batches))))
+                    cost_total = 0.  # empty cost
+                    #
+                    # save the best model, to disk
+                    # if val_acc > best_validation_accuracy:
+                    # best_validation_accuracy = val_acc
+                    if train_acc > lowest_val_acc:
+                        print('saving model...', train_acc, lowest_val_acc)
+                        lowest_val_acc = train_acc
+                        model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                                         global_step=i)
         # close file
         log_handle.close()
 

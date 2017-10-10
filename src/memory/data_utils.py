@@ -1,10 +1,13 @@
-DATA_DIR = 'data/'
-CANDID_PATH = 'data/candidates.txt'
 STOP_WORDS = set(["！", "？", "，", "。", ",", "，", '_'])
 
 import re
 import os
 import jieba
+
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
+CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
 
 jieba.load_userdict('../../data/dict/ext1.dic')
 
@@ -15,8 +18,28 @@ import numpy as np
 import tensorflow as tf
 
 
-def tokenize(sent):
-    tokens = [w for w in list(jieba.cut(sent.strip())) if w not in STOP_WORDS]
+def tokenize(sent, char=True):
+    tokens = list()
+    if char:
+        stop_list = [',', ':']
+        zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
+        en = list()
+        for c in sent:
+            if c in stop_list:
+                continue
+            match = zh_pattern.search(c)
+            if match:
+                if en:
+                    tokens.append(''.join(en))
+                    en = list()
+                tokens.append(c)
+            else:
+                en.append(c)
+        if en:
+            tokens.append(''.join(en))
+    else:
+        tokens = [w for w in list(jieba.cut(sent.strip()))
+                  if w not in STOP_WORDS]
     return tokens
 
 
@@ -211,9 +234,12 @@ if __name__ == '__main__':
     train_data, test_data, val_data = load_dialog(
         data_dir=DATA_DIR,
         candid_dic=candid2idx)
-    # print(train_data[:2])
+    print(train_data[1])
 
     metadata = build_vocab(train_data, candidates)
     train, val, test, batches = get_batches(
         train_data, val_data, test_data, metadata, 16)
     # print(batches)
+    # test = ['range', '电脑,macbookpro,玫瑰金吧', 'api_call_slot_category:冰箱']
+    # for t in test:
+    #     print(tokenize(t, True))
