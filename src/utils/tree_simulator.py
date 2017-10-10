@@ -45,7 +45,12 @@ def gen_sessions(belief_tracker, output_files):
                 nodes = belief_graph.get_nodes_by_slot(required_field)
                 node = np.random.choice(nodes)
             else:
+<<<<<<< HEAD
+                children_names = belief_tracker.search_node.get_children_names_by_slot(
+                    required_field)
+=======
                 children_names = belief_tracker.search_node.get_children_names_by_slot(required_field)
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
                 # choose one
                 name = np.random.choice(children_names)
                 slot = belief_tracker.search_node.get_slot_by_value(name)
@@ -53,6 +58,14 @@ def gen_sessions(belief_tracker, output_files):
                 node = belief_tracker.search_node.get_node_by_value(name)
             slot_values_mapper[node.slot] = node.value
             fields = list(node.fields.keys())
+<<<<<<< HEAD
+            n = np.random.randint(
+                0, np.min([len(fields), num_rnd_external_max]) + 1)
+            picked_fields = np.random.choice(fields, n)
+            for f in picked_fields:
+                value = random_property_value(f, node)
+                slot_values_mapper[f] = value
+=======
             n = np.random.randint(0, np.min([len(fields), num_rnd_external_max]) + 1)
             picked_fields = np.random.choice(fields, n)
             for f in picked_fields:
@@ -62,18 +75,37 @@ def gen_sessions(belief_tracker, output_files):
                     slot_values_mapper['entity'] = value
                 else:
                     slot_values_mapper[f] = value
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
             return slot_values_mapper
 
         my_search_node = belief_tracker.search_node
 
         fields = list(belief_tracker.requested_slots)
+<<<<<<< HEAD
+        n = np.random.randint(
+            0, np.min([len(fields), num_rnd_external_max]) + 1)
+=======
         n = np.random.randint(0, np.min([len(fields), num_rnd_external_max]) + 1)
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
         picked_fields = np.random.choice(fields, n).tolist()
         # append required fields
         picked_fields.append(required_field)
         for f in picked_fields:
             value = random_property_value(f, my_search_node)
+<<<<<<< HEAD
+            slot_values_mapper[f] = value
+
+        return slot_values_mapper
+
+    def gen_ambiguity_response(availables):
+        availables = availables.replace(
+            'api_call_request_ambiguity_removal_', '').split(",")
+        pick = np.random.choice(availables)
+        slot_values_mapper = dict()
+        num_rnd_external_max = 1
+        slot_values_mapper['ambiguity_removal'] = pick
+=======
             # weird
             if value != 'range' and belief_graph.is_entity_value(value):
                 slot_values_mapper['entity'] = value
@@ -90,6 +122,7 @@ def gen_sessions(belief_tracker, output_files):
             slot_values_mapper[belief_graph.get_nodes_by_value(pick)[0].slot] = pick
         else:
             slot_values_mapper['ambiguity_removal'] = pick
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
         #
         # fields = list(my_search_node.fields.keys())
@@ -101,6 +134,10 @@ def gen_sessions(belief_tracker, output_files):
         # for f in picked_fields:
         #     value = random_property_value(f, my_search_node)
         #     slot_values_mapper[f] = value
+<<<<<<< HEAD
+
+=======
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
         return slot_values_mapper
 
     def gen_ambiguity_initial():
@@ -154,7 +191,12 @@ def gen_sessions(belief_tracker, output_files):
             return np.random.choice(search_node.get_children_names_by_slot(field))
 
     def get_requested_field():
+<<<<<<< HEAD
+        requested = np.random.choice(
+            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
+=======
         requested = np.random.choice(['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
         return requested
 
     def render_lang(slot_values_mapper, fresh):
@@ -163,9 +205,17 @@ def gen_sessions(belief_tracker, output_files):
         postfix = ['吧', '呢', '']
         lang = np.random.choice(prefix, p=[0.1, 0.5, 0.2, 0.2])
         if 'brand' in slot_values_mapper:
+<<<<<<< HEAD
+            lang += slot_values_mapper['brand'] + \
+                np.random.choice(['的', ''], p=[0.7, 0.3])
+        if 'price' in slot_values_mapper:
+            lang += np.random.choice(['价格', '价位']) + \
+                slot_values_mapper['price']
+=======
             lang += slot_values_mapper['brand'] + np.random.choice(['的',''], p=[0.7, 0.3])
         if 'price' in slot_values_mapper:
             lang += np.random.choice(['价格', '价位', '']) + slot_values_mapper['price']
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
             if np.random.uniform() < 0.3:
                 if np.random.uniform() < 0.5:
                     lang += '元'
@@ -182,7 +232,12 @@ def gen_sessions(belief_tracker, output_files):
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
                 else:
+<<<<<<< HEAD
+                    lang += np.random.choice(['', trans],
+                                             p=[0.8, 0.2]) + 'range'
+=======
                     lang += trans + 'range'
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
             else:
                 lang += v + ","
 
@@ -205,8 +260,11 @@ def gen_sessions(belief_tracker, output_files):
     test_set = []
     val_set = []
 
+<<<<<<< HEAD
+=======
     train_gbdt = set()
 
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
     container = []
     duplicate_removal = set()
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
@@ -216,6 +274,16 @@ def gen_sessions(belief_tracker, output_files):
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
         elif requested == 'ambiguity_removal':
+<<<<<<< HEAD
+            slot_values_mapper = gen_ambiguity_response(
+                belief_tracker.issue_api())
+        else:
+            slot_values_mapper = gen_random_slot_values(
+                required_field=requested)
+        belief_tracker.color_graph(slot_values_mapper)
+        requested = belief_tracker.get_requested_field()
+        user_reply = render_lang(slot_values_mapper, fresh)
+=======
             slot_values_mapper = gen_ambiguity_response(belief_tracker.issue_api())
         else:
             slot_values_mapper = gen_random_slot_values(required_field=requested)
@@ -231,6 +299,7 @@ def gen_sessions(belief_tracker, output_files):
                    + '#' + user_reply
         requested = belief_tracker.get_requested_field()
         train_gbdt.add(gbdt)
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
         fresh = False
         cls = render_cls(slot_values_mapper)
         candidates.add(cls)
@@ -250,6 +319,22 @@ def gen_sessions(belief_tracker, output_files):
             if bulk not in duplicate_removal:
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
+<<<<<<< HEAD
+                for a in container:
+                    print(a)
+            else:
+                print('# duplicate #')
+            which = np.random.choice(
+                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+            container = []
+            # print(line)
+            i += 1
+            if i >= 2000:
+                break
+
+    print('writing', len(train_set), len(
+        val_set), len(test_set), len(candidates))
+=======
                 # for a in container:
                 #     print(a)
             else:
@@ -263,6 +348,7 @@ def gen_sessions(belief_tracker, output_files):
                 break
 
     print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
@@ -279,6 +365,8 @@ def gen_sessions(belief_tracker, output_files):
         for line in candidates:
             f.writelines(line + '\n')
 
+<<<<<<< HEAD
+=======
     with open(output_files[4], 'w', encoding='utf-8') as f:
         for line in train_gbdt:
             f.writelines(line + '\n')
@@ -300,6 +388,7 @@ def gen_sessions(belief_tracker, output_files):
             for line in hl:
                 line = "plugin:api_call_qa" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
 if __name__ == "__main__":
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
@@ -312,8 +401,15 @@ if __name__ == "__main__":
 
     output_files = ['../../data/memn2n/train/tree/candidates.txt',
                     '../../data/memn2n/train/tree/train.txt',
+<<<<<<< HEAD
+                    '../../data/memn2n/train/tree/val.txt',
+                    '../../data/memn2n/train//tree/test.txt']
+
+    gen_sessions(bt, output_files)
+=======
                      '../../data/memn2n/train/tree/val.txt',
                      '../../data/memn2n/train/tree/test.txt',
                     '../../data/memn2n/train/gbdt/train.txt']
 
     gen_sessions(bt, output_files)
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b

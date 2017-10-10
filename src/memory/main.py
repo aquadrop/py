@@ -1,5 +1,6 @@
 import argparse
 import pickle as pkl
+import gensim
 import sys
 import os
 
@@ -9,13 +10,19 @@ from sklearn import metrics
 
 import data_utils
 import memn2n as memn2n
+import memn2n2 as memn2n2
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
+<<<<<<< HEAD:src/memory/main.py
+DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
+=======
 DATA_DIR = grandfatherdir + '/data/memn2n/train/base'
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
-BATCH_SIZE = 16
+W2V_DIR = grandfatherdir + '/model/w2v/'
+BATCH_SIZE = 64
 EMBEDDING_SIZE = 300
 CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 HOPS = 3
@@ -63,7 +70,11 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
+<<<<<<< HEAD:src/memory/main.py
+    print(metadata['w2idx'])
+=======
 
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
     ###
     # write data to file
     data_ = {
@@ -79,6 +90,24 @@ def prepare_data(args):
     # save metadata to disk
     metadata['candid2idx'] = candid2idx
     metadata['idx2candid'] = idx2candid
+
+    # # build embeddings
+    # w2idx = metadata['w2idx']
+    # print('Loading word2vec...')
+    # w2v_model = gensim.models.Word2Vec.load(
+    #     os.path.join(W2V_DIR, 'dic_18_unk_short.bin'))
+
+    # embeddings = list()
+    # for word, _ in w2idx.items():
+    #     if w2v_model.__contains__(word.strip()):
+    #         vector = w2v_model.__getitem__(word.strip())
+    #     else:
+    #         # print('unk:', word)
+    #         vector = w2v_model.__getitem__('unk')
+    #     # print(type(vector))
+    #     embeddings.append(vector)
+    # embeddings = np.asarray(embeddings)
+    # metadata['embeddings'] = embeddings
 
     with open(P_DATA_DIR + 'metadata.pkl', 'wb') as f:
         pkl.dump(metadata, f)
@@ -137,7 +166,9 @@ class InteractiveSession():
             reply_msg = 'memory cleared!'
         else:
             u = data_utils.tokenize(line)
+            print('context:', self.context)
             data = [(self.context, u, -1)]
+            print('data:', data)
             s, q, a = data_utils.vectorize_data(data,
                                                 self.w2idx,
                                                 self.model._sentence_size,
@@ -149,12 +180,14 @@ class InteractiveSession():
             reply_msg = r
             r = data_utils.tokenize(r)
             u.append('$u')
-            u.append('#' + str(self.nid))
+            # u.append('#' + str(self.nid))
             r.append('$r')
-            r.append('#' + str(self.nid))
+            # r.append('#' + str(self.nid))
             self.context.append(u)
             self.context.append(r)
+            print('context:', self.context)
             self.nid += 1
+
         return reply_msg
 
 
@@ -190,11 +223,16 @@ def main(args):
     vocab_size = metadata['vocab_size']
     n_cand = metadata['n_cand']
     candidate_sentence_size = metadata['candidate_sentence_size']
+    # embeddings = metadata['embeddings']
 
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
+<<<<<<< HEAD:src/memory/main.py
+    # print('w2idx:', w2idx)
+=======
 
+>>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
@@ -204,7 +242,7 @@ def main(args):
     print('---- end ----')
     ###
     # create model
-    # model = model['memn2n']( # why?
+    # model = model['memn2n'](  # why?
     model = memn2n.MemN2NDialog(
         batch_size=BATCH_SIZE,
         vocab_size=vocab_size,
@@ -214,6 +252,18 @@ def main(args):
         candidates_vec=candidates_vec,
         hops=HOPS
     )
+
+    # model = memn2n2.MemN2NDialog(
+    #     batch_size=BATCH_SIZE,
+    #     vocab_size=vocab_size,
+    #     candidates_size=n_cand,
+    #     sentence_size=sentence_size,
+    #     embedding_size=EMBEDDING_SIZE,
+    #     candidates_vec=candidates_vec,
+    #     embeddings=embeddings,
+    #     hops=HOPS
+    # )
+
     # gather data in batches
     train, val, test, batches = data_utils.get_batches(
         train, val, test, metadata, batch_size=BATCH_SIZE)
@@ -238,6 +288,7 @@ def main(args):
             for start, end in batches:
                 s = train['s'][start:end]
                 q = train['q'][start:end]
+                # print(len(q))
                 a = train['a'][start:end]
                 cost_total += model.batch_fit(s, q, a)
 
