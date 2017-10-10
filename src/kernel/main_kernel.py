@@ -41,10 +41,7 @@ from memory.memn2n_session import MemInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
-<<<<<<< HEAD
-=======
 from ml.belief_clf import Multilabel_Clf
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
 
 class MainKernel:
@@ -54,17 +51,12 @@ class MainKernel:
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
-<<<<<<< HEAD
-
-        self._load_memory(config)
-        self.sess = self.memory.get_session()
-=======
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
         else:
-            self.sess = Multilabel_Clf.load(model_path=config['gbdt_model_path'])
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
+            self.sess = Multilabel_Clf.load(
+                model_path=config['gbdt_model_path'])
 
     def _load_memory(self, config):
         if not MainKernel.static_memory:
@@ -74,20 +66,6 @@ class MainKernel:
             self.memory = MainKernel.static_memory
 
     def kernel(self, q, user='solr'):
-<<<<<<< HEAD
-        query, wild_card = self.range_render(q)
-        api = self.sess.reply(q)
-        print(self.sess.context)
-        print(api)
-        if api.startswith('api_call_slot'):
-            api_json = self.api_call_slot_json_render(api)
-            salt = self.belief_tracker.memory_kernel(api_json, wild_card)
-            self.sess.context[-1] += " " + salt
-        else:
-            response = api
-
-        return self.render_response(response.split('#')[0])
-=======
         rande_rendered, wild_card = self.range_render(q)
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
@@ -106,7 +84,8 @@ class MainKernel:
             api = self.sess.reply(q)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
-                response = self.belief_tracker.memory_kernel(api_json, wild_card)
+                response = self.belief_tracker.memory_kernel(
+                    api_json, wild_card)
             else:
                 response = api
 
@@ -124,7 +103,6 @@ class MainKernel:
             key, value = c.split(':')
             api[key] = value
         return api
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
     def range_render(self, query):
         query, wild_card = query_util.rule_base_num_retreive(query)
@@ -133,24 +111,14 @@ class MainKernel:
     def render_response(self, response):
         if response.startswith('api_call_request_'):
             if response.startswith('api_call_request_ambiguity_removal_'):
-<<<<<<< HEAD
                 params = response.replace(
                     'api_call_request_ambiguity_removal_', '')
-                response = '你要哪一个呢,' + params
-                return response
-            params = response.replace('api_call_request_', '')
-            params = self.belief_tracker.belief_graph.slots_trans[params]
-            response = '什么' + params
-            return response
-=======
-                params = response.replace('api_call_request_ambiguity_removal_', '')
                 rendered = '你要哪一个呢,' + params
                 return rendered + "@@" + response
             params = response.replace('api_call_request_', '')
             params = self.belief_tracker.belief_graph.slots_trans[params]
             rendered = '什么' + params
             return rendered + "@@" + response
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
         return response
 
     def api_call_slot_json_render(self, api):
@@ -169,16 +137,12 @@ if __name__ == '__main__':
     #     grandfatherdir, 'data/memn2n/processed/data.pkl')
     # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-<<<<<<< HEAD
-              "solr.facet": 'off',
-=======
               "solr.facet": 'on',
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "clf": 'gbdt' # or memory
+              "clf": 'gbdt'  # or memory
               }
     kernel = MainKernel(config)
     while True:

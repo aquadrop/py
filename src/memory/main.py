@@ -15,11 +15,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-<<<<<<< HEAD:src/memory/main.py
-DATA_DIR = grandfatherdir + '/data/memn2n/train/complex'
-=======
 DATA_DIR = grandfatherdir + '/data/memn2n/train/base'
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 BATCH_SIZE = 64
@@ -70,13 +66,11 @@ def prepare_data(args):
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
-<<<<<<< HEAD:src/memory/main.py
-    print(metadata['w2idx'])
-=======
 
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
-    ###
-    # write data to file
+    print(metadata['w2idx'])
+
+###
+# write data to file
     data_ = {
         'candidates': candidates,
         'train': train,
@@ -228,11 +222,7 @@ def main(args):
     # vectorize candidates
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
-<<<<<<< HEAD:src/memory/main.py
-    # print('w2idx:', w2idx)
-=======
 
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b:src/memory/main.py
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
