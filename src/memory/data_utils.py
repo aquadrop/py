@@ -239,7 +239,7 @@ if __name__ == '__main__':
     metadata = build_vocab(train_data, candidates)
     train, val, test, batches = get_batches(
         train_data, val_data, test_data, metadata, 16)
-    # print(batches)
-    # test = ['range', '电脑,macbookpro,玫瑰金吧', 'api_call_slot_category:冰箱']
-    # for t in test:
-    #     print(tokenize(t, True))
+    print(batches)
+    test = ['range', '电脑,macbookpro,玫瑰金吧', 'api_call_slot_category:冰箱']
+    for t in test:
+        print(tokenize(t, True))
