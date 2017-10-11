@@ -43,14 +43,20 @@ from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
-STOP_WORDS = set(["！", "？", "，", "。", "，", '*',
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":", '_', '.',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
-def tokenize(sent, char=True):
+def tokenize(sent, char=0):
     sent = sent.lower()
     tokens = list()
-    if char:
+    if char == 0:
+        tokens = list(sent)
+        for s in STOP_WORDS:
+            if s in tokens:
+                tokens.remove(s)
+        return tokens
+    elif char==1:
         split_list = [',', ':']
 
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
@@ -73,7 +79,7 @@ def tokenize(sent, char=True):
                         for l in ll:
                             tokens.append(l)
                         en = list()
-                    # tokens.append(c)
+                        # tokens.append(c)
                 else:
                     en.append(c)
         if en:
@@ -175,3 +181,4 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     print(rule_base_num_retreive('华为num元手机phone.mmem'))
+    print(tokenize('华为num元手机phone.mmem', char=0))
