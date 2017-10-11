@@ -228,6 +228,8 @@ def main(args):
         candidates, w2idx, candidate_sentence_size)
 
     print('---- memory config ----')
+    print('embedding size:', EMBEDDING_SIZE)
+    print('batch_size:', BATCH_SIZE)
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
     print('candidate_size:', n_cand)
@@ -277,6 +279,7 @@ def main(args):
         cost_total = 0.
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
+        total_begin = time.clock()
         begin = time.clock()
         for i in range(epochs + 1):
 
@@ -320,6 +323,8 @@ def main(args):
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
         # close file
+        total_end = time.clock()
+        print('Total time: {} minutes.'.format((total_end - total_end) / 60))
         log_handle.close()
 
     else:  # inference
