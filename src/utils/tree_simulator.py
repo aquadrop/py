@@ -270,16 +270,16 @@ def gen_sessions(belief_tracker, output_files):
         api = render_api(belief_tracker.issue_api())
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
-        if requested and requested != 'ambiguity_removal':
-            if np.random.uniform() < 0.25:
-                reh, cls = render_rhetorical(requested)
-                rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
-                memory_line = reh + '\t' + cls + '\t' + 'placeholder'
-                cls = cls.lower()
-                candidates.add(cls)
-                memory_line = memory_line.lower()
-                container.append(memory_line)
-                train_gbdt.add(rhetorical.lower())
+        # if requested and requested != 'ambiguity_removal':
+        #     if np.random.uniform() < 0.25:
+        #         reh, cls = render_rhetorical(requested)
+        #         rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
+        #         memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+        #         cls = cls.lower()
+        #         candidates.add(cls)
+        #         memory_line = memory_line.lower()
+        #         container.append(memory_line)
+        #         train_gbdt.add(rhetorical.lower())
         # mapper[which].append(line)
         # print(line)
         if not requested:
@@ -303,45 +303,51 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 5000:
+            if i >= 2000:
                 break
 
     # lower everything
 
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates))
+
+    with_base = False
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
-        with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-            for line in cf:
-                line = line.strip('\n')
-                f.writelines(line + '\n')
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    f.writelines(line + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
         for line in mapper['val']:
             f.writelines(line + '\n')
-        with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-            for line in cf:
-                line = line.strip('\n')
-                f.writelines(line + '\n')
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    f.writelines(line + '\n')
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
         for line in mapper['test']:
             f.writelines(line + '\n')
-        with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-            for line in cf:
-                line = line.strip('\n')
-                f.writelines(line + '\n')
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    f.writelines(line + '\n')
 
     # candidate
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')
-        with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
-            for line in cf:
-                line = line.strip('\n')
-                f.writelines(line + '\n')
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    f.writelines(line + '\n')
 
     # gbdt
     with open(output_files[4], 'w', encoding='utf-8') as f:
