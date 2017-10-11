@@ -1,8 +1,15 @@
-STOP_WORDS = set(["！", "？", "，", "。", ",", "，", '_'])
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*',
+                  '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 import re
 import os
+import sys
 import jieba
+
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
+
+from utils.query_util import tokenize
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -16,44 +23,6 @@ from six.moves import range, reduce
 
 import numpy as np
 import tensorflow as tf
-
-
-def tokenize(sent, char=True):
-    sent = sent.lower()
-    tokens = list()
-    if char:
-        stop_list = [',', ':']
-        zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
-        en = list()
-        for c in sent:
-            if c == '\t':
-                continue
-            match = zh_pattern.search(c)
-            if match:
-                if en:
-                    ll = ''.join(en).split()
-                    for l in ll:
-                        tokens.append(l)
-                    en = list()
-                tokens.append(c)
-            else:
-                if c in stop_list:
-                    if en:
-                        ll = ''.join(en).split()
-                        for l in ll:
-                            tokens.append(l)
-                        en = list()
-                    tokens.append(c)
-                else:
-                    en.append(c)
-        if en:
-            ll = ''.join(en).split()
-            for l in ll:
-                tokens.append(l)
-    else:
-        tokens = [w for w in list(jieba.cut(sent.strip()))
-                  if w not in STOP_WORDS]
-    return tokens
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -127,7 +96,7 @@ def build_vocab(data, candidates, memory_size=50):
     # print(vocab2)
     vocab |= vocab2
     vocab = sorted(vocab)
-    # print(vocab)
+    print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     max_story_size = max(map(len, (s for s, _, _ in data)))
@@ -256,7 +225,7 @@ if __name__ == '__main__':
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
-    test = ['range', '电脑,macbookpro,玫瑰金吧',
+    test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
             'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
     for t in test:
         print(tokenize(t, True))

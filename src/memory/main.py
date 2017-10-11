@@ -3,6 +3,12 @@ import pickle as pkl
 import gensim
 import sys
 import os
+import time
+
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
+
+from utils.query_util import tokenize
 
 import numpy as np
 import tensorflow as tf
@@ -19,9 +25,9 @@ DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 BATCH_SIZE = 64
-EMBEDDING_SIZE = 300
-CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
-HOPS = 3
+EMBEDDING_SIZE = 128
+CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
+HOPS = 2
 
 '''
     dictionary of models
@@ -157,7 +163,7 @@ class InteractiveSession():
             self.nid = 1
             reply_msg = 'memory cleared!'
         else:
-            u = data_utils.tokenize(line)
+            u = tokenize(line)
             print('context:', self.context)
             data = [(self.context, u, -1)]
             print('data:', data)
@@ -170,7 +176,7 @@ class InteractiveSession():
             preds = self.model.predict(s, q)
             r = self.idx2candid[preds[0]]
             reply_msg = r
-            r = data_utils.tokenize(r)
+            r = tokenize(r)
             u.append('$u')
             # u.append('#' + str(self.nid))
             r.append('$r')
@@ -222,6 +228,8 @@ def main(args):
         candidates, w2idx, candidate_sentence_size)
 
     print('---- memory config ----')
+    print('embedding size:', EMBEDDING_SIZE)
+    print('batch_size:', BATCH_SIZE)
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
     print('candidate_size:', n_cand)
@@ -271,6 +279,8 @@ def main(args):
         cost_total = 0.
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
+        total_begin = time.clock()
+        begin = time.clock()
         for i in range(epochs + 1):
 
             for start, end in batches:
@@ -295,11 +305,14 @@ def main(args):
                     train_acc = metrics.accuracy_score(
                         np.array(train_preds), train['a'])
                     val_acc = metrics.accuracy_score(val_preds, val['a'])
+                    end = time.clock()
                     print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
                           format(i, train_acc, val_acc))
+                    print('time:{}'.format(end - begin))
                     log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
                                                             cost_total / (eval_interval * len(batches))))
                     cost_total = 0.  # empty cost
+                    begin = end
                     #
                     # save the best model, to disk
                     # if val_acc > best_validation_accuracy:
@@ -310,6 +323,8 @@ def main(args):
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
         # close file
+        total_end = time.clock()
+        print('Total time: {} minutes.'.format((total_end - total_end) / 60))
         log_handle.close()
 
     else:  # inference
