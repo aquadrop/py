@@ -287,7 +287,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 2000:
+            if i >= 5000:
                 break
 
     print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
@@ -345,7 +345,8 @@ def gen_sessions(belief_tracker, output_files):
                   'r', encoding='utf-8') as hl:
             for line in hl:
                 line = line.strip('\n')
-                f.writelines(line + '\n')
+                cls, sentence = line.split('#')
+                f.writelines('plugin:api_call_base#' + sentence + '\n')
 
 if __name__ == "__main__":
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")

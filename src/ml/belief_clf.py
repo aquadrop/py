@@ -90,7 +90,7 @@ class Multilabel_Clf:
 
         begin = time.clock()
 
-        self.clf = OneVsRestClassifier(GradientBoostingClassifier(max_depth=5, n_estimators=200))
+        self.clf = OneVsRestClassifier(GradientBoostingClassifier(max_depth=5, n_estimators=2000, verbose=1))
         self.clf.fit(embeddings, labels_)
 
         end = time.clock()
