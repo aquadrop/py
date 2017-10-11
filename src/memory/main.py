@@ -221,7 +221,6 @@ def main(args):
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
 
-    print(w2idx)
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)

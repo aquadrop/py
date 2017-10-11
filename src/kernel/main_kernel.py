@@ -84,8 +84,8 @@ class MainKernel:
             api = self.sess.reply(q)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
-                response = self.belief_tracker.memory_kernel(
-                    api_json, wild_card)
+                response = self.belief_tracker.memory_kernel(q, api)
+                self.sess.context[-1] += ' ' + response
             else:
                 response = api
 
