@@ -65,6 +65,7 @@ class BeliefTracker:
         self.ambiguity_slots = dict()
         self.wild_card = dict()
         self.place_holder = dict()
+        self.avails = dict()
 
         # self.negative = False
         # self.negative_clf = Negative_Clf()
@@ -706,6 +707,8 @@ class BeliefTracker:
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.requested_slots[0]
             avails = self.solr_facet()
+            self.avails.clear()
+            self.avails[slot] = avails
             return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())

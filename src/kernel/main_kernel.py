@@ -97,6 +97,7 @@ class MainKernel:
         else:
             classes, probs = self.sess.predict(q)
 
+        print(probs)
         api = dict()
         for c in classes:
             key, value = c.split(':')
