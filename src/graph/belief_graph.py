@@ -47,8 +47,6 @@ class Graph(Node, object):
         self.id_node = dict()
         self.slots = dict()
         self.slots_trans = dict()
-<<<<<<< HEAD
-=======
 
     def is_entity_value(self, value):
         if len(self.node_header[value]) == 1:
@@ -59,7 +57,6 @@ class Graph(Node, object):
             return False
         else:
             return True
->>>>>>> c15691889e586e666f2be257b860686f0dd3279b
 
     def get_node_connected_slots(self, value):
         """
