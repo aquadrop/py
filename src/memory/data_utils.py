@@ -122,9 +122,12 @@ def parse_dialogs_per_response(lines, candid_dic):
 def build_vocab(data, candidates, memory_size=50):
     vocab = reduce(lambda x, y: x | y, (set(
         list(chain.from_iterable(s)) + q) for s, q, a in data))
-    vocab |= reduce(lambda x, y: x | y, (set(candidate)
+    vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
                                          for candidate in candidates))
+    # print(vocab2)
+    vocab |= vocab2
     vocab = sorted(vocab)
+    print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     max_story_size = max(map(len, (s for s, _, _ in data)))
