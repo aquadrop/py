@@ -25,7 +25,7 @@ DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 BATCH_SIZE = 64
-EMBEDDING_SIZE = 128
+EMBEDDING_SIZE = 300
 CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
 HOPS = 2
 

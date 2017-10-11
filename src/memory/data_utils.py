@@ -91,9 +91,10 @@ def parse_dialogs_per_response(lines, candid_dic):
 def build_vocab(data, candidates, memory_size=50):
     vocab = reduce(lambda x, y: x | y, (set(
         list(chain.from_iterable(s)) + q) for s, q, a in data))
+    # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
+    #                                      for candidate in candidates))
     vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
                                          for candidate in candidates))
-    # print(vocab2)
     vocab |= vocab2
     vocab = sorted(vocab)
     print(vocab)
@@ -102,7 +103,9 @@ def build_vocab(data, candidates, memory_size=50):
     max_story_size = max(map(len, (s for s, _, _ in data)))
     mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
     sentence_size = max(map(len, chain.from_iterable(s for s, _, _ in data)))
-    candidate_sentence_size = max(map(len, candidates))
+    # candidate_sentence_size = max(map(len, candidates))
+    tokenized_candidates = [tokenize(candidate) for candidate in candidates]
+    candidate_sentence_size = max(map(len, tokenized_candidates))
     query_size = max(map(len, (q for _, q, _ in data)))
     memory_size = min(memory_size, max_story_size)
     vocab_size = len(w2idx) + 1  # +1 for nil word
@@ -124,9 +127,10 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     C = []
     # print(shape)
     for i, candidate in enumerate(candidates):
-        lc = max(0, sentence_size - len(candidate))
+        tokens = tokenize(candidate)
+        lc = max(0, sentence_size - len(tokens))
         C.append(
-            [word_idx[w] if w in word_idx else 0 for w in tokenize(candidate)] + [0] * lc)
+            [word_idx[w] if w in word_idx else 0 for w in tokens] + [0] * lc)
     # print(C)
     return tf.constant(C, shape=shape)
 

@@ -217,7 +217,7 @@ def gen_sessions(belief_tracker, output_files):
         lang = lang + np.random.choice(postfix, p=[0.1, 0.1, 0.8])
         lang = lang.lower()
         if 'root' in lang:
-            lang = np.random.choice(['我来买东西','购物','买点东西'])
+            lang = np.random.choice(['我来买东西', '购物', '买点东西'])
         return lang
 
     def render_cls(slot_values_mapper):
