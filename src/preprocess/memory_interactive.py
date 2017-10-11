@@ -38,13 +38,14 @@ import uuid
 import hashlib
 import re
 
-topic_sign = ['一.','二.','三.','四.','五.','六.','七.']
+topic_sign = ['一.', '二.', '三.', '四.', '五.', '六.', '七.']
 talk_sign = r'^[0-9]+.*$'
 talk_pattern = re.compile(talk_sign)
 guest_sign = r'G:.*'
 guest_pattern = re.compile(guest_sign)
 bot_sign = r'B:.*'
 bot_pattern = re.compile(bot_sign)
+
 
 def get_topic(line):
     tt = []
@@ -57,8 +58,10 @@ def get_topic(line):
             tt.append(c)
     return ''.join(tt)
 
+
 def topic_start(line):
     return '话题:' in line
+
 
 def interactive(file_, write_file_):
     D = []
@@ -143,7 +146,8 @@ def process_gbdt_simple(input_file, output_file):
                 if len(value) == 1:
                     line = value[0] + '#' + key
                 else:
-                    line = 'plugin:api_call_base,index:' + hashlib.md5(key.encode()).hexdigest() + "#" + key
+                    line = 'plugin:api_call_base,index:' + \
+                        hashlib.md5(key.encode()).hexdigest() + "#" + key
                 wf.writelines(line + '\n')
 
 
@@ -167,12 +171,13 @@ def process_memory_simple(input_file, output_file):
             if flag == 0:
                 gs = line.split('/')[0]
                 if gs not in cls_mapper:
-                    cls_mapper[gs] = 'api_call_base_' + str(index)
+                    cls_mapper[gs] = 'api_call_base'
                     index += 1
                 flag = 1
                 continue
             if flag == 1:
-                line = gs + '\t' +cls_mapper[gs] + '\t' + line.strip('\n').split('/')[0]
+                line = gs + '\t' + cls_mapper[gs] + \
+                    '\t' + line.strip('\n').split('/')[0]
                 flag = 0
                 d.append(line)
 
@@ -185,8 +190,6 @@ def process_memory_simple(input_file, output_file):
         with open('candidates.txt', 'w', encoding='utf-8') as wf:
             for v in cls_mapper.values():
                 wf.writelines(v + '\n')
-
-
 
 
 if __name__ == '__main__':

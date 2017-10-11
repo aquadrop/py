@@ -54,7 +54,8 @@ def gen_sessions(belief_tracker, output_files):
                 node = belief_tracker.search_node.get_node_by_value(name)
             slot_values_mapper[node.slot] = node.value
             fields = list(node.fields.keys())
-            n = np.random.randint(0, np.min([len(fields), num_rnd_external_max]) + 1)
+            n = np.random.randint(
+                0, np.min([len(fields), num_rnd_external_max]) + 1)
             picked_fields = np.random.choice(fields, n)
             for f in picked_fields:
                 value = random_property_value(f, node)
@@ -84,12 +85,14 @@ def gen_sessions(belief_tracker, output_files):
         return slot_values_mapper
 
     def gen_ambiguity_response(availables):
-        availables = availables[0].replace('api_call_request_ambiguity_removal_', '').split(",")
+        availables = availables[0].replace(
+            'api_call_request_ambiguity_removal_', '').split(",")
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
         if len(belief_graph.get_nodes_by_value(pick)) > 1:
-            slot_values_mapper[belief_graph.get_nodes_by_value(pick)[0].slot] = pick
+            slot_values_mapper[belief_graph.get_nodes_by_value(pick)[
+                0].slot] = pick
         else:
             slot_values_mapper['ambiguity_removal'] = pick
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
@@ -115,7 +118,7 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些","你们这儿都卖什么<fill>"]
+        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>"]
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -124,7 +127,6 @@ def gen_sessions(belief_tracker, output_files):
             t = t.replace("<fill>", "")
         cls = "api_call_rhetorical_" + slot
         return t, cls
-
 
     def gen_ambiguity_initial():
         slot_values_mapper = dict()
@@ -185,11 +187,14 @@ def gen_sessions(belief_tracker, output_files):
         search_node = belief_tracker.search_node
         prefix = ['', '我来买', '我来看看', '看看']
         postfix = ['吧', '呢', '']
-        lang = np.random.choice(prefix, p=[0.1, 0.5, 0.2, 0.2])
+            lang += slot_values_mapper['brand'] +
+                np.random.choice(['的', ''], p=[0.7, 0.3])
         if 'brand' in slot_values_mapper:
-            lang += slot_values_mapper['brand'] + np.random.choice(['的',''], p=[0.7, 0.3])
+            lang += slot_values_mapper['brand'] + \
+                np.random.choice(['的', ''], p=[0.7, 0.3])
         if 'price' in slot_values_mapper:
-            lang += np.random.choice(['价格', '价位', '']) + slot_values_mapper['price']
+            lang += np.random.choice(['价格', '价位', '']) + \
+                                     slot_values_mapper['price']
             if np.random.uniform() < 0.3:
                 if np.random.uniform() < 0.5:
                     lang += '元'
@@ -239,13 +244,16 @@ def gen_sessions(belief_tracker, output_files):
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
         elif requested == 'ambiguity_removal':
-            slot_values_mapper = gen_ambiguity_response(belief_tracker.issue_api())
+            slot_values_mapper = gen_ambiguity_response(
+                belief_tracker.issue_api())
         else:
-            slot_values_mapper = gen_random_slot_values(required_field=requested)
-        belief_tracker.color_graph(slot_values_mapper=slot_values_mapper, range_render=False)
+            slot_values_mapper = gen_random_slot_values(
+                required_field=requested)
+        belief_tracker.color_graph(
+            slot_values_mapper=slot_values_mapper, range_render=False)
         user_reply = render_lang(slot_values_mapper, fresh)
         if not fresh:
-            gbdt =  'plugin:' + 'api_call_slot' + ','\
+            gbdt = 'plugin:' + 'api_call_slot' + ','\
                     + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
                     + '#' + requested + '$' + user_reply
         else:
@@ -275,28 +283,32 @@ def gen_sessions(belief_tracker, output_files):
             container.append(line)
             # check duplicate
             bulk = '#'.join(container)
-            if bulk not in duplicate_removal:
+            which = np.random.choice(
+                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
                 # for a in container:
                 #     print(a)
             else:
                 print('# duplicate #')
-            which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
-            container = []
+            which = np.random.choice(
+    print('writing', len(train_set), len(
+        val_set), len(test_set), len(candidates))
+            container=[]
             # print(line)
             i += 1
             print(i)
             if i >= 5000:
                 break
 
-    print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
+    print('writing', len(train_set), len(
+        val_set), len(test_set), len(candidates))
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line = line.strip('\n')
+                line=line.strip('\n')
                 f.writelines(line + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
@@ -304,7 +316,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line = line.strip('\n')
+                line=line.strip('\n')
                 f.writelines(line + '\n')
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
@@ -312,7 +324,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line = line.strip('\n')
+                line=line.strip('\n')
                 f.writelines(line + '\n')
 
     # candidate
@@ -321,10 +333,10 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
             for line in cf:
-                line = line.strip('\n')
+                line=line.strip('\n')
                 f.writelines(line + '\n')
 
-    ## gbdt
+    # gbdt
     with open(output_files[4], 'w', encoding='utf-8') as f:
         for line in train_gbdt:
             f.writelines(line + '\n')
@@ -332,32 +344,33 @@ def gen_sessions(belief_tracker, output_files):
         with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
                   'r', encoding='utf-8') as hl:
             for line in hl:
-                line = "plugin:api_call_greet" + '#' + line.strip('\n')
+                line="plugin:api_call_greet" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
         # qa
         with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
                   'r', encoding='utf-8') as hl:
+
             for line in hl:
-                line = "plugin:api_call_qa" + '#' + line.strip('\n')
+                line="plugin:api_call_qa" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
         # chat
         with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
                   'r', encoding='utf-8') as hl:
             for line in hl:
-                line = line.strip('\n')
-                cls, sentence = line.split('#')
+                line=line.strip('\n')
+                cls, sentence=line.split('#')
                 f.writelines('plugin:api_call_base#' + sentence + '\n')
 
 if __name__ == "__main__":
-    graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
-    config = dict()
-    config['belief_graph'] = graph_dir
-    config['solr.facet'] = 'off'
+                    '../../data/memn2n/train/tree/val.txt',
+                    '../../data/memn2n/train/tree/test.txt',
+    config['belief_graph']=graph_dir
+    config['solr.facet']='off'
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
-    log_dir = os.path.join(grandfatherdir, "log/test2.log")
-    bt = BeliefTracker(config)
+    log_dir=os.path.join(grandfatherdir, "log/test2.log")
+    bt=BeliefTracker(config)
 
-    output_files = ['../../data/memn2n/train/tree/candidates.txt',
+    output_files=['../../data/memn2n/train/tree/candidates.txt',
                     '../../data/memn2n/train/tree/train.txt',
                      '../../data/memn2n/train/tree/val.txt',
                      '../../data/memn2n/train/tree/test.txt',

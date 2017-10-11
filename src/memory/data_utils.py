@@ -9,7 +9,7 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
 CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
 
-jieba.load_userdict('../../data/dict/ext1.dic')
+jieba.load_userdict(grandfatherdir + '/data/dict/ext1.dic')
 
 from itertools import chain
 from six.moves import range, reduce
@@ -25,18 +25,30 @@ def tokenize(sent, char=True):
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
         en = list()
         for c in sent:
-            if c in stop_list:
+            if c == '\t':
                 continue
             match = zh_pattern.search(c)
             if match:
                 if en:
-                    tokens.append(''.join(en))
+                    ll = ''.join(en).split()
+                    for l in ll:
+                        tokens.append(l)
                     en = list()
                 tokens.append(c)
             else:
-                en.append(c)
+                if c in stop_list:
+                    if en:
+                        ll = ''.join(en).split()
+                        for l in ll:
+                            tokens.append(l)
+                        en = list()
+                    tokens.append(c)
+                else:
+                    en.append(c)
         if en:
-            tokens.append(''.join(en))
+            ll = ''.join(en).split()
+            for l in ll:
+                tokens.append(l)
     else:
         tokens = [w for w in list(jieba.cut(sent.strip()))
                   if w not in STOP_WORDS]
@@ -228,18 +240,19 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
 
 
 if __name__ == '__main__':
-    candidates, candid2idx, idx2candid = load_candidates()
-    # print(candidates)
-    # print(idx2candid)
-    train_data, test_data, val_data = load_dialog(
-        data_dir=DATA_DIR,
-        candid_dic=candid2idx)
-    print(train_data[1])
+    # candidates, candid2idx, idx2candid = load_candidates()
+    # # print(candidates)
+    # # print(idx2candid)
+    # train_data, test_data, val_data = load_dialog(
+    #     data_dir=DATA_DIR,
+    #     candid_dic=candid2idx)
+    # print(train_data[1])
 
-    metadata = build_vocab(train_data, candidates)
-    train, val, test, batches = get_batches(
-        train_data, val_data, test_data, metadata, 16)
+    # metadata = build_vocab(train_data, candidates)
+    # train, val, test, batches = get_batches(
+    #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
-    # test = ['range', '电脑,macbookpro,玫瑰金吧', 'api_call_slot_category:冰箱']
-    # for t in test:
-    #     print(tokenize(t, True))
+    test = ['range', '电脑,macbookpro,玫瑰金吧',
+            'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
+    for t in test:
+        print(tokenize(t, True))
