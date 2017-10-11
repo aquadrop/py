@@ -234,10 +234,12 @@ class BeliefTracker:
 
         # look for api memory
         if self.API in slot_values_mapper:
-            self.machine_state = self.API_REQUEST_STATE
-            value = slot_values_mapper[self.API]
-            node = self.belief_graph.get_nodes_by_value(value)[0]
-            self.move_to_node(node)
+            if len(slot_values_mapper) == 1 or self.API not in self.filling_slots\
+                    or slot_values_mapper[self.API] != self.filling_slots[self.API]:
+                self.machine_state = self.API_REQUEST_STATE
+                value = slot_values_mapper[self.API]
+                node = self.belief_graph.get_nodes_by_value(value)[0]
+                self.move_to_node(node)
 
         for key, value in slot_values_mapper.items():
             if key == self.VIRTUAL or key == self.API or key == self.AMBIGUITY_PICK:

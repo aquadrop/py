@@ -215,6 +215,9 @@ def gen_sessions(belief_tracker, output_files):
         if lang[-1] == ',':
             lang = lang[0:-1]
         lang = lang + np.random.choice(postfix, p=[0.1, 0.1, 0.8])
+        lang = lang.lower()
+        if 'root' in lang:
+            lang = np.random.choice(['我来买东西','购物','买点东西'])
         return lang
 
     def render_cls(slot_values_mapper):
@@ -300,7 +303,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 2000:
+            if i >= 5000:
                 break
 
     # lower everything
