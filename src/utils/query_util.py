@@ -43,7 +43,10 @@ from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
-STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":", '_', '.',
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":",
+                  '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
+
+STOP_WORDS1 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
@@ -62,7 +65,7 @@ def tokenize(sent, char=0):
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
         en = list()
         for c in sent:
-            if c in STOP_WORDS:
+            if c in STOP_WORDS1:
                 continue
             match = zh_pattern.search(c)
             if match:
