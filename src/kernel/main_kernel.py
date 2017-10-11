@@ -55,7 +55,8 @@ class MainKernel:
             self._load_memory(config)
             self.sess = self.memory.get_session()
         else:
-            self.sess = Multilabel_Clf.load(model_path=config['gbdt_model_path'])
+            self.sess = Multilabel_Clf.load(
+                model_path=config['gbdt_model_path'])
 
     def _load_memory(self, config):
         if not MainKernel.static_memory:
@@ -111,7 +112,8 @@ class MainKernel:
     def render_response(self, response):
         if response.startswith('api_call_request_'):
             if response.startswith('api_call_request_ambiguity_removal_'):
-                params = response.replace('api_call_request_ambiguity_removal_', '')
+                params = response.replace(
+                    'api_call_request_ambiguity_removal_', '')
                 rendered = '你要哪一个呢,' + params
                 return rendered + "@@" + response
             params = response.replace('api_call_request_', '')
@@ -141,7 +143,7 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "clf": 'gbdt' # or memory
+              "clf": 'gbdt'  # or memory
               }
     kernel = MainKernel(config)
     while True:

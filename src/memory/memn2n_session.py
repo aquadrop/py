@@ -135,7 +135,8 @@ def main():
     data_dir = os.path.join(
         grandfatherdir, 'data/memn2n/processed/data.pkl')
     ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
-    config = {"metadata_dir":metadata_dir, "data_dir":data_dir, "ckpt_dir":ckpt_dir}
+    config = {"metadata_dir": metadata_dir,
+              "data_dir": data_dir, "ckpt_dir": ckpt_dir}
     mi = MemInfer(config)
     sess = mi.get_session()
 
