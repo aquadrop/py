@@ -19,6 +19,7 @@ import tensorflow as tf
 
 
 def tokenize(sent, char=True):
+    sent = sent.lower()
     tokens = list()
     if char:
         stop_list = [',', ':']

@@ -251,20 +251,24 @@ def gen_sessions(belief_tracker, output_files):
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
                    + '#' + user_reply
         requested = belief_tracker.get_requested_field()
+        gbdt = gbdt.lower()
         train_gbdt.add(gbdt)
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
-                memory_line = reh + '\t' + cls + '\t' + ''
+                memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+                cls = cls.lower()
+                candidates.add(cls)
+                memory_line = memory_line.lower()
                 container.append(memory_line)
-                train_gbdt.add(rhetorical)
+                train_gbdt.add(rhetorical.lower())
         fresh = False
         cls = render_cls(slot_values_mapper)
-        candidates.add(cls)
+        candidates.add(cls.lower())
         api = render_api(belief_tracker.issue_api())
         line = user_reply + '\t' + cls + '\t' + api
-        container.append(line)
+        container.append(line.lower())
         # mapper[which].append(line)
         # print(line)
         if not requested:
@@ -272,9 +276,9 @@ def gen_sessions(belief_tracker, output_files):
             requested = get_requested_field()
             belief_tracker.clear_memory()
             line = ''
-            container.append(line)
+            container.append(line.lower())
             # check duplicate
-            bulk = '#'.join(container)
+            bulk = '#'.join(container).lower()
             if bulk not in duplicate_removal:
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
@@ -282,13 +286,17 @@ def gen_sessions(belief_tracker, output_files):
                 #     print(a)
             else:
                 print('# duplicate #')
-            which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+            which = np.random.choice(
+                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
             container = []
             # print(line)
             i += 1
             print(i)
-            if i >= 5000:
+            if i >= 20000:
                 break
+
+    # lower everything
+
 
     print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
     with open(output_files[1], 'w', encoding='utf-8') as f:
@@ -347,6 +355,7 @@ def gen_sessions(belief_tracker, output_files):
                 line = line.strip('\n')
                 cls, sentence = line.split('#')
                 f.writelines('plugin:api_call_base#' + sentence + '\n')
+
 
 if __name__ == "__main__":
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")

@@ -81,13 +81,16 @@ class MainKernel:
                 return self.render_response(response)
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
-            api = self.sess.reply(q)
+            api = self.sess.reply(rande_rendered)
+            print('before---', self.sess.context)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
                 response, avails = self.belief_tracker.memory_kernel(q, api_json)
-                self.sess.context[-1] += ' ' + response[0]
+                print(response, type(response))
+                self.sess.context[-1].append(response)
             else:
                 response = api
+            print('after---', self.sess.context)
 
             return self.render_response(response.split('#')[0])
 
@@ -142,7 +145,7 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_arc1.pkl',
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
