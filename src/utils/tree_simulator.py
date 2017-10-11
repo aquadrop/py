@@ -253,6 +253,13 @@ def gen_sessions(belief_tracker, output_files):
         requested = belief_tracker.get_requested_field()
         gbdt = gbdt.lower()
         train_gbdt.add(gbdt)
+
+        fresh = False
+        cls = render_cls(slot_values_mapper)
+        candidates.add(cls.lower())
+        api = render_api(belief_tracker.issue_api())
+        line = user_reply + '\t' + cls + '\t' + api
+        container.append(line.lower())
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
@@ -263,12 +270,6 @@ def gen_sessions(belief_tracker, output_files):
                 memory_line = memory_line.lower()
                 container.append(memory_line)
                 train_gbdt.add(rhetorical.lower())
-        fresh = False
-        cls = render_cls(slot_values_mapper)
-        candidates.add(cls.lower())
-        api = render_api(belief_tracker.issue_api())
-        line = user_reply + '\t' + cls + '\t' + api
-        container.append(line.lower())
         # mapper[which].append(line)
         # print(line)
         if not requested:
