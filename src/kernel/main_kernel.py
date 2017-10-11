@@ -145,8 +145,8 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_arc1.pkl',
-              "clf": 'memory'  # or memory
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_a1.pkl',
+              "clf": 'gbdt'  # or memory
               }
     kernel = MainKernel(config)
     while True:
