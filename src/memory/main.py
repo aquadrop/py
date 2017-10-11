@@ -3,6 +3,7 @@ import pickle as pkl
 import gensim
 import sys
 import os
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -18,7 +19,7 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
-BATCH_SIZE = 4
+BATCH_SIZE = 64
 EMBEDDING_SIZE = 300
 CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 HOPS = 3
@@ -271,6 +272,7 @@ def main(args):
         cost_total = 0.
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
+        begin = time.clock()
         for i in range(epochs + 1):
 
             for start, end in batches:
@@ -295,11 +297,14 @@ def main(args):
                     train_acc = metrics.accuracy_score(
                         np.array(train_preds), train['a'])
                     val_acc = metrics.accuracy_score(val_preds, val['a'])
+                    end = time.clock()
                     print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
                           format(i, train_acc, val_acc))
+                    print('time:{}'.format(end - begin))
                     log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
                                                             cost_total / (eval_interval * len(batches))))
                     cost_total = 0.  # empty cost
+                    begin = end
                     #
                     # save the best model, to disk
                     # if val_acc > best_validation_accuracy:
