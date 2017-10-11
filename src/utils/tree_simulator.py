@@ -52,7 +52,8 @@ def gen_sessions(belief_tracker, output_files):
                 node = belief_tracker.search_node.get_node_by_value(name)
             slot_values_mapper[node.slot] = node.value
             fields = list(node.fields.keys())
-            n = np.random.randint(0, np.min([len(fields), num_rnd_external_max]) + 1)
+            n = np.random.randint(
+                0, np.min([len(fields), num_rnd_external_max]) + 1)
             picked_fields = np.random.choice(fields, n)
             for f in picked_fields:
                 value = random_property_value(f, node)
@@ -82,12 +83,14 @@ def gen_sessions(belief_tracker, output_files):
         return slot_values_mapper
 
     def gen_ambiguity_response(availables):
-        availables = availables[0].replace('api_call_request_ambiguity_removal_', '').split(",")
+        availables = availables[0].replace(
+            'api_call_request_ambiguity_removal_', '').split(",")
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
         if len(belief_graph.get_nodes_by_value(pick)) > 1:
-            slot_values_mapper[belief_graph.get_nodes_by_value(pick)[0].slot] = pick
+            slot_values_mapper[belief_graph.get_nodes_by_value(pick)[
+                0].slot] = pick
         else:
             slot_values_mapper['ambiguity_removal'] = pick
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
@@ -113,7 +116,7 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些","你们这儿都卖什么<fill>"]
+        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>"]
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -122,7 +125,6 @@ def gen_sessions(belief_tracker, output_files):
             t = t.replace("<fill>", "")
         cls = "api_call_rhetorical_" + slot
         return t, cls
-
 
     def gen_ambiguity_initial():
         slot_values_mapper = dict()
@@ -185,9 +187,11 @@ def gen_sessions(belief_tracker, output_files):
         postfix = ['吧', '呢', '']
         lang = np.random.choice(prefix, p=[0.1, 0.5, 0.2, 0.2])
         if 'brand' in slot_values_mapper:
-            lang += slot_values_mapper['brand'] + np.random.choice(['的',''], p=[0.7, 0.3])
+            lang += slot_values_mapper['brand'] + \
+                np.random.choice(['的', ''], p=[0.7, 0.3])
         if 'price' in slot_values_mapper:
-            lang += np.random.choice(['价格', '价位', '']) + slot_values_mapper['price']
+            lang += np.random.choice(['价格', '价位', '']) + \
+                slot_values_mapper['price']
             if np.random.uniform() < 0.3:
                 if np.random.uniform() < 0.5:
                     lang += '元'
@@ -237,15 +241,18 @@ def gen_sessions(belief_tracker, output_files):
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
         elif requested == 'ambiguity_removal':
-            slot_values_mapper = gen_ambiguity_response(belief_tracker.issue_api())
+            slot_values_mapper = gen_ambiguity_response(
+                belief_tracker.issue_api())
         else:
-            slot_values_mapper = gen_random_slot_values(required_field=requested)
-        belief_tracker.color_graph(slot_values_mapper=slot_values_mapper, range_render=False)
+            slot_values_mapper = gen_random_slot_values(
+                required_field=requested)
+        belief_tracker.color_graph(
+            slot_values_mapper=slot_values_mapper, range_render=False)
         user_reply = render_lang(slot_values_mapper, fresh)
         if not fresh:
-            gbdt =  'plugin:' + 'api_call_slot' + ','\
-                    + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
-                    + '#' + requested + '$' + user_reply
+            gbdt = 'plugin:' + 'api_call_slot' + ','\
+                + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+                + '#' + requested + '$' + user_reply
         else:
             gbdt = 'plugin:' + 'api_call_slot' + ','\
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
@@ -292,13 +299,13 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 20000:
+            if i >= 2000:
                 break
 
     # lower everything
 
-
-    print('writing', len(train_set), len(val_set), len(test_set), len(candidates))
+    print('writing', len(train_set), len(
+        val_set), len(test_set), len(candidates))
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
@@ -332,7 +339,7 @@ def gen_sessions(belief_tracker, output_files):
                 line = line.strip('\n')
                 f.writelines(line + '\n')
 
-    ## gbdt
+    # gbdt
     with open(output_files[4], 'w', encoding='utf-8') as f:
         for line in train_gbdt:
             f.writelines(line + '\n')
@@ -368,8 +375,8 @@ if __name__ == "__main__":
 
     output_files = ['../../data/memn2n/train/tree/candidates.txt',
                     '../../data/memn2n/train/tree/train.txt',
-                     '../../data/memn2n/train/tree/val.txt',
-                     '../../data/memn2n/train/tree/test.txt',
+                    '../../data/memn2n/train/tree/val.txt',
+                    '../../data/memn2n/train/tree/test.txt',
                     '../../data/memn2n/train/gbdt/train.txt']
 
     gen_sessions(bt, output_files)
