@@ -72,7 +72,7 @@ class Multilabel_Clf:
             for line in reader:
                 key = line[0]
                 input_ = line[1]
-                intention_list = key.split(",")
+                intention_list = key.split("|")
                 tokens = self.cut(input_)
                 # embedding = self.feature_extractor.transform(tokens).toarray()
                 embeddings.append(tokens)

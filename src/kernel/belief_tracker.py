@@ -185,7 +185,7 @@ class BeliefTracker:
         return self.requested_slots[0]
 
     # a tree rendering process...
-    def color_graph(self, query, slot_values_mapper, values_marker=None):
+    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True):
         """
         gen api_call_ambiguity_...
             api_call_request_brand...
@@ -193,6 +193,7 @@ class BeliefTracker:
         :param slot_values_mapper: {"entity":[entities], "slot1":"value1", "slot2":"value2"}
         :param values_marker:
         :param query
+        :param range_render
         :return:
         """
 
@@ -243,15 +244,16 @@ class BeliefTracker:
                 continue
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
-                # use rule base for range
-                self.rule_base_fill(query, key)
+                if range_render:
+                    self.rule_base_fill(query, key)
+                else:
+                    self.fill_slot(key, value)
                 # self.fill_slot(key, value)
                 continue
             if key == 'entity':
                 nodes = self.belief_graph.get_nodes_by_value(value)
             else:
-                nodes = self.belief_graph.get_nodes_by_value_and_field(
-                    value, key)
+                nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
             if len(nodes) == 1:
                 node = nodes[0]
                 #
@@ -278,10 +280,8 @@ class BeliefTracker:
                     if len(parent_values) > 1:
                         for node in filtered:
                             if node.parent_node.value not in self.ambiguity_slots:
-                                self.ambiguity_slots[node.parent_node.value] = [
-                                ]
-                            self.ambiguity_slots[node.parent_node.value].append(
-                                node)
+                                self.ambiguity_slots[node.parent_node.value] = []
+                            self.ambiguity_slots[node.parent_node.value].append(node)
                     else:
                         for node in filtered:
                             self.ambiguity_slots[node.slot] = [node]
@@ -478,10 +478,8 @@ class BeliefTracker:
                     if len(parent_node_value) > 1:
                         for node in filtered_nodes:
                             if node.parent_node.value not in self.ambiguity_slots:
-                                self.ambiguity_slots[node.parent_node.value] = [
-                                ]
-                            self.ambiguity_slots[node.parent_node.value].append(
-                                node)
+                                self.ambiguity_slots[node.parent_node.value] = []
+                            self.ambiguity_slots[node.parent_node.value].append(node)
                     # nice, differentiating at slots, not parent_nodes
                     else:
                         for node in filtered_nodes:
@@ -711,14 +709,13 @@ class BeliefTracker:
             return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
-            return "api_call_request_ambiguity_removal_" + param
+            return "api_call_request_ambiguity_removal_" + param, []
         if self.machine_state == self.API_CALL_STATE:
             # first filling slots
             param = "api_call_search_"
             fill = []
             for key, value in self.filling_slots.items():
                 fill.append(key + ":" + str(value))
-
             # node = self.search_node
             # while node.value != self.belief_graph.ROOT:
             #     if node.slot != 'virtual_category':

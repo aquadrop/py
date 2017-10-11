@@ -15,7 +15,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = grandfatherdir + '/data/memn2n/train/base'
+DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 BATCH_SIZE = 64
@@ -67,10 +67,8 @@ def prepare_data(args):
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
 
-    print(metadata['w2idx'])
-
-###
-# write data to file
+    ###
+    # write data to file
     data_ = {
         'candidates': candidates,
         'train': train,
@@ -223,6 +221,7 @@ def main(args):
     candidates_vec = data_utils.vectorize_candidates(
         candidates, w2idx, candidate_sentence_size)
 
+    print(w2idx)
     print('---- memory config ----')
     print('memory_size:', memory_size)
     print('vocab_size:', vocab_size)
