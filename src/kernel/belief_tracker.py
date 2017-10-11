@@ -86,7 +86,7 @@ class BeliefTracker:
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
 
-        self.color_graph(query, query_mapper)
+        self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
         api, avails = self.issue_api()
         return api, avails

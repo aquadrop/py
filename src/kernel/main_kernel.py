@@ -84,8 +84,8 @@ class MainKernel:
             api = self.sess.reply(q)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
-                response = self.belief_tracker.memory_kernel(q, api)
-                self.sess.context[-1] += ' ' + response
+                response, avails = self.belief_tracker.memory_kernel(q, api_json)
+                self.sess.context[-1] += ' ' + response[0]
             else:
                 response = api
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "clf": 'gbdt'  # or memory
+              "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
     while True:

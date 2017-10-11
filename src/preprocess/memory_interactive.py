@@ -96,7 +96,7 @@ def interactive(file_, write_file_):
                 gs = d.replace('G:', '').strip('\n').split('/')
                 for g in gs:
                     if g not in mapper:
-                        mapper[g] = 'api_call_base_' + str(index)
+                        mapper[g] = 'api_call_base'# + str(index)
                     index += 1
             if d.startswith('B'):
                 b = d.replace('B:', '').strip('\n')
@@ -188,7 +188,8 @@ def process_memory_simple(input_file, output_file):
                 wf.writelines('\n')
 
         with open('candidates.txt', 'w', encoding='utf-8') as wf:
-            for v in cls_mapper.values():
+            vals = set(cls_mapper.values())
+            for v in vals:
                 wf.writelines(v + '\n')
 
 
