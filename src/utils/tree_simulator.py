@@ -283,8 +283,7 @@ def gen_sessions(belief_tracker, output_files):
             container.append(line)
             # check duplicate
             bulk = '#'.join(container)
-            which = np.random.choice(
-                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+            if bulk not in duplicate_removal:
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
                 # for a in container:
@@ -292,13 +291,12 @@ def gen_sessions(belief_tracker, output_files):
             else:
                 print('# duplicate #')
             which = np.random.choice(
-    print('writing', len(train_set), len(
-        val_set), len(test_set), len(candidates))
-            container=[]
+                ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
+            container = []
             # print(line)
             i += 1
             print(i)
-            if i >= 5000:
+            if i >= 2000:
                 break
 
     print('writing', len(train_set), len(
@@ -308,7 +306,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line=line.strip('\n')
+                line = line.strip('\n')
                 f.writelines(line + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
@@ -316,7 +314,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line=line.strip('\n')
+                line = line.strip('\n')
                 f.writelines(line + '\n')
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
@@ -324,7 +322,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
-                line=line.strip('\n')
+                line = line.strip('\n')
                 f.writelines(line + '\n')
 
     # candidate
@@ -333,7 +331,7 @@ def gen_sessions(belief_tracker, output_files):
             f.writelines(line + '\n')
         with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
             for line in cf:
-                line=line.strip('\n')
+                line = line.strip('\n')
                 f.writelines(line + '\n')
 
     # gbdt
@@ -344,22 +342,23 @@ def gen_sessions(belief_tracker, output_files):
         with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
                   'r', encoding='utf-8') as hl:
             for line in hl:
-                line="plugin:api_call_greet" + '#' + line.strip('\n')
+                line = "plugin:api_call_greet" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
         # qa
         with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
                   'r', encoding='utf-8') as hl:
 
             for line in hl:
-                line="plugin:api_call_qa" + '#' + line.strip('\n')
+                line = "plugin:api_call_qa" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
         # chat
         with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
                   'r', encoding='utf-8') as hl:
             for line in hl:
-                line=line.strip('\n')
-                cls, sentence=line.split('#')
+                line = line.strip('\n')
+                cls, sentence = line.split('#')
                 f.writelines('plugin:api_call_base#' + sentence + '\n')
+
 
 if __name__ == "__main__":
                     '../../data/memn2n/train/tree/val.txt',
