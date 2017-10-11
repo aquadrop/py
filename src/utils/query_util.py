@@ -43,6 +43,47 @@ from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*',
+                  '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
+
+
+def tokenize(sent, char=True):
+    sent = sent.lower()
+    tokens = list()
+    if char:
+        split_list = [',', ':']
+
+        zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
+        en = list()
+        for c in sent:
+            if c in STOP_WORDS:
+                continue
+            match = zh_pattern.search(c)
+            if match:
+                if en:
+                    ll = ''.join(en).split()
+                    for l in ll:
+                        tokens.append(l)
+                    en = list()
+                tokens.append(c)
+            else:
+                if c in split_list:
+                    if en:
+                        ll = ''.join(en).split()
+                        for l in ll:
+                            tokens.append(l)
+                        en = list()
+                    # tokens.append(c)
+                else:
+                    en.append(c)
+        if en:
+            ll = ''.join(en).split()
+            for l in ll:
+                tokens.append(l)
+    else:
+        tokens = [w for w in list(jieba.cut(sent.strip()))
+                  if w not in STOP_WORDS]
+    return tokens
 
 
 def jieba_cut(query, smart=True):
@@ -129,6 +170,7 @@ def range_extract(pattern, query, single, range_render=False):
             numbers = '[' + str(numbers[0]) + " TO " + \
                 str(numbers[1]) + "]"
     return range_rendered_query, numbers
+
 
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))

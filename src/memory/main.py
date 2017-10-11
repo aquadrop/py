@@ -5,6 +5,11 @@ import sys
 import os
 import time
 
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
+
+from utils.query_util import tokenize
+
 import numpy as np
 import tensorflow as tf
 from sklearn import metrics
@@ -20,9 +25,9 @@ DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 BATCH_SIZE = 64
-EMBEDDING_SIZE = 300
-CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
-HOPS = 3
+EMBEDDING_SIZE = 128
+CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
+HOPS = 2
 
 '''
     dictionary of models
@@ -158,7 +163,7 @@ class InteractiveSession():
             self.nid = 1
             reply_msg = 'memory cleared!'
         else:
-            u = data_utils.tokenize(line)
+            u = tokenize(line)
             print('context:', self.context)
             data = [(self.context, u, -1)]
             print('data:', data)
@@ -171,7 +176,7 @@ class InteractiveSession():
             preds = self.model.predict(s, q)
             r = self.idx2candid[preds[0]]
             reply_msg = r
-            r = data_utils.tokenize(r)
+            r = tokenize(r)
             u.append('$u')
             # u.append('#' + str(self.nid))
             r.append('$r')
