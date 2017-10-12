@@ -3,6 +3,8 @@ import numpy as np
 from six.moves import range
 import os
 
+import memory.config as config
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 
@@ -109,8 +111,13 @@ class MemN2NDialog(object):
         # cross entropy
         # (batch_size, candidates_size)
         logits = self._inference(self._stories, self._queries)
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=self._answers,
-                                                                       name="cross_entropy")
+        if config.MULTILABEL >= 1:
+            cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
+                                                                    labels=self._answers,
+                                                                           name="cross_entropy")
+        else:
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=self._answers,
+                                                                           name="cross_entropy")
         cross_entropy_mean = tf.reduce_mean(
             cross_entropy, name="cross_entropy_mean")
 
@@ -131,8 +138,15 @@ class MemN2NDialog(object):
             nil_grads_and_vars, name="train_op")
 
         # predict ops
-        predict_op = tf.argmax(logits, 1, name="predict_op")
-        predict_proba_op = tf.nn.softmax(logits, name="predict_proba_op")
+        # predict_op = tf.argmax(logits, 1, name="predict_op")
+        if config.MULTILABEL >= 1:
+            predict_op = tf.nn.top_k(logits, k=config.TOP_K, name="predict_op")
+            predict_proba_op = tf.nn.sigmoid(logits, name="predict_proba_op")
+            top_predict_proba_op = tf.nn.top_k(predict_proba_op, k=config.TOP_K, name="top_predict_proba_op")
+        else:
+            predict_op = tf.argmax(logits, 1, name="predict_op")
+            predict_proba_op = tf.nn.softmax(logits, name="predict_proba_op")
+            top_predict_proba_op = tf.nn.top_k(predict_proba_op, k=config.TOP_K, name="top_predict_proba_op")
         predict_log_proba_op = tf.log(
             predict_proba_op, name="predict_log_proba_op")
 
@@ -142,6 +156,7 @@ class MemN2NDialog(object):
         self.predict_proba_op = predict_proba_op
         self.predict_log_proba_op = predict_log_proba_op
         self.train_op = train_op
+        self.top_predict_proba_op = top_predict_proba_op
 
         init_op = tf.global_variables_initializer()
         self._sess = session
@@ -153,7 +168,10 @@ class MemN2NDialog(object):
             tf.int32, [None, None, self._sentence_size], name="stories")
         self._queries = tf.placeholder(
             tf.int32, [None, self._sentence_size], name="queries")
-        self._answers = tf.placeholder(tf.int32, [None], name="answers")
+        if config.MULTILABEL >= 1:
+            self._answers = tf.placeholder(tf.float32, [None, None], name="answers")
+        else:
+            self._answers = tf.placeholder(tf.int32, [None], name="answers")
 
     def _build_vars(self):
         with tf.variable_scope(self._name):
@@ -172,7 +190,25 @@ class MemN2NDialog(object):
     def _inference(self, stories, queries):
         with tf.variable_scope(self._name):
             q_emb = tf.nn.embedding_lookup(self.A, queries)
-            u_0 = tf.reduce_sum(q_emb, 1)
+
+
+            def get_cell(size):
+                cell = tf.contrib.rnn.LSTMCell(size, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
+                return cell
+
+            if config.LSTM >= 1:
+                with tf.variable_scope("encoder") as scope:
+                    encoder_cell = tf.contrib.rnn.MultiRNNCell([get_cell(self._embedding_size) for _ in range(config.N_LAYER)])
+                    encoder_output, encoder_state = tf.nn.dynamic_rnn(encoder_cell, q_emb,
+                                                                      # sequence_length=self.encoder_inputs_length,
+                                                                      dtype=tf.float32)
+                u_0_lstm = encoder_state[config.N_LAYER - 1][1]
+                # print(u_0_lstm)
+                # self.u_0_sum = u_0
+                u_0 = u_0_lstm
+            else:
+                u_0 = tf.reduce_sum(q_emb, 1)
+
             u = [u_0]
             for _ in range(self._hops):
                 m_emb = tf.nn.embedding_lookup(self.A, stories)
@@ -229,4 +265,4 @@ class MemN2NDialog(object):
             answers: Tensor (None, vocab_size)
         """
         feed_dict = {self._stories: stories, self._queries: queries}
-        return self._sess.run(self.predict_op, feed_dict=feed_dict)
+        return self._sess.run([self.predict_op, self.top_predict_proba_op], feed_dict=feed_dict)
