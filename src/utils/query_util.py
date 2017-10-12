@@ -43,52 +43,89 @@ from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
-STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":",
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_',':', ' ', ',', '.',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
-STOP_WORDS1 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.',
+STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
-def tokenize(sent, char=0):
+def tokenize(sent, char=1):
     sent = sent.lower()
     tokens = list()
     if char == 0:
+        for s in STOP_WORDS_0:
+            sent = sent.replace(s, '')
         tokens = list(sent)
-        for s in STOP_WORDS1:
-            if s in tokens:
-                tokens.remove(s)
         return tokens
-    elif char==1:
-        split_list = [',', ':']
-
+    elif char == 1:
+        split_list = [',', ':', '_']
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
         en = list()
+        digits = list()
+        state = 'cn'
+        # sent = sent.replace(' ', '').replace('\t', '')
+        sent = sent.replace('range', ' range ')
         for c in sent:
-            if c in STOP_WORDS:
-                continue
             match = zh_pattern.search(c)
             if match:
-                if en:
-                    ll = ''.join(en).split()
-                    for l in ll:
-                        tokens.append(l)
+                if state == 'en':
+                    tokens.append(''.join(en))
                     en = list()
+                if state == 'digits':
+                    tokens.append(''.join(digits))
+                    digits = list()
+                state = 'cn'
                 tokens.append(c)
-            else:
-                if c in split_list:
-                    if en:
-                        ll = ''.join(en).split()
-                        for l in ll:
-                            tokens.append(l)
-                        en = list()
-                        # tokens.append(c)
-                else:
-                    en.append(c)
-        if en:
-            ll = ''.join(en).split()
-            for l in ll:
-                tokens.append(l)
+                continue
+            if c.isdigit():
+                if state == 'en':
+                    tokens.append(''.join(en))
+                    en = list()
+                state = 'digits'
+                digits.append(c)
+                continue
+            if c == '.' and len(digits) > 0:
+                digits.append(c)
+                continue
+            if c == '$':
+                if state == 'en':
+                    tokens.append(''.join(en))
+                    en = list()
+                if state == 'digits':
+                    tokens.append(''.join(digits))
+                    digits = list()
+                state = '$'
+                continue
+            if (c == 'r' or c == 'u') and state == '$':
+                tokens.append('$' + c)
+                state = ''
+                continue
+            if c in STOP_WORDS:
+                if state == 'en':
+                    tokens.append(''.join(en))
+                    en = list()
+                if state == 'digits':
+                    tokens.append(''.join(digits))
+                    digits = list()
+            if c.isalpha():
+                if state == 'digits':
+                    tokens.append(''.join(digits))
+                    digits = list()
+                state = 'en'
+                en.append(c)
+
+        if state == 'en':
+            if len(en) > 0:
+                tokens.append(''.join(en))
+            en = list()
+        if state == 'digits':
+            if len(digits) > 0:
+                tokens.append(''.join(digits))
+            digits = list()
+        for s in STOP_WORDS_0:
+            if s in tokens:
+                tokens.remove(s)
     else:
         tokens = [w for w in list(jieba.cut(sent.strip()))
                   if w not in STOP_WORDS]
@@ -183,6 +220,6 @@ def range_extract(pattern, query, single, range_render=False):
 
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
-    print(rule_base_num_retreive('华为num元手机phone.mmem'))
-    print(tokenize('华为num元手机phone.mmem', char=0))
+    print(rule_base_num_retreive('华为num元手机phoner.mmem$rr'))
+    print(tokenize('plugin:api_call_slot,phone.mmem:1g', char=1))
     print(rule_base_num_retreive(''))
