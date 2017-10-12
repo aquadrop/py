@@ -152,13 +152,13 @@ class Node:
         We use belief_graph to achieve faster bottom to up search
         """
         candidate_nodes = belief_graph.get_nodes_by_value(value)
-        if self.value == "ROOT":
+        if self.value == "ROOT".lower():
             return len(candidate_nodes) > 0
 
         for node in candidate_nodes:
             id = node.id
             a = node
-            while a.value != "ROOT":
+            while a.value != "ROOT".lower():
                 if a.value == self.value:
                     return True
                 a = a.parent_node
@@ -166,14 +166,14 @@ class Node:
 
     def get_posterity_nodes_by_value(self, value, belief_graph):
         candidate_nodes = belief_graph.get_nodes_by_value(value)
-        if self.value == "ROOT":
+        if self.value == "ROOT".lower():
             return candidate_nodes
 
         posterity = []
         for node in candidate_nodes:
             id = node.id
             a = node
-            while a.value != "ROOT":
+            while a.value != "ROOT".lower():
                 if a.value == self.value:
                     posterity.append(belief_graph.get_node_by_id(id))
                     break
@@ -201,7 +201,7 @@ class Node:
     def get_ancestry_values(self):
         node = self.parent_node
         anc_values = []
-        while node.value != "ROOT":
+        while node.value != "ROOT".lower():
             anc_values.append(node.value)
             node = node.parent_node
         return anc_values

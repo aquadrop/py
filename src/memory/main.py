@@ -17,6 +17,7 @@ from sklearn import metrics
 import data_utils
 import memn2n as memn2n
 import memn2n2 as memn2n2
+import config as config
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
@@ -24,11 +25,10 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
 W2V_DIR = grandfatherdir + '/model/w2v/'
-BATCH_SIZE = 64
-EMBEDDING_SIZE = 300
 CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
-HOPS = 2
-
+HOPS = config.HOPS
+BATCH_SIZE = config.BATCH_SIZE
+EMBEDDING_SIZE = config.EMBEDDING_SIZE
 '''
     dictionary of models
         select model from here

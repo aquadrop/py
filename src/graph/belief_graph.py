@@ -36,7 +36,7 @@ from graph.node import Node
 
 
 class Graph(Node, object):
-    ROOT = 'ROOT'
+    ROOT = "ROOT".lower()
 
     def __init__(self, slot, value, fields, node_type, id):
         super(Graph, self).__init__(slot=slot, value=value,
@@ -128,7 +128,7 @@ def load_belief_graph(path, output_model_path):
                         field = fi.split(":")[0]
                         prob = float(fi.split(":")[1])
                         fields[field] = prob
-                if value == "ROOT":
+                if value == "ROOT".lower():
                     node = Graph(
                         value=value, fields=fields, slot=slot, id=id, node_type=node_type)
                     if not belief_graph:
@@ -193,14 +193,14 @@ def load_belief_graph_from_tables(files, output_file):
     for f in files:
         with open(f, 'r', encoding='utf-8') as inpt:
             for line in inpt:
-                line = line.strip('\n').replace(' ', '')
+                line = line.strip('\n').replace(' ', '').lower()
                 note, cn, slot, node_type, slot_value = line.split('|')
                 if note == '-':
                     slots[slot] = node_type
                     _id = str(uuid.uuid4())
                     # node = Node(value=slot_value, fields=dict(),
                     #                   slot=slot, id=_id, node_type="property")
-                    if slot_value == "ROOT":
+                    if slot_value == "ROOT".lower():
                         node = Graph(
                             value=slot_value, fields=dict(), slot=slot, id=id, node_type=slot)
                         if not belief_graph:
@@ -224,7 +224,7 @@ def load_belief_graph_from_tables(files, output_file):
     for f in files:
         with open(f, 'r', encoding='utf-8') as inpt:
             for line in inpt:
-                line = line.strip('\n').replace(' ', '')
+                line = line.strip('\n').replace(' ', '').lower()
                 note, cn, slot, node_type, slot_value = line.split('|')
                 if note == '-':
                     nodes = node_header[slot_value]

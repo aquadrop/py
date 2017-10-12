@@ -37,6 +37,7 @@ class BeliefTracker:
     TRAVEL_STATE = "travel_state"
     AMBIGUITY_STATE = "ambiguity_state"
     REQUEST_PROPERTY_STATE = "request_property_state"
+    NO_CHILD_STATE = 'no_child_state'
     RESET_STATE = "reset_state"
 
     VIRTUAL = 'virtual_category'
@@ -290,8 +291,13 @@ class BeliefTracker:
                             self.ambiguity_slots[node.slot] = [node]
                 else:
                     # swith branch
+                    # current_requested = self.get_requested_field()
+                    # if current_requested == key:
+                    #     # remain in the current node
+                    #     self.machine_state = self.NO_CHILD_STATE
+                    # else:
                     self.move_to_node(self.belief_graph.get_root_node())
-                    return self.color_graph(query, slot_values_mapper)
+                    return self.color_graph(query=query, slot_values_mapper=slot_values_mapper)
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE

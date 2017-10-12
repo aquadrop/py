@@ -178,7 +178,7 @@ def gen_sessions(belief_tracker, output_files):
 
     def get_requested_field():
         requested = np.random.choice(
-            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
+            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.2, 0.5, 0.3, 0])
         return requested
 
     def render_lang(slot_values_mapper, fresh):
@@ -302,7 +302,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 20000:
+            if i >= 50000:
                 break
 
     # lower everything
@@ -310,7 +310,7 @@ def gen_sessions(belief_tracker, output_files):
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates))
 
-    with_base = False
+    with_base = True
     base_count = 0
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:

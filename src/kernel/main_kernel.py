@@ -90,9 +90,10 @@ class MainKernel:
                 self.sess.context[-1].append(response)
             else:
                 response = api
+                avails = []
             print('after---', self.sess.context)
 
-            return self.render_response(response.split('#')[0])
+            return self.render_response(response) + '#avail_vals:' + str(avails)
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -144,9 +145,9 @@ if __name__ == '__main__':
               "solr.facet": 'on',
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
+              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_a1.pkl',
-              "clf": 'gbdt'  # or memory
+              "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
     while True:
