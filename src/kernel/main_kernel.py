@@ -42,6 +42,7 @@ from utils.cn2arab import *
 
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
+import utils.solr_util as solr_util
 
 
 class MainKernel:
@@ -66,6 +67,8 @@ class MainKernel:
             self.memory = MainKernel.static_memory
 
     def kernel(self, q, user='solr'):
+        if not q:
+            return 'api_call_error'
         rande_rendered, wild_card = self.range_render(q)
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
@@ -124,6 +127,25 @@ class MainKernel:
             params = self.belief_tracker.belief_graph.slots_trans[params]
             rendered = '什么' + params
             return rendered + "@@" + response
+        if response.startswith('api_call_rhetorical_'):
+            entity = response.replace('api_call_rhetorical_', '')
+            if entity in self.belief_tracker.avails:
+                return '我们有' + ",".join(self.belief_tracker.avails[entity])
+            else:
+                return '无法查阅'
+        if response.startswith('api_call_search_'):
+            tokens = response.replace('api_call_search_', '').split(',')
+            mapper = dict()
+            for t in tokens:
+                key, value = t.split(':')
+                mapper[key] = value
+            docs = solr_util.query(mapper)
+            if len(docs) > 0:
+                doc = docs[0]
+                if 'discount' in doc and doc['discount']:
+                    return '为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
+                else:
+                    return '为您推荐' + doc['title'][0]
         return response
 
     def api_call_slot_json_render(self, api):

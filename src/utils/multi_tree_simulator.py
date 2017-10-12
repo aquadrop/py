@@ -221,7 +221,7 @@ def gen_sessions(belief_tracker, output_files):
         return lang
 
     def render_cls(slot_values_mapper):
-        return 'api_call_slot_' + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])
+        return 'plugin:api_call_slot' + "," + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])
 
     def render_api(api):
         return api[0]
@@ -266,7 +266,8 @@ def gen_sessions(belief_tracker, output_files):
 
         fresh = False
         cls = render_cls(slot_values_mapper)
-        candidates.add(cls.lower())
+        for each in cls.split(","):
+            candidates.add(each.lower())
         api = render_api(belief_tracker.issue_api())
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
@@ -274,9 +275,9 @@ def gen_sessions(belief_tracker, output_files):
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
-                memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+                memory_line = reh + '\t' + "plugin:" + cls + '\t' + 'placeholder'
                 cls = cls.lower()
-                candidates.add(cls)
+                candidates.add("plugin:" + cls)
                 memory_line = memory_line.lower()
                 container.append(memory_line)
                 train_gbdt.add(rhetorical.lower())
@@ -302,7 +303,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 100000:
+            if i >= 5000:
                 break
 
     # lower everything
@@ -331,6 +332,10 @@ def gen_sessions(belief_tracker, output_files):
                         train_count += 1
                         if train_count > 0.7 * base_count:
                             break
+                    if line:
+                        a, b, c = line.split('\t')
+                        b = "plugin:api_call_base"
+                        line = '\t'.join([a, b, c])
                     f.writelines(line + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
@@ -342,10 +347,14 @@ def gen_sessions(belief_tracker, output_files):
                     line = line.strip('\n')
                     if not line:
                         train_count += 1
-                        if train_count > 0.8 * base_count:
-                            f.writelines(line + '\n')
-                        if train_count > 0.9 * base_count:
-                            break
+                    if train_count > 0.8 * base_count:
+                        if line:
+                            a, b, c = line.split('\t')
+                            b = "plugin:api_call_base"
+                            line = '\t'.join([a, b, c])
+                        f.writelines(line + '\n')
+                    if train_count > 0.9 * base_count:
+                        break
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
         for line in mapper['test']:
@@ -354,7 +363,13 @@ def gen_sessions(belief_tracker, output_files):
             with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
+                    if not line:
+                        train_count += 1
                     if train_count > 0.9 * base_count:
+                        if line:
+                            a, b, c = line.split('\t')
+                            b = "plugin:api_call_base"
+                            line = '\t'.join([a, b, c])
                         f.writelines(line + '\n')
 
     # candidate
@@ -365,34 +380,34 @@ def gen_sessions(belief_tracker, output_files):
             with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
-                    f.writelines(line + '\n')
+                    f.writelines("plugin:" + line + '\n')
 
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)
 
     # gbdt
-    with open(output_files[4], 'w', encoding='utf-8') as f:
-        for line in train_gbdt:
-            f.writelines(line + '\n')
-        # hello
-        with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = "plugin:api_call_greet" + '#' + line.strip('\n')
-                f.writelines(line + '\n')
-        # qa
-        with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = "plugin:api_call_qa" + '#' + line.strip('\n')
-                f.writelines(line + '\n')
-        # chat
-        with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = line.strip('\n')
-                cls, sentence = line.split('#')
-                f.writelines('plugin:api_call_base#' + sentence + '\n')
+    # with open(output_files[4], 'w', encoding='utf-8') as f:
+    #     for line in train_gbdt:
+    #         f.writelines(line + '\n')
+    #     # hello
+    #     with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
+    #               'r', encoding='utf-8') as hl:
+    #         for line in hl:
+    #             line = "plugin:api_call_greet" + '#' + line.strip('\n')
+    #             f.writelines(line + '\n')
+    #     # qa
+    #     with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
+    #               'r', encoding='utf-8') as hl:
+    #         for line in hl:
+    #             line = "plugin:api_call_qa" + '#' + line.strip('\n')
+    #             f.writelines(line + '\n')
+    #     # chat
+    #     with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
+    #               'r', encoding='utf-8') as hl:
+    #         for line in hl:
+    #             line = line.strip('\n')
+    #             cls, sentence = line.split('#')
+    #             f.writelines('plugin:api_call_base#' + sentence + '\n')
 
 
 if __name__ == "__main__":
@@ -404,10 +419,10 @@ if __name__ == "__main__":
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     bt = BeliefTracker(config)
 
-    output_files = ['../../data/memn2n/train/tree/candidates.txt',
-                    '../../data/memn2n/train/tree/train.txt',
-                    '../../data/memn2n/train/tree/val.txt',
-                    '../../data/memn2n/train/tree/test.txt',
+    output_files = ['../../data/memn2n/train/multi_tree/candidates.txt',
+                    '../../data/memn2n/train/multi_tree/train.txt',
+                    '../../data/memn2n/train/multi_tree/val.txt',
+                    '../../data/memn2n/train/multi_tree/test.txt',
                     '../../data/memn2n/train/gbdt/train.txt']
 
     gen_sessions(bt, output_files)

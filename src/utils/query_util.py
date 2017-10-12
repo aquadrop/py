@@ -55,7 +55,7 @@ def tokenize(sent, char=0):
     tokens = list()
     if char == 0:
         tokens = list(sent)
-        for s in STOP_WORDS:
+        for s in STOP_WORDS1:
             if s in tokens:
                 tokens.remove(s)
         return tokens
@@ -65,7 +65,7 @@ def tokenize(sent, char=0):
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')
         en = list()
         for c in sent:
-            if c in STOP_WORDS1:
+            if c in STOP_WORDS:
                 continue
             match = zh_pattern.search(c)
             if match:
@@ -185,3 +185,4 @@ if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     print(rule_base_num_retreive('华为num元手机phone.mmem'))
     print(tokenize('华为num元手机phone.mmem', char=0))
+    print(rule_base_num_retreive(''))

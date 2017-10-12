@@ -6,6 +6,8 @@ import os
 import sys
 import jieba
 
+import memory.config as config
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
@@ -70,7 +72,10 @@ def parse_dialogs_per_response(lines, candid_dic):
             if '\t' in line:
                 # print(line)
                 u, r, salt = line.split('\t')
-                a = candid_dic[r]
+                if config.MULTILABEL >= 1:
+                    a = [candid_dic[single_r] for single_r in r.split(",")]
+                else:
+                    a = candid_dic[r]
                 u = tokenize(u)
                 r = tokenize(r + " " + salt)
                 # print(u)

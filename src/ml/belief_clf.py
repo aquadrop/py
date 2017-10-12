@@ -121,7 +121,7 @@ class Multilabel_Clf:
                 # print_cn(line)
                 key = line[0]
                 input_ = line[1]
-                labels = key.split(",")
+                labels = key.split("|")
 
                 prediction, proba = self.predict(input_)
                 if set(prediction) == set(labels):

@@ -18,17 +18,29 @@ import data_utils
 import memn2n as memn2n
 import memn2n2 as memn2n2
 import config as config
+import heapq
+import operator
+import memory.config as config
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
-P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+
+if config.MULTILABEL >= 1:
+    DATA_DIR = grandfatherdir + '/data/memn2n/train/multi_tree'
+else:
+    DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
+if config.MULTILABEL >= 1:
+    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/multiple/'
+    CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
+else:
+    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+    CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
 W2V_DIR = grandfatherdir + '/model/w2v/'
-CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
 HOPS = config.HOPS
 BATCH_SIZE = config.BATCH_SIZE
 EMBEDDING_SIZE = config.EMBEDDING_SIZE
+
 '''
     dictionary of models
         select model from here
@@ -46,12 +58,14 @@ model = {
 
 def batch_predict(model, S, Q, n, batch_size):
     preds = []
+    loss = []
     for start in range(0, n, batch_size):
         end = start + batch_size
         s = S[start:end]
         q = Q[start:end]
-        pred = model.predict(s, q)
-        preds += list(pred)
+        pred, top_prob= model.predict(s, q)
+        # print(pred.indices, top_prob.values)
+        preds += list(pred.indices)
     return preds
 
 
@@ -163,28 +177,55 @@ class InteractiveSession():
             self.nid = 1
             reply_msg = 'memory cleared!'
         else:
-            u = tokenize(line)
-            print('context:', self.context)
-            data = [(self.context, u, -1)]
-            print('data:', data)
-            s, q, a = data_utils.vectorize_data(data,
-                                                self.w2idx,
-                                                self.model._sentence_size,
-                                                1,
-                                                self.n_cand,
-                                                self.memory_size)
-            preds = self.model.predict(s, q)
-            r = self.idx2candid[preds[0]]
-            reply_msg = r
-            r = tokenize(r)
-            u.append('$u')
-            # u.append('#' + str(self.nid))
-            r.append('$r')
-            # r.append('#' + str(self.nid))
-            self.context.append(u)
-            self.context.append(r)
-            print('context:', self.context)
-            self.nid += 1
+            if config.MULTILABEL >= 1:
+                u = tokenize(line)
+                print('context:', self.context)
+                data = [(self.context, u, -1)]
+                print('data:', data)
+                s, q, a = data_utils.vectorize_data(data,
+                                                    self.w2idx,
+                                                    self.model._sentence_size,
+                                                    1,
+                                                    self.n_cand,
+                                                    self.memory_size)
+                preds, top_probs= self.model.predict(s, q)
+                # preds = preds.indices[0]
+                preds = preds.indices[0].tolist()
+                top_probs = top_probs.values[0]
+                print(top_probs)
+                r = []
+                for i, pred in enumerate(preds):
+                    r.append(self.idx2candid[pred])
+                reply_msg = ','.join(r)
+                r = tokenize(reply_msg)
+                u.append('$u')
+                # u.append('#' + str(self.nid))
+                r.append('$r')
+                # r.append('#' + str(self.nid))
+                self.context.append(u)
+                self.context.append(r)
+                print('context:', self.context)
+                self.nid += 1
+            else:
+                u = data_utils.tokenize(line)
+                data = [(self.context, u, -1)]
+                s, q, a = data_utils.vectorize_data(data,
+                                                    self.w2idx,
+                                                    self.model._sentence_size,
+                                                    1,
+                                                    self.n_cand,
+                                                    self.memory_size)
+                preds = self.model.predict(s, q)
+                r = self.idx2candid[preds[0]]
+                reply_msg = r
+                r = data_utils.tokenize(r)
+                u.append('$u')
+                # u.append('#' + str(self.nid))
+                r.append('$r')
+                # r.append('#' + str(self.nid))
+                self.context.append(u)
+                self.context.append(r)
+                self.nid += 1
 
         return reply_msg
 
@@ -277,6 +318,7 @@ def main(args):
         # write log to file
         log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
         cost_total = 0.
+        best_cost = 100
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
         total_begin = time.clock()
@@ -288,40 +330,56 @@ def main(args):
                 q = train['q'][start:end]
                 # print(len(q))
                 a = train['a'][start:end]
+                if config.MULTILABEL >= 1:
+                    # convert to one hot
+                    one_hot = np.zeros((end - start, n_cand))
+                    for aa in range(end - start):
+                        for index in a[aa]:
+                            one_hot[aa][index] = 1
+                    a = one_hot
                 cost_total += model.batch_fit(s, q, a)
-
-            if i % 1 == 0 and i:
-                print('stage...', i)
-                if i % eval_interval == 0 and i:
-                    train_preds = batch_predict(model, train['s'], train['q'], len(
-                        train['s']), batch_size=BATCH_SIZE)
-                    # for i in range(len(train['q'])):
-                    #     if train_preds[i] != train['a'][i]:
-                    #         print(recover_sentence(train['q'][i], idx2w),
-                    #               recover_cls(train_preds[i], idx2candid),
-                    #               recover_cls(train['a'][i], idx2candid))
-                    val_preds = batch_predict(model, val['s'], val['q'], len(
-                        val['s']), batch_size=BATCH_SIZE)
-                    train_acc = metrics.accuracy_score(
-                        np.array(train_preds), train['a'])
-                    val_acc = metrics.accuracy_score(val_preds, val['a'])
-                    end = time.clock()
-                    print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                          format(i, train_acc, val_acc))
-                    print('time:{}'.format(end - begin))
-                    log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
-                                                            cost_total / (eval_interval * len(batches))))
-                    cost_total = 0.  # empty cost
-                    begin = end
-                    #
-                    # save the best model, to disk
-                    # if val_acc > best_validation_accuracy:
-                    # best_validation_accuracy = val_acc
-                    if train_acc > lowest_val_acc:
-                        print('saving model...', train_acc, lowest_val_acc)
-                        lowest_val_acc = train_acc
+            if config.MULTILABEL >= 1:
+                if i % 1 == 0 and i:
+                    print('stage...', i, cost_total)
+                    if cost_total < best_cost:
+                        print('saving model...', i, '++', str(best_cost) + '-->' + str(cost_total))
+                        best_cost = cost_total
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
+                cost_total = 0
+            else :
+                if i % 1 == 0 and i:
+                    print('stage...', i)
+                    if i % eval_interval == 0 and i:
+                        train_preds = batch_predict(model, train['s'], train['q'], len(
+                            train['s']), batch_size=BATCH_SIZE)
+                        # for i in range(len(train['q'])):
+                        #     if train_preds[i] != train['a'][i]:
+                        #         print(recover_sentence(train['q'][i], idx2w),
+                        #               recover_cls(train_preds[i], idx2candid),
+                        #               recover_cls(train['a'][i], idx2candid))
+                        val_preds = batch_predict(model, val['s'], val['q'], len(
+                            val['s']), batch_size=BATCH_SIZE)
+                        train_acc = metrics.accuracy_score(
+                            np.array(train_preds), train['a'])
+                        val_acc = metrics.accuracy_score(val_preds, val['a'])
+                        end = time.clock()
+                        print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
+                              format(i, train_acc, val_acc))
+                        print('time:{}'.format(end - begin))
+                        log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
+                                                                cost_total / (eval_interval * len(batches))))
+                        cost_total = 0.  # empty cost
+                        begin = end
+                        #
+                        # save the best model, to disk
+                        # if val_acc > best_validation_accuracy:
+                        # best_validation_accuracy = val_acc
+                        if train_acc > lowest_val_acc:
+                            print('saving model...', train_acc, lowest_val_acc)
+                            lowest_val_acc = train_acc
+                            model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                                             global_step=i)
         # close file
         total_end = time.clock()
         print('Total time: {} minutes.'.format((total_end - total_end) / 60))
