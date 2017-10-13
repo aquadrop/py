@@ -303,7 +303,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 100:
+            if i >= 5000:
                 break
 
     # lower everything
@@ -311,7 +311,7 @@ def gen_sessions(belief_tracker, output_files):
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates))
 
-    with_base = False
+    with_base = True
     base_count = 0
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:

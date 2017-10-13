@@ -65,7 +65,10 @@ def batch_predict(model, S, Q, n, batch_size):
         q = Q[start:end]
         pred, top_prob= model.predict(s, q)
         # print(pred.indices, top_prob.values)
-        preds += list(pred.indices)
+        if config.MULTILABEL >= 1:
+            preds += list(pred.indices)
+        else:
+            preds += list(pred)
     return preds
 
 
