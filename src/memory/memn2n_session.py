@@ -39,7 +39,8 @@ class Memn2nSession():
 
     def append_memory(self, m):
         m = tokenize(m)
-        self.context[-1].extend(m)
+        m.append('$r')
+        self.context.append(m)
 
     def reply(self, msg):
         line = msg.strip().lower()
