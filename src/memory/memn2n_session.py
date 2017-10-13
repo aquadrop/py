@@ -17,6 +17,7 @@ sys.path.append(grandfatherdir)
 import utils.query_util as query_util
 import memory.memn2n as memn2n
 import memory.data_utils as data_utils
+import memory.config as config
 
 
 class Memn2nSession():
@@ -94,7 +95,7 @@ class MemInfer:
         # vectorize candidates
         candidates_vec = data_utils.vectorize_candidates(
             candidates, self.w2idx, candidate_sentence_size)
-        HOPS = 3
+        HOPS = config.HOPS
         print('---- memory config ----')
         print('memory_size:', self.memory_size)
         print('vocab_size:', vocab_size)
@@ -104,11 +105,11 @@ class MemInfer:
         print('---- end ----')
 
         model = memn2n.MemN2NDialog(
-            batch_size=16,
+            batch_size=config.BATCH_SIZE,
             vocab_size=vocab_size,
             candidates_size=self.n_cand,
             sentence_size=sentence_size,
-            embedding_size=300,
+            embedding_size=config.EMBEDDING_SIZE,
             candidates_vec=candidates_vec,
             hops=HOPS
         )
@@ -134,7 +135,7 @@ def main():
         grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     data_dir = os.path.join(
         grandfatherdir, 'data/memn2n/processed/data.pkl')
-    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt2')
     config = {"metadata_dir": metadata_dir,
               "data_dir": data_dir, "ckpt_dir": ckpt_dir}
     mi = MemInfer(config)

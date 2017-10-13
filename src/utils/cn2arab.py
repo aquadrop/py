@@ -35,7 +35,7 @@ def new_cn2arab(query):
         return float(query)
 
     if len(query) == 0:
-        return False, query
+        return query
 
     result = []
     numstring = []
