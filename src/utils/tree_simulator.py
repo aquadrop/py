@@ -183,9 +183,9 @@ def gen_sessions(belief_tracker, output_files):
 
     def render_lang(slot_values_mapper, fresh):
         search_node = belief_tracker.search_node
-        prefix = ['', '我来买', '我来看看', '看看']
+        prefix = ['', '我来买', '我来看看', '看看','我要买','我想买']
         postfix = ['吧', '呢', '']
-        lang = np.random.choice(prefix, p=[0.1, 0.5, 0.2, 0.2])
+        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1,0.15,0.15])
         if 'brand' in slot_values_mapper:
             lang += slot_values_mapper['brand'] + \
                 np.random.choice(['的', ''], p=[0.7, 0.3])
