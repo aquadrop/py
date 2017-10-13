@@ -344,11 +344,9 @@ def main(args):
                     if cost_total < best_cost:
                         print('saving model...', i, '++',
                               str(best_cost) + '-->' + str(cost_total))
-                              str(best_cost) + '-->' + str(cost_total))
                         best_cost = cost_total
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
-            else:
             else:
                 if i % 1 == 0 and i:
                     print('stage...', i)

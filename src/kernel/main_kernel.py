@@ -43,6 +43,7 @@ from utils.cn2arab import *
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
+from qa.qa import Qa as QA
 
 
 class MainKernel:
@@ -52,6 +53,7 @@ class MainKernel:
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
+        self.interactive = QA('interactive')
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -91,6 +93,10 @@ class MainKernel:
                 response, avails = self.belief_tracker.memory_kernel(q, api_json)
                 print(response, type(response))
                 self.sess.context[-1].append(response)
+            if api.startswith('api_call_base') or api.startswith('api_call_greet'):
+                matched, answer = self.interactive.get_responses(query=q)
+                response = answer
+                avails = []
             else:
                 response = api
                 avails = []
@@ -168,8 +174,8 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_a1.pkl',
-              "clf": 'memory'  # or memory
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clk.pkl',
+              "clf": 'gbdt'  # or memory
               }
     kernel = MainKernel(config)
     while True:
