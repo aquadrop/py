@@ -15,7 +15,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n as memn2n
+import memn2n_lstm as memn2n
 import memn2n2 as memn2n2
 import config as config
 import heapq
@@ -63,7 +63,7 @@ def batch_predict(model, S, Q, n, batch_size):
         end = start + batch_size
         s = S[start:end]
         q = Q[start:end]
-        pred, top_prob= model.predict(s, q)
+        pred, top_prob = model.predict(s, q)
         # print(pred.indices, top_prob.values)
         preds += list(pred.indices)
     return preds
@@ -188,7 +188,7 @@ class InteractiveSession():
                                                     1,
                                                     self.n_cand,
                                                     self.memory_size)
-                preds, top_probs= self.model.predict(s, q)
+                preds, top_probs = self.model.predict(s, q)
                 # preds = preds.indices[0]
                 preds = preds.indices[0].tolist()
                 top_probs = top_probs.values[0]
@@ -342,12 +342,14 @@ def main(args):
                 if i % 1 == 0 and i:
                     print('stage...', i, cost_total)
                     if cost_total < best_cost:
-                        print('saving model...', i, '++', str(best_cost) + '-->' + str(cost_total))
+                        print('saving model...', i, '++',
+                              str(best_cost) + '-->' + str(cost_total))
+                              str(best_cost) + '-->' + str(cost_total))
                         best_cost = cost_total
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
-                cost_total = 0
-            else :
+            else:
+            else:
                 if i % 1 == 0 and i:
                     print('stage...', i)
                     if i % eval_interval == 0 and i:
@@ -382,7 +384,7 @@ def main(args):
                                              global_step=i)
         # close file
         total_end = time.clock()
-        print('Total time: {} minutes.'.format((total_end - total_end) / 60))
+        print('Total time: {} minutes.'.format((total_end - total_begin) / 60))
         log_handle.close()
 
     else:  # inference

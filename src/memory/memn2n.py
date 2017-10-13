@@ -45,7 +45,7 @@ class MemN2NDialog(object):
     def __init__(self, batch_size, vocab_size, candidates_size, sentence_size, embedding_size,
                  candidates_vec,
                  hops=3,
-                 max_grad_norm=80.0,
+                 max_grad_norm=40.0,
                  nonlin=None,
                  initializer=tf.random_normal_initializer(stddev=0.1),
                  optimizer=tf.train.AdamOptimizer(
