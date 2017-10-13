@@ -15,7 +15,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n_lstm as memn2n
+import memn2n as memn2n
 import memn2n2 as memn2n2
 import config as config
 import heapq
@@ -218,7 +218,7 @@ class InteractiveSession():
                                                     1,
                                                     self.n_cand,
                                                     self.memory_size)
-                preds = self.model.predict(s, q)
+                preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
                 r = data_utils.tokenize(r)
