@@ -5,13 +5,14 @@ import re
 import os
 import sys
 import jieba
+import json
 
-import memory.config as config
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
+import memory.config as config
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -25,6 +26,32 @@ from six.moves import range, reduce
 
 import numpy as np
 import tensorflow as tf
+
+
+def build_vocab_beforehand(vocab_base, vocab_path):
+    with open(vocab_base, 'r') as f:
+        lines = f.readlines()
+    vocab = reduce(lambda x, y: x | y, (set(tokenize(line, char=0))
+                                        for line in lines))
+    vocab = sorted(vocab)
+    # print(vocab)
+    extra_list = ['api', 'call', 'slot', 'deny', 'rhetorical', 'general',
+                  'brand', 'price', 'ac', 'power', 'fr', 'cool_type', 'phone',
+                  'sys', 'feature', 'color', 'memsize', 'size', 'distance',
+                  'resolution', 'panel', 'dyson', 'root', 'virtual', 'mode',
+                  'energy_lvl', 'connect', 'net', 'rmem', 'mmem', 'people', 'vol', 'width', 'height',
+                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto'
+                  ]
+    for w in extra_list:
+        vocab.append(w)
+    for i in range(100):
+        vocab.append('placeholder' + str(i + 1))
+    vocab = sorted(vocab)
+    print(vocab)
+    # 0 is reserved
+    w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+    with open(vocab_path, 'w') as f:
+        json.dump(vocab, f, ensure_ascii=False)
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -94,17 +121,22 @@ def parse_dialogs_per_response(lines, candid_dic):
 
 
 def build_vocab(data, candidates, memory_size=50):
-    vocab = reduce(lambda x, y: x | y, (set(
-        list(chain.from_iterable(s)) + q) for s, q, a in data))
-    # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
+    # vocab = reduce(lambda x, y: x | y, (set(
+    #     list(chain.from_iterable(s)) + q) for s, q, a in data))
+    # # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
+    # #                                      for candidate in candidates))
+    # vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
     #                                      for candidate in candidates))
-    vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
-                                         for candidate in candidates))
-    vocab |= vocab2
-    vocab = sorted(vocab)
-    print(vocab)
-    # 0 is reserved
+    # vocab |= vocab2
+    # vocab = sorted(vocab)
+    # print(vocab)
+    # # 0 is reserved
+    # w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+
+    with open(grandfatherdir + '/data/memn2n/train/vocab.txt', 'r') as f:
+        vocab = json.load(f)
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+    print(w2idx)
     max_story_size = max(map(len, (s for s, _, _ in data)))
     mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
     sentence_size = max(map(len, chain.from_iterable(s for s, _, _ in data)))
@@ -222,19 +254,25 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
 
 
 if __name__ == '__main__':
-    # candidates, candid2idx, idx2candid = load_candidates()
-    # # print(candidates)
-    # # print(idx2candid)
-    # train_data, test_data, val_data = load_dialog(
-    #     data_dir=DATA_DIR,
-    #     candid_dic=candid2idx)
-    # print(train_data[1])
+    candidates, candid2idx, idx2candid = load_candidates()
+    # print(candidates)
+    # print(idx2candid)
+    train_data, test_data, val_data = load_dialog(
+        data_dir=DATA_DIR,
+        candid_dic=candid2idx)
+    print(train_data[1])
 
-    # metadata = build_vocab(train_data, candidates)
+    metadata = build_vocab(train_data, candidates)
+
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
-    test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
-            'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
-    for t in test:
-        print(tokenize(t, True))
+
+    # test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
+    #         'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
+    # for t in test:
+    #     print(tokenize(t, True))
+
+    base_vocab = grandfatherdir + '/data/memn2n/base_vocab.txt'
+    vocab_path = grandfatherdir + '/data/memn2n/train/vocab.txt'
+    build_vocab_beforehand(base_vocab, vocab_path)
