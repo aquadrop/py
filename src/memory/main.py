@@ -65,7 +65,10 @@ def batch_predict(model, S, Q, n, batch_size):
         q = Q[start:end]
         pred, top_prob = model.predict(s, q)
         # print(pred.indices, top_prob.values)
-        preds += list(pred.indices)
+        if config.MULTILABEL >= 1:
+            preds += list(pred.indices)
+        else:
+            preds += list(pred)
     return preds
 
 
@@ -147,7 +150,7 @@ def parse_args(args):
     #                     help='Task Id in bAbI (6) tasks {1-6}')
     parser.add_argument('--batch_size', required=False, type=int, default=16,
                         help='you know what batch size means!')
-    parser.add_argument('--epochs', required=False, type=int, default=200,
+    parser.add_argument('--epochs', required=False, type=int, default=2000,
                         help='num iteration of training over train set')
     parser.add_argument('--eval_interval', required=False, type=int, default=5,
                         help='num iteration of training over train set')
