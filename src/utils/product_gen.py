@@ -202,6 +202,44 @@ def phone_product_gen(product_file, data_file):
 
             output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
+def pc_product_gen(product_file, data_file):
+    profile = dict()
+    title = []
+    with open(data_file, 'r') as infile:
+        line = infile.readline()
+        title = line.strip('\n').split("|")[4].split(',')
+        for line in infile:
+            line = line.replace(' ', '').strip('\n')
+            mark, a, b, _, c = line.split("|")
+            if mark == '*':
+                continue
+            profile[b] = c.split(",")
+
+    with open(product_file, 'w') as output:
+        for i in range(500):
+            ac = dict()
+            for key, value in profile.items():
+                data = np.random.choice(value)
+                ac[key] = data
+            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            if np.random.uniform() < 0.4:
+                ac['discount'] = np.random.choice(discount)
+            ac["pc.series"] = ""
+            if ac["brand"] == "苹果":
+                ac["pc.sys"] = "macos"
+                ac["pc.series"] = np.random.choice("mabbookair,macbookpro".split(","))
+            else:
+                ac["pc.sys"] = np.random.choice(["chromeos","windows"])
+            if ac["brand"] == "索尼":
+                ac["phone.series"] = np.random.choice("vaio".split(","))
+            tt = []
+            for t in title:
+                tt.append(ac[t])
+
+            ac['title'] = " ".join(tt)
+
+            output.write(json.dumps(ac, ensure_ascii=False) + '\n')
+
 
 def update_solr(solr_file):
 
@@ -222,12 +260,14 @@ def update_solr(solr_file):
 
 
 if __name__ == "__main__":
-    phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
+    # phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
     # ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
     # tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
+    pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/pc.txt')
     print('updating')
+    update_solr("../../data/raw/pc.txt")
     # update_solr("../../data/raw/product_tv.txt")
     # update_solr("../../data/raw/product_ac.txt")
-    update_solr("../../data/raw/product_phone.txt")
+    # update_solr("../../data/raw/product_phone.txt")
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     # update_solr("../../data/raw/product_fr.txt")

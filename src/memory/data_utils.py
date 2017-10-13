@@ -103,15 +103,17 @@ def parse_dialogs_per_response(lines, candid_dic):
                 else:
                     a = candid_dic[r]
                 u = tokenize(u)
-                r = tokenize(r + " " + salt)
+                r = tokenize(r)
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
                 data.append((context[:], u[:], a))
                 u.append('$u')
                 r.append('$r')
+                salt.append('$r')
                 context.append(u)
                 context.append(r)
+                context.append(salt)
         else:
             # clear context
             context = []

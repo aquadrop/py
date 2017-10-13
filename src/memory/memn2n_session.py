@@ -18,7 +18,7 @@ import utils.query_util as query_util
 import memory.memn2n as memn2n
 import memory.data_utils as data_utils
 import memory.config as config
-
+from utils.query_util import tokenize
 
 class Memn2nSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -33,32 +33,70 @@ class Memn2nSession():
         self.memory_size = memory_size
         self.model = model
 
+    def clear_memory(self):
+        self.context = []
+        self.nid = 1
+
+    def append_memory(self, m):
+        m = tokenize(m)
+        self.context[-1].extend(m)
+
     def reply(self, msg):
         line = msg.strip().lower()
         if line == 'clear':
-            self.context = []
-            self.nid = 1
+            self.clear_memory()
             reply_msg = 'memory cleared!'
         else:
-            u = data_utils.tokenize(line)
-            data = [(self.context, u, -1)]
-            s, q, a = data_utils.vectorize_data(data,
-                                                self.w2idx,
-                                                self.model._sentence_size,
-                                                1,
-                                                self.n_cand,
-                                                self.memory_size)
-            preds = self.model.predict(s, q)
-            r = self.idx2candid[preds[0]]
-            reply_msg = r
-            r = data_utils.tokenize(r)
-            u.append('$u')
-            # u.append('#' + str(self.nid))
-            r.append('$r')
-            # r.append('#' + str(self.nid))
-            self.context.append(u)
-            self.context.append(r)
-            self.nid += 1
+            if config.MULTILABEL >= 1:
+                u = tokenize(line)
+                print('context:', self.context)
+                data = [(self.context, u, -1)]
+                print('data:', data)
+                s, q, a = data_utils.vectorize_data(data,
+                                                    self.w2idx,
+                                                    self.model._sentence_size,
+                                                    1,
+                                                    self.n_cand,
+                                                    self.memory_size)
+                preds, top_probs = self.model.predict(s, q)
+                # preds = preds.indices[0]
+                preds = preds.indices[0].tolist()
+                top_probs = top_probs.values[0]
+                print(top_probs)
+                r = []
+                for i, pred in enumerate(preds):
+                    r.append(self.idx2candid[pred])
+                reply_msg = ','.join(r)
+                r = tokenize(reply_msg)
+                u.append('$u')
+                # u.append('#' + str(self.nid))
+                r.append('$r')
+                # r.append('#' + str(self.nid))
+                self.context.append(u)
+                self.context.append(r)
+                print('context:', self.context)
+                self.nid += 1
+            else:
+                u = data_utils.tokenize(line)
+                data = [(self.context, u, -1)]
+                s, q, a = data_utils.vectorize_data(data,
+                                                    self.w2idx,
+                                                    self.model._sentence_size,
+                                                    1,
+                                                    self.n_cand,
+                                                    self.memory_size)
+                preds, top_probs = self.model.predict(s, q)
+                r = self.idx2candid[preds[0]]
+                reply_msg = r
+                r = data_utils.tokenize(r)
+                u.append('$u')
+                # u.append('#' + str(self.nid))
+                r.append('$r')
+                # r.append('#' + str(self.nid))
+                self.context.append(u)
+                self.context.append(r)
+                self.nid += 1
+
         return reply_msg
 
 
