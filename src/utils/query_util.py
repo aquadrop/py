@@ -43,11 +43,11 @@ from utils.cn2arab import *
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
-STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":", '_', '.',
+STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ":",
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
-def tokenize(sent, char=0):
+def tokenize(sent, char=1):
     sent = sent.lower()
     tokens = list()
     if char == 0:
@@ -56,7 +56,7 @@ def tokenize(sent, char=0):
             if s in tokens:
                 tokens.remove(s)
         return tokens
-    elif char==1:
+    elif char == 1:
         split_list = [',', ':']
 
         zh_pattern = re.compile(u'[\u4e00-\u9fa5]+')

@@ -15,7 +15,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n as memn2n
+import memn2n_lstm as memn2n
 import memn2n2 as memn2n2
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -324,7 +324,7 @@ def main(args):
                                          global_step=i)
         # close file
         total_end = time.clock()
-        print('Total time: {} minutes.'.format((total_end - total_end) / 60))
+        print('Total time: {} minutes.'.format((total_end - total_begin) / 60))
         log_handle.close()
 
     else:  # inference
