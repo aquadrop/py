@@ -31,7 +31,7 @@ import tensorflow as tf
 def build_vocab_beforehand(vocab_base, vocab_path):
     with open(vocab_base, 'r') as f:
         lines = f.readlines()
-    vocab = reduce(lambda x, y: x | y, (set(tokenize(line, char=0))
+    vocab = reduce(lambda x, y: x | y, (set(tokenize(line., char=0))
                                         for line in lines))
     vocab = sorted(vocab)
     # print(vocab)
@@ -133,7 +133,7 @@ def build_vocab(data, candidates, memory_size=50):
     # # 0 is reserved
     # w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
 
-    with open(grandfatherdir + '/data/memn2n/train/vocab.txt', 'r') as f:
+    with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
         vocab = json.load(f)
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     print(w2idx)
@@ -254,15 +254,15 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
 
 
 if __name__ == '__main__':
-    candidates, candid2idx, idx2candid = load_candidates()
-    # print(candidates)
-    # print(idx2candid)
-    train_data, test_data, val_data = load_dialog(
-        data_dir=DATA_DIR,
-        candid_dic=candid2idx)
-    print(train_data[1])
+    # candidates, candid2idx, idx2candid = load_candidates()
+    # # print(candidates)
+    # # print(idx2candid)
+    # train_data, test_data, val_data = load_dialog(
+    #     data_dir=DATA_DIR,
+    #     candid_dic=candid2idx)
+    # print(train_data[1])
 
-    metadata = build_vocab(train_data, candidates)
+    # metadata = build_vocab(train_data, candidates)
 
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
@@ -273,6 +273,6 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
-    base_vocab = grandfatherdir + '/data/memn2n/base_vocab.txt'
-    vocab_path = grandfatherdir + '/data/memn2n/train/vocab.txt'
+    base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
+    vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
     build_vocab_beforehand(base_vocab, vocab_path)

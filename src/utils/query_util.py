@@ -51,7 +51,7 @@ STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ',
 
 
 def tokenize(sent, char=1):
-    sent = sent.lower()
+    sent = sent.lower().strip()
     tokens = list()
     if char == 0:
         for s in STOP_WORDS_0:
