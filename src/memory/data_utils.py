@@ -6,12 +6,11 @@ import os
 import sys
 import jieba
 
-import memory.config as config
-
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
+import memory.config as config
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -222,19 +221,19 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
 
 
 if __name__ == '__main__':
-    # candidates, candid2idx, idx2candid = load_candidates()
-    # # print(candidates)
-    # # print(idx2candid)
-    # train_data, test_data, val_data = load_dialog(
-    #     data_dir=DATA_DIR,
-    #     candid_dic=candid2idx)
-    # print(train_data[1])
+    candidates, candid2idx, idx2candid = load_candidates()
+    # print(candidates)
+    # print(idx2candid)
+    train_data, test_data, val_data = load_dialog(
+        data_dir=DATA_DIR,
+        candid_dic=candid2idx)
+    print(train_data[1])
 
-    # metadata = build_vocab(train_data, candidates)
+    metadata = build_vocab(train_data, candidates)
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
-    test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
-            'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
-    for t in test:
-        print(tokenize(t, True))
+    # test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
+    #         'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
+    # for t in test:
+    #     print(tokenize(t, True))
