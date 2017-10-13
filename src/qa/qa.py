@@ -28,21 +28,22 @@ class Qa:
         for index, doc in enumerate(docs):
             if index > 9:
                 break
+            if 'g' not in doc or 'b' not in doc:
+                continue
             b = doc['b']
-            g = doc['g'][0]
-            score = self.similarity(query, g)
-            print(score)
-            print(g)
-            if score > best_score:
-                best_score = score
-                best_query = g
-                best_answer = b
+            g = doc['g']
+            for _g in g:
+                score = self.similarity(query, _g)
+                if score > best_score:
+                    best_score = score
+                    best_query = _g
+                    best_answer = b
             # print(score)
 
         if best_score < THRESHOLD:
-            return 'api_call_base'
+            return query, 'api_call_base', best_score
         else:
-            return best_query, best_answer
+            return best_query, np.random.choice(best_answer), best_score
 
     def embed(self, tokens):
         embeddings = [ff_embedding(word) for word in tokens]
@@ -78,9 +79,8 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer = qa.get_responses('你叫什么名字吗')
-    print(best_query)
-    print(best_answer)
+    best_query, best_answer, best_score = qa.get_responses('今天天气怎么样')
+    print(best_query, best_answer, best_score)
 
 
 if __name__ == '__main__':
