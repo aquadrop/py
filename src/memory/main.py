@@ -89,6 +89,7 @@ def prepare_data(args):
     train, test, val = data_utils.load_dialog(
         data_dir=DATA_DIR,
         candid_dic=candid2idx)
+    # print(train)
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
