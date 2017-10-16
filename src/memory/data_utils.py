@@ -5,7 +5,10 @@ import re
 import os
 import sys
 import jieba
+
+
 import json
+
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -25,6 +28,7 @@ from six.moves import range, reduce
 
 import numpy as np
 import tensorflow as tf
+
 
 
 def build_vocab_beforehand(vocab_base, vocab_path):
@@ -51,6 +55,7 @@ def build_vocab_beforehand(vocab_base, vocab_path):
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     with open(vocab_path, 'w') as f:
         json.dump(vocab, f, ensure_ascii=False)
+
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -275,6 +280,8 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
+
     base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
     vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
     build_vocab_beforehand(base_vocab, vocab_path)
+

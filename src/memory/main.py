@@ -320,7 +320,7 @@ def main(args):
         print('\n>> Training started!\n')
         # write log to file
         log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
-        cost_total = 0.
+        cost_total = 0
         best_cost = 100
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
