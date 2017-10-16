@@ -133,7 +133,7 @@ def parse_dialogs_per_response(lines, candid_dic):
     return data
 
 
-def build_vocab(data, candidates, memory_size=50):
+def build_vocab(data, candidates, memory_size=config.MAX_MEMORY_SIZE):
     if config.FIX_VOCAB:
         with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
             vocab = json.load(f)

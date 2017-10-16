@@ -375,7 +375,6 @@ def main(args):
                     if i % eval_interval == 0 and i:
                         train_preds = batch_predict(model, train['s'], train['q'], len(
                             train['s']), batch_size=BATCH_SIZE)
-                        print(len(train['q']))
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
                                 print_out = recover(train['q'][error],\
