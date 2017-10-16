@@ -178,7 +178,7 @@ class InteractiveSession():
         self.model = model
         self.idx2candid = idx2candid
         self.w2idx = w2idx
-        self.n_cand = model._candidates_size
+        self.n_cand = model.get_sentence_size()
         self.memory_size = memory_size
         self.model = model
 
@@ -196,7 +196,7 @@ class InteractiveSession():
                 print('data:', data)
                 s, q, a = data_utils.vectorize_data(data,
                                                     self.w2idx,
-                                                    self.model._sentence_size,
+                                                    self.model.get_sentence_size(),
                                                     1,
                                                     self.n_cand,
                                                     self.memory_size)
@@ -223,7 +223,7 @@ class InteractiveSession():
                 data = [(self.context, u, -1)]
                 s, q, a = data_utils.vectorize_data(data,
                                                     self.w2idx,
-                                                    self.model._sentence_size,
+                                                    self.model.get_sentence_size(),
                                                     1,
                                                     self.n_cand,
                                                     self.memory_size)
@@ -368,11 +368,16 @@ def main(args):
                     if i % eval_interval == 0 and i:
                         train_preds = batch_predict(model, train['s'], train['q'], len(
                             train['s']), batch_size=BATCH_SIZE)
-                        # for i in range(len(train['q'])):
-                        #     if train_preds[i] != train['a'][i]:
-                        #         print(recover_sentence(train['q'][i], idx2w),
-                        #               recover_cls(train_preds[i], idx2candid),
-                        #               recover_cls(train['a'][i], idx2candid))
+                        print(len(train['q']))
+                        for error in range(len(train['q'])):
+                            if train_preds[error] != train['a'][error]:
+                                print_out = recover(train['q'][error],\
+                                                                      train_preds[error], train['a'][error],\
+                                                                      idx2w, idx2candid)
+                                print(print_out)
+                                # print(recover_sentence(train['q'][i], idx2w),
+                                #       recover_cls(train_preds[i], idx2candid),
+                                #       recover_cls(train['a'][i], idx2candid))
                         val_preds = batch_predict(model, val['s'], val['q'], len(
                             val['s']), batch_size=BATCH_SIZE)
                         train_acc = metrics.accuracy_score(
@@ -421,17 +426,15 @@ def main(args):
         elif args['ui']:
             return isess
 
+def recover(sentence, predicted, ground, idx2w, idx2candid):
+    predicted = idx2candid[predicted]
+    ground = idx2candid[ground.tolist()]
+    sentence = recover_sentence(sentence, idx2w)
+    return sentence, predicted, ground
 
 def recover_sentence(sentence_idx, idx2w):
     sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]
-    return ','.join(sentence)
-
-
-def recover_cls(idx, idx2cls):
-    if not isinstance(idx, np.int64):
-        idx = idx[0]
-    result = idx2cls[idx]
-    return result
+    return ''.join(sentence)
 
 
 def launch_multiple_session():

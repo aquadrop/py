@@ -143,12 +143,12 @@ def jieba_cut(query, smart=True):
 def rule_base_num_retreive(query):
     inch_dual = r".*(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸).*"
     meter_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米.*"
-    ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[P|匹].*"
+    ac_power_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[p|P|匹].*"
     price_dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[块|元].*"
 
     inch_single = r".*([-+]?\d*\.\d+|\d+)寸.*"
     meter_single = r".*([-+]?\d*\.\d+|\d+)米.*"
-    ac_power_single = r".*([-+]?\d*\.\d+|\d+)[P|匹].*"
+    ac_power_single = r".*([-+]?\d*\.\d+|\d+)[p|P|匹].*"
     price_single = r".*([-+]?\d*\.\d+|\d+)[块|元].*"
 
     dual = {"_inch_": inch_dual, "_meter_": meter_dual, "ac.power": ac_power_dual,
@@ -173,8 +173,8 @@ def rule_base_num_retreive(query):
 
     if flag:
         return render, wild_card
-    price_dual_default = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸).*"
-    price_single_default = r".*([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸).*"
+    price_dual_default = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级).*"
+    price_single_default = r".*([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级).*"
     remove_regex = r"\d+[个|只|条|部|本|台]"
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
@@ -220,6 +220,6 @@ def range_extract(pattern, query, single, range_render=False):
 
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
-    print(rule_base_num_retreive('华为num元手机phoner.mmem$rr'))
+    print(rule_base_num_retreive('华为1台手机phoner.mmem$rr'))
     print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

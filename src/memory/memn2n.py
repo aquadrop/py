@@ -166,6 +166,9 @@ class MemN2NDialog(object):
     def get_sess(self):
         return self._sess
 
+    def get_sentence_size(self):
+        return self._sentence_size
+
     def _build_inputs(self):
         self._stories = tf.placeholder(
             tf.int32, [None, None, self._sentence_size], name="stories")
