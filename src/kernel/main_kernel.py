@@ -28,6 +28,10 @@ Main Kernel
 
 import os
 import sys
+import logging
+import time
+from datetime import datetime
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -44,8 +48,13 @@ import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
 from qa.qa import Qa as QA
+import memory.config as config
 
+current_date = time.strftime("%Y.%m.%d")
+logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_' + current_date + '.log')
+                    ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
+os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 class MainKernel:
 
     static_memory = None
@@ -79,6 +88,11 @@ class MainKernel:
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
                 response, avails = self.belief_tracker.memory_kernel(q, api)
+            elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
+                # self.sess.clear_memory()
+                matched, answer, score = self.interactive.get_responses(query=q)
+                response = answer
+                avails = []
             else:
                 response = api['plugin']
                 avails = []
@@ -87,10 +101,10 @@ class MainKernel:
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
             api = self.sess.reply(rande_rendered)
-            print('before---', api, self.sess.context)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
                 response, avails = self.belief_tracker.memory_kernel(q, api_json)
+
                 # print(response, type(response))
             elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 # self.sess.clear_memory()
@@ -101,9 +115,9 @@ class MainKernel:
                 response = api
                 avails = []
             self.sess.append_memory(response)
-            print('after---', self.sess.context)
-
-            return self.render_response(response) + '#avail_vals:' + str(avails)
+            render = self.render_response(response) + '#avail_vals:' + str(avails)
+            logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(user, 'memory', q, api, render))
+            return render
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -115,6 +129,7 @@ class MainKernel:
         print(probs)
         api = dict()
         for c in classes:
+            print(c)
             key, value = c.split(':')
             api[key] = value
         return api
@@ -175,7 +190,7 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clk.pkl',
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)

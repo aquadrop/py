@@ -8,6 +8,7 @@ sys.path.insert(0, parentdir)
 
 from kernel.belief_tracker import BeliefTracker
 from graph.belief_graph import Graph
+import memory.config as m_config
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -73,6 +74,7 @@ def gen_sessions(belief_tracker, output_files):
         picked_fields = np.random.choice(fields, n).tolist()
         # append required fields
         picked_fields.append(required_field)
+        picked_fields = set(picked_fields)
         for f in picked_fields:
             value = random_property_value(f, my_search_node)
             # weird
@@ -302,7 +304,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 50000:
+            if i >= 200:
                 break
 
     # lower everything
@@ -358,14 +360,19 @@ def gen_sessions(belief_tracker, output_files):
                         f.writelines(line + '\n')
 
     # candidate
+    if with_base:
+        with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
+            for line in cf:
+                line = line.strip('\n')
+                candidates.add(line)
+    candidates = list(candidates)
+    candidates.sort()
+    if len(candidates) < m_config.CANDIDATE_POOL:
+        for i in range(m_config.CANDIDATE_POOL - len(candidates)):
+            candidates.append('reserved_' + str(i + len(candidates)))
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/candidates.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    f.writelines(line + '\n')
 
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)

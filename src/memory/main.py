@@ -35,7 +35,7 @@ if config.MULTILABEL >= 1:
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
 else:
     P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
-    CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt2'
+    CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 HOPS = config.HOPS
 BATCH_SIZE = config.BATCH_SIZE
@@ -159,6 +159,15 @@ def parse_args(args):
     args = vars(parser.parse_args(args))
     return args
 
+def _check_restore_parameters(sess, saver, model_path):
+    """ Restore the previously trained parameters if there are any. """
+    print("--checking directory:", model_path)
+    ckpt = tf.train.get_checkpoint_state(model_path)
+    if ckpt and ckpt.model_checkpoint_path:
+        print("Loading parameters for the model")
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        print("Initializing fresh parameters for the model")
 
 class InteractiveSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -315,11 +324,14 @@ def main(args):
         # training starts here
         epochs = args['epochs']
         eval_interval = args['eval_interval']
+
+        # restore from checkpoint
+        _check_restore_parameters(model.get_sess(), model.saver, CKPT_DIR)
         #
         # training and evaluation loop
         print('\n>> Training started!\n')
         # write log to file
-        log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
+        log_handle = open(dir_path + '/../../logs/' + args['log_file'], 'w')
         cost_total = 0.
         best_cost = 100
         # best_validation_accuracy = 0.
@@ -348,7 +360,7 @@ def main(args):
                         print('saving model...', i, '++',
                               str(best_cost) + '-->' + str(cost_total))
                         best_cost = cost_total
-                        model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                        model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
             else:
                 if i % 1 == 0 and i:
@@ -381,7 +393,7 @@ def main(args):
                         if train_acc > lowest_val_acc:
                             print('saving model...', train_acc, lowest_val_acc)
                             lowest_val_acc = train_acc
-                            model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
+                            model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt',
                                              global_step=i)
         # close file
         total_end = time.clock()
@@ -394,7 +406,7 @@ def main(args):
         ckpt = tf.train.get_checkpoint_state(CKPT_DIR)
         if ckpt and ckpt.model_checkpoint_path:
             print('\n>> restoring checkpoint from', ckpt.model_checkpoint_path)
-            model.saver.restore(model._sess, ckpt.model_checkpoint_path)
+            model.saver.restore(model.get_sess(), ckpt.model_checkpoint_path)
         # base(model, idx2candid, w2idx, sentence_size, BATCH_SIZE, n_cand, memory_size)
 
         # create an base session instance
