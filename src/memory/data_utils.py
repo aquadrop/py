@@ -6,12 +6,12 @@ import os
 import sys
 import jieba
 
-import memory.config as config
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
+import memory.config as config
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -25,6 +25,20 @@ from six.moves import range, reduce
 
 import numpy as np
 import tensorflow as tf
+
+
+def build_vocab_beforehand(files):
+    vocabs = list()
+    for file in files:
+        with open(file, 'r') as f:
+            lines = f.readlines()
+        vocab = reduce(lambda x, y: x | y, (set(tokenize(line))
+                                            for line in lines))
+        print(vocab)
+        vocabs.append(vocab)
+
+    vocab = reduce(lambda x, y: x | y, vocabs)
+    # print(vocab)
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -234,7 +248,15 @@ if __name__ == '__main__':
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
-    test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
-            'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
-    for t in test:
-        print(tokenize(t, True))
+
+    # test = ['range', 'api_call_search_category:空调,ac.power:3p,brand:艾美特,ac.mode:冷暖,price:range,ac.type:立柜式',
+    #         'api_call_slot_category:冰箱 mabbookair api_call_request_pc.type']
+    # for t in test:
+    #     print(tokenize(t, True))
+
+    belief_graph = grandfatherdir + '/data/graph/belief_graph.txt'
+    entity = grandfatherdir + '/data/graph/entity.txt'
+    candidates = grandfatherdir + '/data/memn2n/candidates.txt'
+    # base_vocab = grandfatherdir + '/data/memn2n/base_vocab.txt'
+    files = [belief_graph, entity, candidates]
+    build_vocab_beforehand(files)

@@ -317,7 +317,7 @@ def main(args):
         print('\n>> Training started!\n')
         # write log to file
         log_handle = open(dir_path + '/../../log/' + args['log_file'], 'w')
-        cost_total = 0.
+        cost_total = 0
         best_cost = 100
         # best_validation_accuracy = 0.
         lowest_val_acc = 0.8
@@ -348,7 +348,7 @@ def main(args):
                         best_cost = cost_total
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
-            else:
+
             else:
                 if i % 1 == 0 and i:
                     print('stage...', i)
