@@ -32,7 +32,7 @@ def pickle_():
 
 
 class Translator():
-    def __init__(self,path):
+    def __init__(self,path=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")):
         self.dic=self._load(path)
 
     def _load(self,path):

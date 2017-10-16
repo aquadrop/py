@@ -9,6 +9,9 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
+from utils.translator import Translator
+
+translator=Translator()
 
 import numpy as np
 import tensorflow as tf
@@ -199,11 +202,13 @@ class InteractiveSession():
                 r = []
                 for i, pred in enumerate(preds):
                     r.append(self.idx2candid[pred])
+
                 reply_msg = ','.join(r)
                 r = tokenize(reply_msg)
                 u.append('$u')
                 # u.append('#' + str(self.nid))
                 r.append('$r')
+                r=translator.en2cn(r)
                 # r.append('#' + str(self.nid))
                 self.context.append(u)
                 self.context.append(r)
@@ -224,6 +229,7 @@ class InteractiveSession():
                 r = data_utils.tokenize(r)
                 u.append('$u')
                 # u.append('#' + str(self.nid))
+                r=translator.en2cn(r)
                 r.append('$r')
                 # r.append('#' + str(self.nid))
                 self.context.append(u)

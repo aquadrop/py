@@ -19,6 +19,9 @@ import memory.memn2n as memn2n
 import memory.data_utils as data_utils
 import memory.config as config
 from utils.query_util import tokenize
+from utils.translator import Translator
+
+translator=Translator()
 
 class Memn2nSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -73,6 +76,7 @@ class Memn2nSession():
                 # u.append('#' + str(self.nid))
                 r.append('$r')
                 # r.append('#' + str(self.nid))
+                r = translator(r)
                 self.context.append(u)
                 self.context.append(r)
                 print('context:', self.context)
@@ -93,6 +97,7 @@ class Memn2nSession():
                 u.append('$u')
                 # u.append('#' + str(self.nid))
                 r.append('$r')
+                r = translator(r)
                 # r.append('#' + str(self.nid))
                 self.context.append(u)
                 self.context.append(r)
