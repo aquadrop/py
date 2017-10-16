@@ -23,7 +23,7 @@ See README.md to learn what this code has done!
 Also SEE https://stackoverflow.com/questions/38241410/tensorflow-remember-lstm-state-for-next-batch-stateful-lstm
 for special treatment for this code
 
-Belief Graph
+Main Kernel
 """
 
 import os
@@ -43,6 +43,7 @@ from utils.cn2arab import *
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
+from qa.qa import Qa as QA
 
 
 class MainKernel:
@@ -52,6 +53,7 @@ class MainKernel:
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
+        self.interactive = QA('interactive')
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -85,15 +87,20 @@ class MainKernel:
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
             api = self.sess.reply(rande_rendered)
-            print('before---', self.sess.context)
+            print('before---', api, self.sess.context)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
                 response, avails = self.belief_tracker.memory_kernel(q, api_json)
-                print(response, type(response))
-                self.sess.context[-1].append(response)
+                # print(response, type(response))
+            elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
+                # self.sess.clear_memory()
+                matched, answer, score = self.interactive.get_responses(query=q)
+                response = answer
+                avails = []
             else:
                 response = api
                 avails = []
+            self.sess.append_memory(response)
             print('after---', self.sess.context)
 
             return self.render_response(response) + '#avail_vals:' + str(avails)
@@ -168,7 +175,7 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_a1.pkl',
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clk.pkl',
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)

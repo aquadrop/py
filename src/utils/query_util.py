@@ -51,7 +51,7 @@ STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ',
 
 
 def tokenize(sent, char=1):
-    sent = sent.lower()
+    sent = sent.lower().strip()
     tokens = list()
     if char == 0:
         for s in STOP_WORDS_0:
@@ -221,5 +221,5 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     print(rule_base_num_retreive('华为num元手机phoner.mmem$rr'))
-    print(tokenize('plugin:api_call_slot,phone.mmem:1g', char=1))
+    print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

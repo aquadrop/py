@@ -3,3 +3,4 @@ scikit-learn
 solrclient
 pycnnum
 jieba
+lru-dict

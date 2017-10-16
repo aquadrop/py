@@ -35,70 +35,75 @@ from flask import Flask
 from flask import request
 import json
 
-from functools import lru_cache
+# from lru import LRU
 
 # pickle
 from graph.belief_graph import Graph
 from kernel.main_kernel import MainKernel
 
 import sys
-
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(parentdir)
+sys.path.append(grandfatherdir)
 
 app = Flask(__name__)
 
-config = {"belief_graph": dir_path + "/../model/graph/belief_graph.pkl"}
+config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
+              "solr.facet": 'on',
+              "metadata_dir": os.path.join(parentdir, 'data/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(parentdir, 'data/memn2n/processed/data.pkl'),
+              "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt2'),
+              "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
+              "clf": 'memory'  # or memory
+              }
 
 kernel = MainKernel(config)
-multi_sn_kernels = lru_cache(1000)
+# https://pypi.python.org/pypi/lru-dict/
+lru_kernels = dict()
 
 QSIZE = 1
 kernel_backups = Queue(1000)
 
 
-@app.route('/sn/info', methods=['GET', 'POST'])
+@app.route('/e/info', methods=['GET', 'POST'])
 def info():
-    current_q_size = kernel_backups.qsize()
-    current_u_size = len(multi_sn_kernels.keys())
-    result = {"current_q_size": current_q_size, "current_u_size": current_u_size}
+    size = len(lru_kernels)
+    result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
     return json.dumps(result, ensure_ascii=False)
 
 
-@app.route('/sn/chat', methods=['GET', 'POST'])
+@app.route('/e/chat', methods=['GET', 'POST'])
 def chat():
     try:
         args = request.args
         q = args['q']
         q = urllib.parse.unquote(q)
-        try:
+        if 'u' in args:
             u = args['u']
-            if not multi_sn_kernels.has_key(u):
+            if u not in lru_kernels:
                 if kernel_backups.qsize() > 0:
                     ek = kernel_backups.get_nowait()
-                    multi_sn_kernels[u] = ek
+                    lru_kernels[u] = ek
                 else:
-                    for i in range(2):
-                        k = MainKernel(config)
-                        kernel_backups.put_nowait(k)
-                        result = {"question": q, "result": \
-                            {"answer": "主机负载到达初始上限,正在为您分配实例..."},
-                                  "user": u}
-                        # print('========================')
+                    result = {"question": q,
+                              "result": {"answer": "maximum user reached hence rejecting request"}, "user": u}
                     return json.dumps(result, ensure_ascii=False)
-            u_i_kernel = multi_sn_kernels[u]
+            u_i_kernel = lru_kernels[u]
             r = u_i_kernel.kernel(q=q, user=u)
             result = {"question": q, "result": {"answer": r}, "user": u}
             return json.dumps(result, ensure_ascii=False)
 
-        except:
-            traceback.print_exc()
+        else:
             r = kernel.kernel(q=q)
             result = {"question": q, "result": {"answer": r}, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
         traceback.print_exc()
-        result = {"question": q, "result": {"answer": "主机负载到达上限或者主机核心出现异常"}, "user": "solr"}
+        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
 if __name__ == "__main__":
@@ -113,7 +118,6 @@ if __name__ == "__main__":
     QSIZE = int(args.qsize)
 
     for i in range(QSIZE):
-        print('========================')
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
-    app.run(host='0.0.0.0', port=21304, threaded=True)
+    app.run(host='0.0.0.0', port=21303, threaded=True)

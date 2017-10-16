@@ -15,7 +15,7 @@ import tensorflow as tf
 from sklearn import metrics
 
 import data_utils
-import memn2n_lstm as memn2n
+import memn2n as memn2n
 import memn2n2 as memn2n2
 import config as config
 import heapq
@@ -65,7 +65,10 @@ def batch_predict(model, S, Q, n, batch_size):
         q = Q[start:end]
         pred, top_prob = model.predict(s, q)
         # print(pred.indices, top_prob.values)
-        preds += list(pred.indices)
+        if config.MULTILABEL >= 1:
+            preds += list(pred.indices)
+        else:
+            preds += list(pred)
     return preds
 
 
@@ -147,7 +150,7 @@ def parse_args(args):
     #                     help='Task Id in bAbI (6) tasks {1-6}')
     parser.add_argument('--batch_size', required=False, type=int, default=16,
                         help='you know what batch size means!')
-    parser.add_argument('--epochs', required=False, type=int, default=200,
+    parser.add_argument('--epochs', required=False, type=int, default=2000,
                         help='num iteration of training over train set')
     parser.add_argument('--eval_interval', required=False, type=int, default=5,
                         help='num iteration of training over train set')
@@ -215,7 +218,7 @@ class InteractiveSession():
                                                     1,
                                                     self.n_cand,
                                                     self.memory_size)
-                preds = self.model.predict(s, q)
+                preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
                 r = data_utils.tokenize(r)
@@ -344,11 +347,9 @@ def main(args):
                     if cost_total < best_cost:
                         print('saving model...', i, '++',
                               str(best_cost) + '-->' + str(cost_total))
-                              str(best_cost) + '-->' + str(cost_total))
                         best_cost = cost_total
                         model.saver.save(model._sess, CKPT_DIR + '/memn2n_model.ckpt',
                                          global_step=i)
-
             else:
                 if i % 1 == 0 and i:
                     print('stage...', i)

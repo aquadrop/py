@@ -200,12 +200,15 @@ class BeliefTracker:
         """
 
         if not values_marker:
-            values_marker = [0] * len(slot_values_mapper)
+            values_marker = dict()
+            for key, value in slot_values_mapper.items():
+                values_marker[key] = 0
 
         if self.machine_state == self.AMBIGUITY_STATE:
             flag = True
             if self.AMBIGUITY_PICK in slot_values_mapper:
                 self.machine_state = self.API_REQUEST_STATE
+                values_marker[self.AMBIGUITY_STATE] = 1
                 value = slot_values_mapper[self.AMBIGUITY_PICK]
                 if value in self.ambiguity_slots:
                     nodes = self.ambiguity_slots[value]
@@ -220,9 +223,32 @@ class BeliefTracker:
                             # self.machine_state = self.AMBIGUITY_STATE
                             self.ambiguity_slots[node.slot] = [node]
             else:
-                # fail to remove ambiguity
-                self.machine_state = self.API_REQUEST_STATE
-                self.ambiguity_slots.clear()
+                # check category before leaving
+                api_slot_value = ''
+                fetch_key = [self.API, 'entity']
+                if fetch_key[0] in slot_values_mapper:
+                    api_slot_value = slot_values_mapper[fetch_key[0]]
+                    values_marker[fetch_key[0]] = 1
+                if fetch_key[1] in slot_values_mapper:
+                    api_slot_value = slot_values_mapper[fetch_key[1]]
+                    values_marker[fetch_key[1]] = 1
+                if api_slot_value in self.ambiguity_slots:
+                    nodes = self.ambiguity_slots[api_slot_value]
+                    if len(nodes) == 1:
+                        self.move_to_node(nodes[0].parent_node)
+                        self.fill_slot(nodes[0].slot, nodes[0].value)
+                        self.ambiguity_slots.clear()
+                    else:
+                        flag = False
+                        self.ambiguity_slots.clear()
+                        for node in nodes:
+                            # self.machine_state = self.AMBIGUITY_STATE
+                            self.ambiguity_slots[node.slot] = [node]
+                else:
+                    # fail to remove ambiguity
+                    self.machine_state = self.API_REQUEST_STATE
+                    self.ambiguity_slots.clear()
+                    flag = True
             if self.AMBIGUITY_PICK in self.requested_slots and flag:
                 self.requested_slots.remove(self.AMBIGUITY_PICK)
             # del slot_values_mapper[self.AMBIGUITY_PICK]
@@ -230,17 +256,19 @@ class BeliefTracker:
         if self.VIRTUAL in slot_values_mapper:
             self.machine_state = self.API_REQUEST_STATE
             value = slot_values_mapper[self.VIRTUAL]
+            values_marker[self.VIRTUAL] = 1
             node = self.belief_graph.get_nodes_by_value(value)[0]
             self.move_to_node(node)
 
         # look for api memory
         if self.API in slot_values_mapper:
-            if len(slot_values_mapper) == 1 or self.API not in self.filling_slots\
-                    or slot_values_mapper[self.API] != self.filling_slots[self.API]:
-                self.machine_state = self.API_REQUEST_STATE
-                value = slot_values_mapper[self.API]
-                node = self.belief_graph.get_nodes_by_value(value)[0]
-                self.move_to_node(node)
+            if values_marker[self.API] == 0:
+                if len(slot_values_mapper) == 1 or self.API not in self.filling_slots\
+                        or slot_values_mapper[self.API] != self.filling_slots[self.API]:
+                    self.machine_state = self.API_REQUEST_STATE
+                    value = slot_values_mapper[self.API]
+                    node = self.belief_graph.get_nodes_by_value(value)[0]
+                    self.move_to_node(node)
 
         for key, value in slot_values_mapper.items():
             if key == self.VIRTUAL or key == self.API or key == self.AMBIGUITY_PICK:

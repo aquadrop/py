@@ -7,6 +7,9 @@ import sys
 import jieba
 
 
+import json
+
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
@@ -27,18 +30,32 @@ import numpy as np
 import tensorflow as tf
 
 
-def build_vocab_beforehand(files):
-    vocabs = list()
-    for file in files:
-        with open(file, 'r') as f:
-            lines = f.readlines()
-        vocab = reduce(lambda x, y: x | y, (set(tokenize(line))
-                                            for line in lines))
-        print(vocab)
-        vocabs.append(vocab)
 
-    vocab = reduce(lambda x, y: x | y, vocabs)
+def build_vocab_beforehand(vocab_base, vocab_path):
+    with open(vocab_base, 'r') as f:
+        lines = f.readlines()
+    vocab = reduce(lambda x, y: x | y, (set(tokenize(line, char=0))
+                                        for line in lines))
+    vocab = sorted(vocab)
     # print(vocab)
+    extra_list = ['api', 'call', 'slot', 'deny', 'rhetorical', 'general',
+                  'brand', 'price', 'ac', 'power', 'fr', 'cool_type', 'phone',
+                  'sys', 'feature', 'color', 'memsize', 'size', 'distance',
+                  'resolution', 'panel', 'dyson', 'root', 'virtual', 'mode',
+                  'energy_lvl', 'connect', 'net', 'rmem', 'mmem', 'people', 'vol', 'width', 'height',
+                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto',"1.5",'2.5','plugin'
+                  ]
+    for w in extra_list:
+        vocab.append(w)
+    for i in range(100):
+        vocab.append('placeholder' + str(i + 1))
+    vocab = sorted(vocab)
+    print(vocab)
+    # 0 is reserved
+    w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+    with open(vocab_path, 'w') as f:
+        json.dump(vocab, f, ensure_ascii=False)
+
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -91,15 +108,18 @@ def parse_dialogs_per_response(lines, candid_dic):
                 else:
                     a = candid_dic[r]
                 u = tokenize(u)
-                r = tokenize(r + " " + salt)
+                r = tokenize(r)
+                salt = tokenize(salt)
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
                 data.append((context[:], u[:], a))
                 u.append('$u')
                 r.append('$r')
+                salt.append('$r')
                 context.append(u)
                 context.append(r)
+                context.append(salt)
         else:
             # clear context
             context = []
@@ -108,17 +128,22 @@ def parse_dialogs_per_response(lines, candid_dic):
 
 
 def build_vocab(data, candidates, memory_size=50):
-    vocab = reduce(lambda x, y: x | y, (set(
-        list(chain.from_iterable(s)) + q) for s, q, a in data))
-    # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
-    #                                      for candidate in candidates))
-    vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
-                                         for candidate in candidates))
-    vocab |= vocab2
-    vocab = sorted(vocab)
-    print(vocab)
-    # 0 is reserved
+    if config.FIX_VOCAB:
+        with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
+            vocab = json.load(f)
+    else:
+        vocab = reduce(lambda x, y: x | y, (set(
+            list(chain.from_iterable(s)) + q) for s, q, a in data))
+        # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
+        #                                      for candidate in candidates))
+        vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
+                                             for candidate in candidates))
+        vocab |= vocab2
+        vocab = sorted(vocab)
+        print(vocab)
+        # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+    print(w2idx)
     max_story_size = max(map(len, (s for s, _, _ in data)))
     mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
     sentence_size = max(map(len, chain.from_iterable(s for s, _, _ in data)))
@@ -245,6 +270,7 @@ if __name__ == '__main__':
     # print(train_data[1])
 
     # metadata = build_vocab(train_data, candidates)
+
     # train, val, test, batches = get_batches(
     #     train_data, val_data, test_data, metadata, 16)
     # print(batches)
@@ -254,9 +280,8 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
-    belief_graph = grandfatherdir + '/data/graph/belief_graph.txt'
-    entity = grandfatherdir + '/data/graph/entity.txt'
-    candidates = grandfatherdir + '/data/memn2n/candidates.txt'
-    # base_vocab = grandfatherdir + '/data/memn2n/base_vocab.txt'
-    files = [belief_graph, entity, candidates]
-    build_vocab_beforehand(files)
+
+    base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
+    vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
+    build_vocab_beforehand(base_vocab, vocab_path)
+
