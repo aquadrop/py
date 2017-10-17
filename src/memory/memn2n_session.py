@@ -45,6 +45,7 @@ class Memn2nSession():
             return
         if config.FIX_VOCAB:
             m = translator.en2cn(m)
+            print('translated..', m)
         m = tokenize(m)
         m.append('$r')
         self.context.append(m)

@@ -209,7 +209,7 @@ def gen_sessions(belief_tracker, output_files):
                 trans = search_node.get_node_slot_trans(k)
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
-                    if k in ['tv.size', 'phone.size']:
+                    if k in ['tv.size', 'phone.size','pc.size']:
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
@@ -315,7 +315,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 50000:
+            if i >= 30000:
                 break
 
     # lower everything
