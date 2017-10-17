@@ -90,7 +90,7 @@ class Multilabel_Clf:
 
         begin = time.clock()
 
-        self.clf = OneVsRestClassifier(GradientBoostingClassifier(max_depth=5, n_estimators=200, verbose=2))
+        self.clf = OneVsRestClassifier(GradientBoostingClassifier(max_depth=5, n_estimators=200, verbose=0))
         self.clf.fit(embeddings, labels_)
 
         end = time.clock()
@@ -133,6 +133,7 @@ class Multilabel_Clf:
 
     @staticmethod
     def load(model_path):
+        print(model_path)
         with open(model_path, "rb") as input_file:
             clf = pickle.load(input_file)
             return clf
@@ -170,14 +171,14 @@ def main(config):
 
 
 if __name__ == '__main__':
-    config = {"gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
+    config = {"gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_new.pkl',
               'train_data_path': grandfatherdir + '/data/memn2n/train/gbdt/train.txt',
             'test_data_path': grandfatherdir + '/data/memn2n/train/gbdt/train.txt'}
     main(config)
 
     model_path = config['gbdt_model_path']
     clf = Multilabel_Clf.load(model_path=model_path)
-    inputs=["ambiguity_removal$我来买手机"]
+    inputs=["ambiguity_removal$我来买苹果手机"]
     for p in inputs:
         labels, probs = clf.predict(input_=p)
-        print(','.join(labels))
+        print(labels, probs)

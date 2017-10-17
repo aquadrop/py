@@ -6,7 +6,7 @@ import os
 import memory.config as config
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
+os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
 def zero_nil_slot(t, name=None):
     """
@@ -162,6 +162,12 @@ class MemN2NDialog(object):
         self._sess = session
         self._sess.run(init_op)
         self.saver = tf.train.Saver(max_to_keep=1)
+
+    def get_sess(self):
+        return self._sess
+
+    def get_sentence_size(self):
+        return self._sentence_size
 
     def _build_inputs(self):
         self._stories = tf.placeholder(
