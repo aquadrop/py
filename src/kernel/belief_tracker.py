@@ -92,6 +92,12 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    def user_wild_card(self, wild_card):
+        if 'price' in wild_card:
+            pass
+        if '_inch_' in wild_card:
+            pass
+
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
             try:
@@ -586,7 +592,7 @@ class BeliefTracker:
     def range_extract(self, pattern, query, single):
         numbers = []
         array_numbers = numbers
-        match = re.match(pattern, query)
+        match = re.search(pattern, query)
         if single:
             if match:
                 numbers = match.group(0)
