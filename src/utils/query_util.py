@@ -152,9 +152,9 @@ def rule_base_num_retreive(query):
     ac_power_single = r"([-+]?\d*\.\d+|\d+)[p|P|匹]"
     price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
 
-    dual = {"_inch_": inch_dual, "_meter_": meter_dual, "ac.power": ac_power_dual,
+    dual = {"__inch__": inch_dual, "__meter__": meter_dual, "ac.power": ac_power_dual,
             "price": price_dual}
-    single = {"_inch_": inch_single, "_meter_": meter_single, "ac.power": ac_power_single,
+    single = {"__inch__": inch_single, "__meter__": meter_single, "ac.power": ac_power_single,
               "price": price_single}
 
     wild_card = dict()
@@ -182,11 +182,11 @@ def rule_base_num_retreive(query):
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
     if numbers:
-        wild_card['price'] = numbers
+        wild_card['number'] = numbers
         return render, wild_card
     render, numbers = range_extract(price_single_default, query, True, True)
     if numbers:
-        wild_card['price'] = numbers
+        wild_card['number'] = numbers
     return render, wild_card
 
 

@@ -174,7 +174,7 @@ if __name__ == '__main__':
     config = {"gbdt_model_path": grandfatherdir + '/model/ml/belief_clf_new.pkl',
               'train_data_path': grandfatherdir + '/data/memn2n/train/gbdt/train.txt',
             'test_data_path': grandfatherdir + '/data/memn2n/train/gbdt/train.txt'}
-    # main(config)
+    main(config)
 
     model_path = config['gbdt_model_path']
     clf = Multilabel_Clf.load(model_path=model_path)

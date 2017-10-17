@@ -40,7 +40,7 @@ ac_power = [1.0, 1.5, 2, 1.5, 3,2.5,4]
 ac_type = ["圆柱", "立式", "挂壁式", "立柜式", "中央空调"]
 ac_brand = ["三菱", "松下", "科龙", "惠而浦", "大金", "目立", "海尔", "美的", "卡萨帝",
             "奥克斯", "长虹", "格力", "莱克", "艾美特", "dyson", "智高", "爱仕达", "格兰仕"]
-price = [2000, 15000]
+price = [2000, 120000]
 location = ["一楼", "二楼", "三楼", "地下一楼"]
 ac_fr = ["变频", "定频"]
 ac_cool_type = ["单冷", "冷暖"]
@@ -77,14 +77,14 @@ def ac_product_gen(product_file, data_file):
     title = []
     with open(data_file, 'r') as infile:
         line = infile.readline()
-        title = line.strip('\n').split("|")[2].split(',')
+        title = line.strip('\n').split("|")[4].split(',')
         for line in infile:
             line = line.replace(' ', '').strip('\n')
-            a, b, c = line.split("|")
+            mark, a, b, _, c = line.split("|")
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
-        for i in range(500):
+        for i in range(2000):
             ac = dict()
             for key, value in profile.items():
                 data = np.random.choice(value)
@@ -107,14 +107,14 @@ def tv_product_gen(product_file, data_file):
     title = []
     with open(data_file, 'r') as infile:
         line = infile.readline()
-        title = line.strip('\n').split("|")[2].split(',')
+        title = line.strip('\n').split("|")[4].split(',')
         for line in infile:
             line = line.replace(' ', '').strip('\n')
-            a, b, c = line.split("|")
+            mark, a, b, _, c = line.split("|")
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
-        for i in range(500):
+        for i in range(2000):
             ac = dict()
             for key, value in profile.items():
                 data = np.random.choice(value)
@@ -136,14 +136,14 @@ def fr_product_gen(product_file, data_file):
     title = []
     with open(data_file, 'r') as infile:
         line = infile.readline()
-        title = line.strip('\n').split("|")[2].split(',')
+        title = line.strip('\n').split("|")[4].split(',')
         for line in infile:
             line = line.replace(' ', '').strip('\n')
-            a, b, c = line.split("|")
+            mark, a, b, _, c = line.split("|")
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
-        for i in range(500):
+        for i in range(2000):
             ac = dict()
             for key, value in profile.items():
                 data = np.random.choice(value)
@@ -174,7 +174,7 @@ def phone_product_gen(product_file, data_file):
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
-        for i in range(500):
+        for i in range(2000):
             ac = dict()
             for key, value in profile.items():
                 data = np.random.choice(value)
@@ -216,7 +216,7 @@ def pc_product_gen(product_file, data_file):
             profile[b] = c.split(",")
 
     with open(product_file, 'w') as output:
-        for i in range(500):
+        for i in range(2000):
             ac = dict()
             for key, value in profile.items():
                 data = np.random.choice(value)
@@ -260,14 +260,15 @@ def update_solr(solr_file):
 
 
 if __name__ == "__main__":
-    # phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
-    # ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
-    # tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
+    phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
+    ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
+    tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
     pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/pc.txt')
+    fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     print('updating')
     update_solr("../../data/raw/pc.txt")
-    # update_solr("../../data/raw/product_tv.txt")
-    # update_solr("../../data/raw/product_ac.txt")
-    # update_solr("../../data/raw/product_phone.txt")
+    update_solr("../../data/raw/product_tv.txt")
+    update_solr("../../data/raw/product_ac.txt")
+    update_solr("../../data/raw/product_phone.txt")
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
-    # update_solr("../../data/raw/product_fr.txt")
+    update_solr("../../data/raw/product_fr.txt")
