@@ -559,13 +559,13 @@ class BeliefTracker:
         query = str(new_cn2arab(query))
         flag = False
         for key, value in dual.items():
-            numbers = self.range_extract(value, query, False)
+            numbers, _ = self.range_extract(value, query, False)
             if numbers:
                 flag = True
                 self.wild_card[key] = numbers
 
         for key, value in single.items():
-            numbers = self.range_extract(value, query, True)
+            numbers, _ = self.range_extract(value, query, True)
             if numbers:
                 flag = True
                 self.wild_card[key] = numbers
@@ -576,21 +576,23 @@ class BeliefTracker:
         price_single_default = r"([-+]?\d*\.\d+|\d+)"
         remove_regex = r"\d+[个|只|条|部|本|台]"
         query = re.sub(remove_regex, '', query)
-        numbers = self.range_extract(price_dual_default, query, False)
+        numbers, _ = self.range_extract(price_dual_default, query, False)
         if numbers:
             self.wild_card['price'] = numbers
-        numbers = self.range_extract(price_single_default, query, True)
+        numbers, _ = self.range_extract(price_single_default, query, True)
         if numbers:
             self.wild_card['price'] = numbers
 
     def range_extract(self, pattern, query, single):
         numbers = []
+        array_numbers = numbers
         match = re.match(pattern, query)
         if single:
             if match:
                 numbers = match.group(0)
                 numbers = float(re.findall(r"[-+]?\d*\.\d+|\d+", numbers)[0])
                 numbers = [numbers * 0.9, numbers * 1.1]
+                array_numbers = numbers
                 numbers = '[' + str(numbers[0]) + " TO " + \
                     str(numbers[1]) + "]"
         else:
@@ -598,9 +600,10 @@ class BeliefTracker:
                 numbers = match.group(0)
                 numbers = [float(r) for r in re.findall(
                     r"[-+]?\d*\.\d+|\d+", numbers)[0:2]]
+                array_numbers = numbers
                 numbers = '[' + str(numbers[0]) + " TO " + \
                     str(numbers[1]) + "]"
-        return numbers
+        return numbers, array_numbers
 
     def rule_base_fill(self, query, slot):
         """
@@ -608,6 +611,8 @@ class BeliefTracker:
         :param query: 我要买一个两千到三千的手机
         :param slot
         :return:
+
+        Introduce additonal range rule. 价格范围在几千..., 匹数等范围在1-10
         """
         # if self.machine_state != self.API_REQUEST_RULE_STATE:
         #     return
@@ -619,12 +624,12 @@ class BeliefTracker:
         dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+).*"
         single = r".*([-+]?\d*\.\d+|\d+).*"
 
-        numbers = self.range_extract(dual, query, False)
+        numbers, an = self.range_extract(dual, query, False)
         if numbers:
             self.fill_slot(slot, numbers)
             return True
 
-        numbers = self.range_extract(single, query, True)
+        numbers, an = self.range_extract(single, query, True)
         if numbers:
             self.fill_slot(slot, numbers)
             return True
