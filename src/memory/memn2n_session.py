@@ -19,6 +19,9 @@ import memory.memn2n as memn2n
 import memory.data_utils as data_utils
 import memory.config as config
 from utils.query_util import tokenize
+from utils.translator import Translator
+
+translator=Translator()
 
 class Memn2nSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -38,6 +41,8 @@ class Memn2nSession():
         self.nid = 1
 
     def append_memory(self, m):
+        if config.FIX_VOCAB:
+            m = translator.en2cn(m)
         m = tokenize(m)
         m.append('$r')
         self.context.append(m)
@@ -73,6 +78,7 @@ class Memn2nSession():
                 # u.append('#' + str(self.nid))
                 r.append('$r')
                 # r.append('#' + str(self.nid))
+                r = translator(r)
                 self.context.append(u)
                 self.context.append(r)
                 print('context:', self.context)
@@ -89,10 +95,13 @@ class Memn2nSession():
                 preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
+                if config.FIX_VOCAB:
+                    r = translator.en2cn(r)
                 r = data_utils.tokenize(r)
                 u.append('$u')
                 # u.append('#' + str(self.nid))
                 r.append('$r')
+                # r = translator(r)
                 # r.append('#' + str(self.nid))
                 self.context.append(u)
                 self.context.append(r)

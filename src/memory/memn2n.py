@@ -163,6 +163,12 @@ class MemN2NDialog(object):
         self._sess.run(init_op)
         self.saver = tf.train.Saver(max_to_keep=1)
 
+    def get_sess(self):
+        return self._sess
+
+    def get_sentence_size(self):
+        return self._sentence_size
+
     def _build_inputs(self):
         self._stories = tf.placeholder(
             tf.int32, [None, None, self._sentence_size], name="stories")

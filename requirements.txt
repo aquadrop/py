@@ -4,3 +4,5 @@ solrclient
 pycnnum
 jieba
 lru-dict
+flask
+gensim

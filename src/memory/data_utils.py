@@ -5,12 +5,16 @@ import re
 import os
 import sys
 import jieba
+
+
 import json
+
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
+from utils.translator import Translator
 import memory.config as config
 
 grandfatherdir = os.path.dirname(os.path.dirname(
@@ -26,6 +30,7 @@ from six.moves import range, reduce
 import numpy as np
 import tensorflow as tf
 
+translator=Translator()
 
 def build_vocab_beforehand(vocab_base, vocab_path):
     with open(vocab_base, 'r') as f:
@@ -51,6 +56,7 @@ def build_vocab_beforehand(vocab_base, vocab_path):
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     with open(vocab_path, 'w') as f:
         json.dump(vocab, f, ensure_ascii=False)
+
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -103,8 +109,13 @@ def parse_dialogs_per_response(lines, candid_dic):
                 else:
                     a = candid_dic[r]
                 u = tokenize(u)
+                if config.FIX_VOCAB:
+                    r = translator.en2cn(r)
                 r = tokenize(r)
+                if config.FIX_VOCAB:
+                    salt = translator.en2cn(salt)
                 salt = tokenize(salt)
+
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
@@ -122,7 +133,7 @@ def parse_dialogs_per_response(lines, candid_dic):
     return data
 
 
-def build_vocab(data, candidates, memory_size=50):
+def build_vocab(data, candidates, memory_size=config.MAX_MEMORY_SIZE):
     if config.FIX_VOCAB:
         with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
             vocab = json.load(f)
@@ -275,6 +286,8 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
+
     base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
     vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
     build_vocab_beforehand(base_vocab, vocab_path)
+

@@ -101,6 +101,7 @@ class MainKernel:
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
             api = self.sess.reply(rande_rendered)
+            print(api)
             if api.startswith('api_call_slot'):
                 api_json = self.api_call_slot_json_render(api)
                 response, avails = self.belief_tracker.memory_kernel(q, api_json)
@@ -111,6 +112,8 @@ class MainKernel:
                 matched, answer, score = self.interactive.get_responses(query=q)
                 response = answer
                 avails = []
+            elif api.startswith('api_call_search'):
+                self.sess.clear_memory()
             else:
                 response = api
                 avails = []
