@@ -176,8 +176,8 @@ def rule_base_num_retreive(query):
 
     if flag:
         return render, wild_card
-    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级)"
-    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级)"
+    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K)"
+    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K)"
     remove_regex = r"\d+[个|只|条|部|本|台]"
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
