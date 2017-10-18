@@ -237,7 +237,7 @@ class InteractiveSession():
                 preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
-                if config.TRANSLATE >= 1:
+                if config.FIX_VOCAB:
                     r = translator.en2cn(r)
                 r = data_utils.tokenize(r)
                 u.append('$u')

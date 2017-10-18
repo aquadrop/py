@@ -134,7 +134,7 @@ def gen_sessions(belief_tracker, output_files):
         while True:
             key = np.random.choice(nodes_value_list)
             nodes = belief_tracker.belief_graph.get_nodes_by_value(key)
-            if len(nodes) == 1:
+            if len(nodes) == 1 or not belief_graph.is_entity_value(key):
                 node = nodes[0]
                 if node.slot == 'category' or node.slot == 'virtual_category':
                     continue
@@ -209,8 +209,16 @@ def gen_sessions(belief_tracker, output_files):
                 trans = search_node.get_node_slot_trans(k)
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
+                    if k in ['tv.size', 'phone.size','pc.size']:
+                        lang += '寸'
+                    if k in ['tv.distance']:
+                        lang += '米'
                 else:
                     lang += trans + 'range'
+                    if k in ['tv.size', 'phone.size']:
+                        lang += '寸'
+                    if k in ['tv.distance']:
+                        lang += '米'
             else:
                 lang += v + ","
 
@@ -307,15 +315,16 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 64:
+            if i >= 30000:
                 break
 
     # lower everything
 
-    print('writing', len(train_set), len(
-        val_set), len(test_set), len(candidates))
-
-    with_base = False
+    # print('writing', len(train_set), len(
+    #     val_set), len(test_set), len(candidates))
+    #
+    with_base = True
+    with_gbdt = False
     base_count = 0
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
@@ -380,30 +389,32 @@ def gen_sessions(belief_tracker, output_files):
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)
 
+    if not with_gbdt:
+        return
     # gbdt
-    # with open(output_files[4], 'w', encoding='utf-8') as f:
-    #     for line in train_gbdt:
-    #         f.writelines(line + '\n')
-    #     # hello
-    #     with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
-    #               'r', encoding='utf-8') as hl:
-    #         for line in hl:
-    #             line = "plugin:api_call_greet" + '#' + line.strip('\n')
-    #             f.writelines(line + '\n')
-    #     # qa
-    #     # with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
-    #     #           'r', encoding='utf-8') as hl:
-    #     #     for line in hl:
-    #     #         line = "plugin:api_call_qa" + '#' + line.strip('\n')
-    #     #         f.writelines(line + '\n')
-    #     # chat
-    #     if with_base:
-    #         with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
-    #                   'r', encoding='utf-8') as hl:
-    #             for line in hl:
-    #                 line = line.strip('\n')
-    #                 cls, sentence = line.split('#')
-    #                 f.writelines('plugin:api_call_base#' + sentence + '\n')
+    with open(output_files[4], 'w', encoding='utf-8') as f:
+        for line in train_gbdt:
+            f.writelines(line + '\n')
+        # hello
+        with open(grandfatherdir + '/data/memn2n/dialog_simulator/greet.txt',
+                  'r', encoding='utf-8') as hl:
+            for line in hl:
+                line = "plugin:api_call_greet" + '#' + line.strip('\n')
+                f.writelines(line + '\n')
+        # qa
+        # with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
+        #           'r', encoding='utf-8') as hl:
+        #     for line in hl:
+        #         line = "plugin:api_call_qa" + '#' + line.strip('\n')
+        #         f.writelines(line + '\n')
+        # chat
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
+                      'r', encoding='utf-8') as hl:
+                for line in hl:
+                    line = line.strip('\n')
+                    cls, sentence = line.split('#')
+                    f.writelines('plugin:api_call_base#' + sentence + '\n')
 
 
 if __name__ == "__main__":

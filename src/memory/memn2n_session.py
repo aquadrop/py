@@ -41,7 +41,11 @@ class Memn2nSession():
         self.nid = 1
 
     def append_memory(self, m):
-        m = translator.en2cn(m)
+        if not m:
+            return
+        if config.FIX_VOCAB:
+            m = translator.en2cn(m)
+            print('translated..', m)
         m = tokenize(m)
         m.append('$r')
         self.context.append(m)
@@ -94,12 +98,14 @@ class Memn2nSession():
                 preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
-                r = translator.en2cn(r)
+                if config.FIX_VOCAB:
+                    r = translator.en2cn(r)
+                    print('translated..', r)
                 r = data_utils.tokenize(r)
                 u.append('$u')
                 # u.append('#' + str(self.nid))
                 r.append('$r')
-                r = translator(r)
+                # r = translator(r)
                 # r.append('#' + str(self.nid))
                 self.context.append(u)
                 self.context.append(r)
@@ -181,7 +187,7 @@ def main():
         grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     data_dir = os.path.join(
         grandfatherdir, 'data/memn2n/processed/data.pkl')
-    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt2')
+    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
     config = {"metadata_dir": metadata_dir,
               "data_dir": data_dir, "ckpt_dir": ckpt_dir}
     mi = MemInfer(config)
@@ -189,6 +195,10 @@ def main():
 
     reply = sess.reply("手机")
     print(reply)
+    query = ''
+    while query != 'exit':
+        query = input('>> ')
+        print('>> ' + sess.reply(query))
 
 
 if __name__ == '__main__':

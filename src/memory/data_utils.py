@@ -109,11 +109,11 @@ def parse_dialogs_per_response(lines, candid_dic):
                 else:
                     a = candid_dic[r]
                 u = tokenize(u)
-
-                if config.TRANSLATE >= 1:
+                if config.FIX_VOCAB:
                     r = translator.en2cn(r)
-                    salt = translator.en2cn(salt)
                 r = tokenize(r)
+                if config.FIX_VOCAB:
+                    salt = translator.en2cn(salt)
                 salt = tokenize(salt)
 
                 # print(u)

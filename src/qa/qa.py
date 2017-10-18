@@ -10,7 +10,7 @@ sys.path.insert(0, parentdir)
 from utils.query_util import tokenize
 from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding
-
+from qa.base import BaseKernel
 
 THRESHOLD = 0.93
 
@@ -18,6 +18,7 @@ THRESHOLD = 0.93
 class Qa:
     def __init__(self, core):
         self.core = core
+        self.base = BaseKernel()
 
     def get_responses(self, query):
         docs = solr_qa(self.core, query)
@@ -41,7 +42,8 @@ class Qa:
             # print(score)
 
         if best_score < THRESHOLD:
-            return query, 'api_call_base', best_score
+            return query, self.base.kernel(query), best_score
+            # return query, 'api_call_base', best_score
         else:
             return best_query, np.random.choice(best_answer), best_score
 

@@ -92,6 +92,12 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    def user_wild_card(self, wild_card):
+        if 'price' in wild_card:
+            pass
+        if '_inch_' in wild_card:
+            pass
+
     def _load_clf(self, path):
         if not BeliefTracker.static_gbdt:
             try:
@@ -337,13 +343,38 @@ class BeliefTracker:
             if self.requested_slots[0] == self.AMBIGUITY_PICK:
                 self.machine_state = self.AMBIGUITY_STATE
 
-    def use_wild_card(self, wild_card):
-        # fill price
-        if 'price' in self.filling_slots:
-            self.filling_slots['price'] = wild_card['price']
-        # if 'tv.distance' in self.filling_slots:
-        #     self.filling_slots['tv.distance'] = self.wild_card['_meter_']
-        # if 'pc.size' in self.filling_slots:
+    def exploit_wild_card(self, wild_card):
+        """
+        shall_exploit_range is true
+        :param wild_card:
+        :return:
+        """
+        flag = False
+        for slot in self.requested_slots:
+            if slot in self.belief_graph.range_adapter_mapper:
+                adapter = self.belief_graph.range_adapter(slot)
+                if adapter in wild_card:
+                    self.fill_slot(slot, wild_card[adapter])
+                    flag = True
+                    break
+
+        if not flag:
+            if self.shall_exploit_range():
+                if 'number' in wild_card:
+                    self.fill_slot(self.get_requested_field(), wild_card['number'])
+                    flag = True
+        # fill and change state
+        if len(self.requested_slots) == 0:
+            self.machine_state = self.API_CALL_STATE
+        return flag
+
+    def shall_exploit_range(self):
+        requested = self.get_requested_field()
+        if not requested:
+            return False
+        if Node.RANGE == self.belief_graph.get_field_type(requested):
+            return True
+        return False
 
     def update_belief_graph(self, slot_values_list, query, slot_values_marker=None):
         """
@@ -586,7 +617,7 @@ class BeliefTracker:
     def range_extract(self, pattern, query, single):
         numbers = []
         array_numbers = numbers
-        match = re.match(pattern, query)
+        match = re.search(pattern, query)
         if single:
             if match:
                 numbers = match.group(0)
