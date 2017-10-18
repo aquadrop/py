@@ -658,7 +658,7 @@ class BeliefTracker:
 
     def solr_facet(self):
         if self.config['solr.facet'] != 'on':
-            return ['facet is off']
+            return ['facet is off'], 0
         node = self.search_node
         fill = []
         facet_field = self.requested_slots[0]
@@ -683,7 +683,16 @@ class BeliefTracker:
                         p = i
                 if len(components) == 0:
                     components.append(str(a[1]) + "-" + str(a[-1]))
-            return components
+            render = []
+            for i in range(0, len(components) - 1):
+                if '-'  in components[i + 1]:
+                    render.append(components[i])
+                    continue
+                if '-' in components[i]:
+                    render.append(components[i])
+                    continue
+                render.append(components[i] + "-" + components[i + 1])
+            return render
 
         if self.is_key_type(facet_field):
             params = {
@@ -705,21 +714,24 @@ class BeliefTracker:
             facets = res.get_facet_keys_as_list(facet_field)
             return res.get_facet_keys_as_list(facet_field), len(facets)
         else:
+            start = 1
             gap = 1
             end = 100
             # use facet.range
             if facet_field == "price":
-                gap = 1000
+                start = 100
+                gap = 3000
                 end = 30000
-            if facet_field == 'ac.power':
-                gap = 0.1
+            if facet_field == 'ac.power_float':
+                start = 1
+                gap = 0.4
                 end = 10
             params = {
                 'q': '*:*',
                 'facet': True,
                 'facet.range': facet_field,
                 "facet.mincount": 1,
-                'facet.range.start': 0,
+                'facet.range.start': start,
                 'facet.range.end': end,
                 'facet.range.gap': gap
             }
@@ -734,9 +746,9 @@ class BeliefTracker:
             params['fq'] = " AND ".join(fill)
             res = self.solr.query('category', params)
             ranges = res.get_facets_ranges()[facet_field].keys()
-            ranges = [float(r) for r in ranges]
+            ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
             # now render the result
-            facet = render_range(ranges, 1)
+            facet = render_range(ranges, gap)
             return facet, len(ranges)
 
     def issue_class(self):
@@ -780,8 +792,8 @@ class BeliefTracker:
                     if len(self.requested_slots) == 0:
                         self.machine_state = self.API_CALL_STATE
                     return self.issue_api()
-                if len(avails) == 0 and Node.KEY == self.belief_graph.get_field_type(slot):
-                    return 'api_call_nonexist_' + slot, []
+                # if len(avails) == 0 and Node.KEY == self.belief_graph.get_field_type(slot):
+                #     return 'api_call_nonexist_' + slot, []
             return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
@@ -949,6 +961,16 @@ def test():
                 print('error:', e, end='\n\n', file=logfile)
                 break
 
+def test_facet():
+    graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    config = dict()
+    config['belief_graph'] = graph_dir
+    config['solr.facet'] = 'on'
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
+    bt = BeliefTracker(config)
+    bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
+    bt.requested_slots = ['ac.power_float']
+    print(bt.solr_facet())
 
 if __name__ == "__main__":
-    test()
+    test_facet()
