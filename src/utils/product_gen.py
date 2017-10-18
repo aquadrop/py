@@ -95,6 +95,14 @@ def ac_product_gen(product_file, data_file):
             ac['category'] = '空调'
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
+            ## ac.power
+            power = float(ac['ac.power_float'])
+            if power <= 1:
+                ac['ac.power'] = '1P'
+            elif power > 1 and power < 1.5:
+                ac['ac.power'] = '大1P'
+            else:
+                ac['ac.power'] = ac['ac.power_float'] + 'P'
             tt = []
             for t in title:
                 tt.append(ac[t])
@@ -255,7 +263,7 @@ def update_solr(solr_file):
             # line = str.encode(line)
             print(line)
             line = str.encode(line)
-            req = urllib.request.Request(url='http://10.89.100.12:11403/solr/category/update?commit=true',
+            req = urllib.request.Request(url='http://localhost:11403/solr/category/update?commit=true',
                                   data=line)
             headers = {"content-type": "text/json"}
             req.add_header('Content-type', 'application/json')
@@ -276,5 +284,4 @@ if __name__ == "__main__":
     update_solr("../../data/raw/product_tv.txt")
     update_solr("../../data/raw/product_ac.txt")
     update_solr("../../data/raw/product_phone.txt")
-    # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     update_solr("../../data/raw/product_fr.txt")

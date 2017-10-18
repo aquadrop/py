@@ -60,12 +60,12 @@ class Graph(Node, object):
         """
 
     def _prebuild_range_adaper(self):
-        self.range_adapter_mapper['number'] = 'price'
+        self.range_adapter_mapper['price'] = 'number'
         self.range_adapter_mapper['tv.size'] = '__inch__'
         self.range_adapter_mapper['phone.size'] = '__inch__'
         self.range_adapter_mapper['pc.size'] = '__inch__'
         self.range_adapter_mapper['tv.distance'] = '__meter__'
-        self.range_adapter_mapper['ac.power'] = 'ac.power'
+        self.range_adapter_mapper['ac.power_float'] = 'ac.power'
         self.range_adapter_mapper['fr.height'] = '__meter__'
         self.range_adapter_mapper['fr.width'] = '__meter__'
 

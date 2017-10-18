@@ -53,6 +53,9 @@ def gen_sessions(belief_tracker, output_files):
                 node = belief_tracker.search_node.get_node_by_value(name)
             slot_values_mapper[node.slot] = node.value
             fields = list(node.fields.keys())
+            if 'ac.power' in fields:
+                fields.remove('ac.power')
+                fields.append('ac.power_float')
             n = np.random.randint(
                 0, np.min([len(fields), num_rnd_external_max]) + 1)
             picked_fields = np.random.choice(fields, n)
@@ -258,7 +261,7 @@ def gen_sessions(belief_tracker, output_files):
             slot_values_mapper = gen_ambiguity_initial()
         elif requested == 'ambiguity_removal':
             slot_values_mapper = gen_ambiguity_response(
-                belief_tracker.issue_api())
+                belief_tracker.issue_api(attend_facet=False))
         else:
             slot_values_mapper = gen_random_slot_values(
                 required_field=requested)
@@ -280,7 +283,7 @@ def gen_sessions(belief_tracker, output_files):
         fresh = False
         cls = render_cls(slot_values_mapper)
         candidates.add(cls.lower())
-        api = render_api(belief_tracker.issue_api())
+        api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
         if requested and requested != 'ambiguity_removal':
@@ -315,7 +318,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 30000:
+            if i >= 300:
                 break
 
     # lower everything
