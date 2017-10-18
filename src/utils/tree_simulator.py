@@ -223,6 +223,10 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['tv.distance']:
                         lang += '米'
             else:
+                if v in ['电视', '冰箱', '空调','电脑']:
+                    v = np.random.choice(['台','一台','一个','个','']) + v
+                if v in ['手机']:
+                    v = np.random.choice(['部','一部','一个','个','']) + v
                 lang += v + ","
 
         if lang[-1] == ',':
@@ -318,7 +322,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 300:
+            if i >= 30000:
                 break
 
     # lower everything
