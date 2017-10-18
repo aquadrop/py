@@ -23,7 +23,7 @@ import sys
 solr = SolrClient('http://localhost:11403/solr')
 
 
-def query(mappers):
+def query(mappers, option_mapper=None):
     params = {
         'q': '*:*',
         'q.op': "OR"
@@ -32,6 +32,11 @@ def query(mappers):
     for key, value in mappers.items():
         fill.append(key + ":" + str(value))
     params['fq'] = " AND ".join(fill)
+    options = []
+    if option_mapper:
+        for key, value in option_mapper.items():
+            options.append(key + ":" + str(value))
+    params['fq'] += ' OR ' + " OR ".join(options)
     res = solr.query('category', params)
     docs = res.docs
     return docs

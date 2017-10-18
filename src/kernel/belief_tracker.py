@@ -684,14 +684,17 @@ class BeliefTracker:
                 if len(components) == 0:
                     components.append(str(a[1]) + "-" + str(a[-1]))
             render = []
-            for i in range(0, len(components) - 1):
-                if '-'  in components[i + 1]:
-                    render.append(components[i])
-                    continue
-                if '-' in components[i]:
-                    render.append(components[i])
-                    continue
-                render.append(components[i] + "-" + components[i + 1])
+            if len(components) == 1:
+                render.append(components[0])
+            else:
+                for i in range(0, len(components) - 1):
+                    if '-'  in components[i + 1]:
+                        render.append(components[i])
+                        continue
+                    if '-' in components[i]:
+                        render.append(components[i])
+                        continue
+                    render.append(components[i] + "-" + components[i + 1])
             return render
 
         if self.is_key_type(facet_field):
@@ -724,7 +727,7 @@ class BeliefTracker:
                 end = 30000
             if facet_field == 'ac.power_float':
                 start = 1
-                gap = 0.4
+                gap = 0.5
                 end = 10
             params = {
                 'q': '*:*',
