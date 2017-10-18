@@ -89,8 +89,9 @@ class BeliefTracker:
 
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
-        if self.shall_exploit_range() and wild_card:
+        if wild_card:
             self.exploit_wild_card(wild_card=wild_card)
+        print(self.requested_slots)
         api, avails = self.issue_api()
         return api, avails
 
@@ -285,8 +286,7 @@ class BeliefTracker:
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
                 if range_render:
-                    success = self.rule_base_fill(query, key)
-                    print(success)
+                    self.rule_base_fill(query, key)
                 else:
                     self.fill_slot(key, value)
                 # self.fill_slot(key, value)
