@@ -972,7 +972,8 @@ def test_facet():
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     bt = BeliefTracker(config)
     bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
-    bt.requested_slots = ['ac.power_float']
+    bt.requested_slots = ['ac.type']
+    bt.filling_slots = {"brand":"格力","ac.power_float":"[0.9 TO 1.1]","price":"[3600 TO 4400]"}
     print(bt.solr_facet())
 
 if __name__ == "__main__":

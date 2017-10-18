@@ -184,7 +184,7 @@ class MainKernel:
             or_mapper = dict()
             for t in tokens:
                 key, value = t.split(':')
-                if self.belief_tracker.belief_graph.get_field_type(key) == 'range':
+                if key == 'price':
                     or_mapper[key] = value
                 else:
                     and_mapper[key] = value
