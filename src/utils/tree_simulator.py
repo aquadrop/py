@@ -260,6 +260,9 @@ def gen_sessions(belief_tracker, output_files):
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     fresh = True
+    with_multiple = False
+    mlt_container = []
+    mlt_candidates = []
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -290,6 +293,10 @@ def gen_sessions(belief_tracker, output_files):
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
+        mlt_line = user_reply + '\t' + 'plugin:apl_call_slot,' +\
+            '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+            + '\t' + api
+        mlt_container.append(mlt_line)
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
@@ -306,7 +313,7 @@ def gen_sessions(belief_tracker, output_files):
             requested = get_requested_field()
             belief_tracker.clear_memory()
             line = ''
-            # container.append(line.lower())
+            container.append(line.lower())
             # check duplicate
             bulk = '#'.join(container).lower()
             if bulk not in duplicate_removal:
