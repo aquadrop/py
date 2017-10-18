@@ -83,12 +83,14 @@ class BeliefTracker:
             query=query)
         return response
 
-    def memory_kernel(self, query, query_mapper):
+    def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
 
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
+        if self.shall_exploit_range() and wild_card:
+            self.exploit_wild_card(wild_card=wild_card)
         api, avails = self.issue_api()
         return api, avails
 

@@ -88,7 +88,7 @@ class MainKernel:
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(q, api)
+                response, avails = self.belief_tracker.memory_kernel(q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(query=q)
@@ -117,7 +117,7 @@ class MainKernel:
                         avails = []
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(q, api_json)
+                        response, avails = self.belief_tracker.memory_kernel(q, api_json, wild_card)
                     memory = response
                     if response.startswith('api_call_search'):
                         print('clear memory')
