@@ -114,7 +114,7 @@ class MemN2NDialog(object):
         if config.MULTILABEL >= 1:
             cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
                                                                     labels=self._answers,
-                                                                           name="cross_entropy")
+                                                                    name="cross_entropy")
         else:
             cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=self._answers,
                                                                            name="cross_entropy")
@@ -196,7 +196,6 @@ class MemN2NDialog(object):
     def _inference(self, stories, queries):
         with tf.variable_scope(self._name):
             q_emb = tf.nn.embedding_lookup(self.A, queries)
-
 
             def get_cell(size):
                 cell = tf.contrib.rnn.LSTMCell(size, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))

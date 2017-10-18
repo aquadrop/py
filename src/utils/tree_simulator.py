@@ -260,9 +260,10 @@ def gen_sessions(belief_tracker, output_files):
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     fresh = True
-    with_multiple = False
+    with_multiple = True
     mlt_container = []
-    mlt_candidates = []
+    mlt_candidates = set()
+    mlt_duplicate_removal = set()
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -293,19 +294,25 @@ def gen_sessions(belief_tracker, output_files):
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
-        mlt_line = user_reply + '\t' + 'plugin:apl_call_slot,' +\
-            '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+        mlt_line = user_reply + '\t' + 'plugin:api_call_sunning,' +\
+            ','.join([key + ":" + value for key, value in slot_values_mapper.items()])\
             + '\t' + api
-        mlt_container.append(mlt_line)
+        mlt_container.append(mlt_line.lower())
+        mlt_candidates.add('plugin:api_call_sunning')
+        for key, value in slot_values_mapper.items():
+            mlt_candidates.add(key + ":" + value)
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
                 memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+                mlt_memory_line = reh + '\t' + "plugin:api_call_sunning," + "act:" + cls + '\t' + 'placeholder'
                 cls = cls.lower()
                 candidates.add(cls)
                 memory_line = memory_line.lower()
                 container.append(memory_line)
+                mlt_container.append(mlt_memory_line.lower())
+                mlt_candidates.add('act:' + cls)
                 train_gbdt.add(rhetorical.lower())
         # print(line)
         if not requested:
@@ -315,21 +322,32 @@ def gen_sessions(belief_tracker, output_files):
             line = ''
             container.append(line.lower())
             # check duplicate
-            bulk = '#'.join(container).lower()
-            if bulk not in duplicate_removal:
-                duplicate_removal.add(bulk)
-                mapper[which].extend(container)
-                # for a in container:
-                #     print(a)
-            else:
-                print('# duplicate #')
+            if not with_multiple:
+                bulk = '#'.join(container).lower()
+                if bulk not in duplicate_removal:
+                    duplicate_removal.add(bulk)
+                    mapper[which].extend(container)
+                    # for a in container:
+                    #     print(a)
+                else:
+                    print('# duplicate #')
+
+            if with_multiple:
+                mlt_bulk = '#'.join(mlt_container).lower()
+                mlt_container.append(line.lower())
+                if mlt_bulk not in mlt_duplicate_removal:
+                    mlt_duplicate_removal.add(mlt_bulk)
+                    mapper[which].extend(mlt_container)
+                else:
+                    print('# mlt duplicate #')
             which = np.random.choice(
                 ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
             container = []
+            mlt_container = []
             # print(line)
             i += 1
             print(i)
-            if i >= 30000:
+            if i >= 300:
                 break
 
     # lower everything
@@ -337,9 +355,16 @@ def gen_sessions(belief_tracker, output_files):
     # print('writing', len(train_set), len(
     #     val_set), len(test_set), len(candidates))
     #
-    with_base = True
+    with_base = False
     with_gbdt = False
     base_count = 0
+
+    if with_multiple:
+        candidates = mlt_candidates
+        container = mlt_container
+        for i in range(0, len(output_files) - 1):
+            output_files[i] = output_files[i].replace('tree', 'mlt_tree')
+
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:

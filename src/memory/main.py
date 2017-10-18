@@ -30,11 +30,11 @@ grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 
 if config.MULTILABEL >= 1:
-    DATA_DIR = grandfatherdir + '/data/memn2n/train/multi_tree'
+    DATA_DIR = grandfatherdir + '/data/memn2n/train/mlt_tree'
 else:
     DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 if config.MULTILABEL >= 1:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/multiple/'
+    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/mlt/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
 else:
     P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
@@ -380,8 +380,8 @@ def main(args):
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
                                 print_out = recover(error, train['q'],\
-                                                                      train_preds[error], train['a'][error],\
-                                                                      idx2w, idx2candid)
+                                                    train_preds[error], train['a'][error],\
+                                                    idx2w, idx2candid)
                                 print(print_out)
                                 # print(recover_sentence(train['q'][i], idx2w),
                                 #       recover_cls(train_preds[i], idx2candid),
