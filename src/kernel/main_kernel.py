@@ -88,7 +88,7 @@ class MainKernel:
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(q, api)
+                response, avails = self.belief_tracker.memory_kernel(q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(query=q)
@@ -117,7 +117,7 @@ class MainKernel:
                         avails = []
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(q, api_json)
+                        response, avails = self.belief_tracker.memory_kernel(q, api_json, wild_card)
                     memory = response
                     if response.startswith('api_call_search'):
                         print('clear memory')
@@ -180,11 +180,15 @@ class MainKernel:
                 return '无法查阅'
         if response.startswith('api_call_search_'):
             tokens = response.replace('api_call_search_', '').split(',')
-            mapper = dict()
+            and_mapper = dict()
+            or_mapper = dict()
             for t in tokens:
                 key, value = t.split(':')
-                mapper[key] = value
-            docs = solr_util.query(mapper)
+                if key == 'price':
+                    or_mapper[key] = value
+                else:
+                    and_mapper[key] = value
+            docs = solr_util.query(and_mapper, or_mapper)
             if len(docs) > 0:
                 doc = docs[0]
                 if 'discount' in doc and doc['discount']:

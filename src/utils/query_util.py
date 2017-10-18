@@ -152,9 +152,11 @@ def rule_base_num_retreive(query):
     ac_power_single = r"([-+]?\d*\.\d+|\d+)[p|P|匹]"
     price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
 
-    dual = {"__inch__": inch_dual, "__meter__": meter_dual, "ac.power": ac_power_dual,
+    dual = {"__inch__": inch_dual, "__meter__": meter_dual,
+            "ac.power": ac_power_dual,
             "price": price_dual}
-    single = {"__inch__": inch_single, "__meter__": meter_single, "ac.power": ac_power_single,
+    single = {"__inch__": inch_single, "__meter__": meter_single,
+              "ac.power": ac_power_single,
               "price": price_single}
 
     wild_card = dict()
@@ -222,8 +224,8 @@ def range_extract(pattern, query, single, range_render=False):
 
 
 if __name__ == "__main__":
-    print(' '.join(jieba_cut('华为num元手机phone.mmem')))
-    print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('5000电视'))
-    print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
+    # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
+    # print(rule_base_num_retreive('50寸电视'))
+    print(rule_base_num_retreive('哪点事'))
+    # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

@@ -30,6 +30,9 @@ from queue import Queue
 import argparse
 import traceback
 import urllib
+import time
+import logging
+from datetime import datetime
 
 from flask import Flask
 from flask import request
@@ -49,6 +52,10 @@ grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
+
+current_date = time.strftime("%Y.%m.%d")
+logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_error_' + current_date + '.log')
+                    ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -102,7 +109,7 @@ def chat():
             result = {"question": q, "result": {"answer": r}, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
-        traceback.print_exc()
+        logging.info("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 

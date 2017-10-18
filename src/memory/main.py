@@ -379,7 +379,7 @@ def main(args):
                             train['s']), batch_size=BATCH_SIZE)
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
-                                print_out = recover(train['q'][error],\
+                                print_out = recover(error, train['q'],\
                                                                       train_preds[error], train['a'][error],\
                                                                       idx2w, idx2candid)
                                 print(print_out)
@@ -434,11 +434,16 @@ def main(args):
         elif args['ui']:
             return isess
 
-def recover(sentence, predicted, ground, idx2w, idx2candid):
+def recover(index, sentence, predicted, ground, idx2w, idx2candid):
     predicted = idx2candid[predicted]
     ground = idx2candid[ground.tolist()]
-    sentence = recover_sentence(sentence, idx2w)
-    return sentence, predicted, ground
+    sentence = recover_sentence(sentence[index], idx2w)
+    last_sentence = ''
+    try:
+        last_sentence = recover_sentence(sentence[index - 1], idx2w)
+    except:
+        pass
+    return last_sentence, sentence, predicted, ground
 
 def recover_sentence(sentence_idx, idx2w):
     sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]

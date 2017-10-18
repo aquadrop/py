@@ -53,6 +53,9 @@ def gen_sessions(belief_tracker, output_files):
                 node = belief_tracker.search_node.get_node_by_value(name)
             slot_values_mapper[node.slot] = node.value
             fields = list(node.fields.keys())
+            if 'ac.power' in fields:
+                fields.remove('ac.power')
+                fields.append('ac.power_float')
             n = np.random.randint(
                 0, np.min([len(fields), num_rnd_external_max]) + 1)
             picked_fields = np.random.choice(fields, n)
@@ -220,6 +223,10 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['tv.distance']:
                         lang += '米'
             else:
+                if v in ['电视', '冰箱', '空调','电脑']:
+                    v = np.random.choice(['台','一台','一个','个','']) + v
+                if v in ['手机']:
+                    v = np.random.choice(['部','一部','一个','个','']) + v
                 lang += v + ","
 
         if lang[-1] == ',':
@@ -258,7 +265,7 @@ def gen_sessions(belief_tracker, output_files):
             slot_values_mapper = gen_ambiguity_initial()
         elif requested == 'ambiguity_removal':
             slot_values_mapper = gen_ambiguity_response(
-                belief_tracker.issue_api())
+                belief_tracker.issue_api(attend_facet=False))
         else:
             slot_values_mapper = gen_random_slot_values(
                 required_field=requested)
@@ -280,7 +287,7 @@ def gen_sessions(belief_tracker, output_files):
         fresh = False
         cls = render_cls(slot_values_mapper)
         candidates.add(cls.lower())
-        api = render_api(belief_tracker.issue_api())
+        api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
         container.append(line.lower())
         if requested and requested != 'ambiguity_removal':

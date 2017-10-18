@@ -22,7 +22,7 @@ import sys
 from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
-from utils.query_util import *
+import utils.query_util as query_util
 
 
 class BeliefTracker:
@@ -83,12 +83,15 @@ class BeliefTracker:
             query=query)
         return response
 
-    def memory_kernel(self, query, query_mapper):
+    def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
 
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
+        if wild_card:
+            self.exploit_wild_card(wild_card=wild_card)
+        print(self.requested_slots)
         api, avails = self.issue_api()
         return api, avails
 
@@ -343,26 +346,38 @@ class BeliefTracker:
             if self.requested_slots[0] == self.AMBIGUITY_PICK:
                 self.machine_state = self.AMBIGUITY_STATE
 
-    def exploit_wild_card(self, wild_card):
+    def exploit_wild_card(self, wild_card, given_slot=None):
         """
         shall_exploit_range is true
         :param wild_card:
         :return:
         """
         flag = False
+
+        if given_slot:
+            adapter = self.belief_graph.range_adapter(given_slot)
+            if adapter in wild_card:
+                self.fill_slot(given_slot, wild_card[adapter])
+                flag = True
+            if not flag:
+                if self.shall_exploit_range():
+                    if 'number' in wild_card:
+                        self.fill_slot(self.get_requested_field(), wild_card['number'])
+                        flag = True
+            return flag
+
         for slot in self.requested_slots:
             if slot in self.belief_graph.range_adapter_mapper:
                 adapter = self.belief_graph.range_adapter(slot)
-                if adapter in wild_card:
+                if adapter in wild_card and adapter != 'number':
                     self.fill_slot(slot, wild_card[adapter])
                     flag = True
-                    break
-
         if not flag:
             if self.shall_exploit_range():
                 if 'number' in wild_card:
                     self.fill_slot(self.get_requested_field(), wild_card['number'])
                     flag = True
+                    del wild_card['number']
         # fill and change state
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
@@ -637,42 +652,15 @@ class BeliefTracker:
         return numbers, array_numbers
 
     def rule_base_fill(self, query, slot):
-        """
-        rule based,匹配数字到价格等slot
-        :param query: 我要买一个两千到三千的手机
-        :param slot
-        :return:
-
-        Introduce additonal range rule. 价格范围在几千..., 匹数等范围在1-10
-        """
-        # if self.machine_state != self.API_REQUEST_RULE_STATE:
-        #     return
-
-        query = str(new_cn2arab(query))
-
-        remove_regex = r"\d+[个|只|条|部|本|台]"
-        query = re.sub(remove_regex, '', query)
-        dual = r".*([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+).*"
-        single = r".*([-+]?\d*\.\d+|\d+).*"
-
-        numbers, an = self.range_extract(dual, query, False)
-        if numbers:
-            self.fill_slot(slot, numbers)
-            return True
-
-        numbers, an = self.range_extract(single, query, True)
-        if numbers:
-            self.fill_slot(slot, numbers)
-            return True
-
-        return False
+        _, wild_card = query_util.rule_base_num_retreive(query)
+        self.exploit_wild_card(wild_card, given_slot=slot)
 
     def is_key_type(self, slot):
         return self.search_node.get_field_type(slot) == Node.KEY
 
     def solr_facet(self):
         if self.config['solr.facet'] != 'on':
-            return ['facet is off']
+            return ['facet is off'], 0
         node = self.search_node
         fill = []
         facet_field = self.requested_slots[0]
@@ -697,7 +685,19 @@ class BeliefTracker:
                         p = i
                 if len(components) == 0:
                     components.append(str(a[1]) + "-" + str(a[-1]))
-            return components
+            render = []
+            if len(components) == 1:
+                render.append(components[0])
+            else:
+                for i in range(0, len(components) - 1):
+                    if '-'  in components[i + 1]:
+                        render.append(components[i])
+                        continue
+                    if '-' in components[i]:
+                        render.append(components[i])
+                        continue
+                    render.append(components[i] + "-" + components[i + 1])
+            return render
 
         if self.is_key_type(facet_field):
             params = {
@@ -716,19 +716,29 @@ class BeliefTracker:
                 node = node.parent_node
             params['fq'] = " AND ".join(fill)
             res = self.solr.query('category', params)
-            return res.get_facet_keys_as_list(facet_field)
+            facets = res.get_facet_keys_as_list(facet_field)
+            return res.get_facet_keys_as_list(facet_field), len(facets)
         else:
+            start = 1
+            gap = 1
+            end = 100
             # use facet.range
             if facet_field == "price":
-                return []
+                start = 100
+                gap = 3000
+                end = 30000
+            if facet_field == 'ac.power_float':
+                start = 1
+                gap = 0.5
+                end = 10
             params = {
                 'q': '*:*',
                 'facet': True,
                 'facet.range': facet_field,
                 "facet.mincount": 1,
-                'facet.range.start': 0,
-                'facet.range.end': 100,
-                'facet.range.gap': 1
+                'facet.range.start': start,
+                'facet.range.end': end,
+                'facet.range.gap': gap
             }
             for key, value in self.filling_slots.items():
                 fill.append(key + ":" + str(value))
@@ -741,10 +751,10 @@ class BeliefTracker:
             params['fq'] = " AND ".join(fill)
             res = self.solr.query('category', params)
             ranges = res.get_facets_ranges()[facet_field].keys()
-            ranges = [float(r) for r in ranges]
+            ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
             # now render the result
-            facet = render_range(ranges, 1)
-            return facet
+            facet = render_range(ranges, gap)
+            return facet, len(ranges)
 
     def issue_class(self):
         if self.machine_state == self.TRAVEL_STATE:
@@ -773,14 +783,22 @@ class BeliefTracker:
         if self.machine_state == self.RESET_STATE:
             return "reset_requested"
 
-    def issue_api(self):
+    def issue_api(self, attend_facet=True):
         if self.machine_state == self.TRAVEL_STATE:
             return "api_greeting_search_normal", []
         if self.machine_state in [self.API_REQUEST_STATE, self.API_REQUEST_RULE_STATE]:
             slot = self.requested_slots[0]
-            avails = self.solr_facet()
+            avails, num_avails = self.solr_facet()
             self.avails.clear()
             self.avails[slot] = avails
+            if attend_facet:
+                if num_avails == 1:
+                    self.fill_slot(slot, avails[0])
+                    if len(self.requested_slots) == 0:
+                        self.machine_state = self.API_CALL_STATE
+                    return self.issue_api()
+                # if len(avails) == 0 and Node.KEY == self.belief_graph.get_field_type(slot):
+                #     return 'api_call_nonexist_' + slot, []
             return "api_call_request_" + slot, avails
         if self.machine_state == self.AMBIGUITY_STATE:
             param = ','.join(self.ambiguity_slots.keys())
@@ -948,6 +966,17 @@ def test():
                 print('error:', e, end='\n\n', file=logfile)
                 break
 
+def test_facet():
+    graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    config = dict()
+    config['belief_graph'] = graph_dir
+    config['solr.facet'] = 'on'
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
+    bt = BeliefTracker(config)
+    bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
+    bt.requested_slots = ['ac.type']
+    bt.filling_slots = {"brand":"格力","ac.power_float":"[0.9 TO 1.1]","price":"[3600 TO 4400]"}
+    print(bt.solr_facet())
 
 if __name__ == "__main__":
-    test()
+    test_facet()
