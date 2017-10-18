@@ -36,7 +36,7 @@ def query(mappers, option_mapper=None):
     if option_mapper:
         for key, value in option_mapper.items():
             options.append(key + ":" + str(value))
-    params['fq'] += ' OR ' + " OR ".join(options)
+        params['fq'] += ' OR ' + " OR ".join(options)
     res = solr.query('category', params)
     docs = res.docs
     return docs
