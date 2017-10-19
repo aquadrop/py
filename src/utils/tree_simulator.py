@@ -134,7 +134,7 @@ def gen_sessions(belief_tracker, output_files):
         while True:
             key = np.random.choice(nodes_value_list)
             nodes = belief_tracker.belief_graph.get_nodes_by_value(key)
-            if len(nodes) == 1:
+            if len(nodes) == 1 or not belief_graph.is_entity_value(key):
                 node = nodes[0]
                 if node.slot == 'category' or node.slot == 'virtual_category':
                     continue
@@ -187,7 +187,7 @@ def gen_sessions(belief_tracker, output_files):
         search_node = belief_tracker.search_node
         prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买']
         postfix = ['吧', '呢', '']
-        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1,0.15,0.15])
+        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1, 0.15, 0.15])
         if 'brand' in slot_values_mapper:
             lang += slot_values_mapper['brand'] + \
                 np.random.choice(['的', ''], p=[0.7, 0.3])
@@ -209,8 +209,16 @@ def gen_sessions(belief_tracker, output_files):
                 trans = search_node.get_node_slot_trans(k)
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
+                    if k in ['tv.size', 'phone.size', 'pc.size']:
+                        lang += '寸'
+                    if k in ['tv.distance']:
+                        lang += '米'
                 else:
                     lang += trans + 'range'
+                    if k in ['tv.size', 'phone.size']:
+                        lang += '寸'
+                    if k in ['tv.distance']:
+                        lang += '米'
             else:
                 lang += v + ","
 
@@ -223,7 +231,10 @@ def gen_sessions(belief_tracker, output_files):
         return lang
 
     def render_cls(slot_values_mapper):
-        return 'api_call_slot_' + ','.join([key + ":" + value for key, value in slot_values_mapper.items()])
+        params = []
+        for key in sorted(slot_values_mapper.keys()):
+            params.append(key + ":" + slot_values_mapper[key])
+        return 'api_call_slot_' + ','.join(params)
 
     def render_api(api):
         return api[0]
@@ -255,11 +266,11 @@ def gen_sessions(belief_tracker, output_files):
             slot_values_mapper=slot_values_mapper, range_render=False)
         user_reply = render_lang(slot_values_mapper, fresh)
         if not fresh:
-            gbdt = 'plugin:' + 'api_call_slot' + ','\
+            gbdt = 'plugin:' + 'api_call_slot' + '|'\
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
                 + '#' + requested + '$' + user_reply
         else:
-            gbdt = 'plugin:' + 'api_call_slot' + ','\
+            gbdt = 'plugin:' + 'api_call_slot' + '|'\
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
                    + '#' + user_reply
         requested = belief_tracker.get_requested_field()
@@ -304,17 +315,16 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-
-            if i >= 200:
-
+            if i >= 20000:
                 break
 
     # lower everything
 
-    print('writing', len(train_set), len(
-        val_set), len(test_set), len(candidates))
-
-    with_base = False
+    # print('writing', len(train_set), len(
+    #     val_set), len(test_set), len(candidates))
+    #
+    with_base = True
+    with_gbdt = False
     base_count = 0
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
@@ -379,6 +389,8 @@ def gen_sessions(belief_tracker, output_files):
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)
 
+    if not with_gbdt:
+        return
     # gbdt
     with open(output_files[4], 'w', encoding='utf-8') as f:
         for line in train_gbdt:
@@ -390,18 +402,19 @@ def gen_sessions(belief_tracker, output_files):
                 line = "plugin:api_call_greet" + '#' + line.strip('\n')
                 f.writelines(line + '\n')
         # qa
-        with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = "plugin:api_call_qa" + '#' + line.strip('\n')
-                f.writelines(line + '\n')
+        # with open(grandfatherdir + '/data/memn2n/dialog_simulator/qa.txt',
+        #           'r', encoding='utf-8') as hl:
+        #     for line in hl:
+        #         line = "plugin:api_call_qa" + '#' + line.strip('\n')
+        #         f.writelines(line + '\n')
         # chat
-        with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
-                  'r', encoding='utf-8') as hl:
-            for line in hl:
-                line = line.strip('\n')
-                cls, sentence = line.split('#')
-                f.writelines('plugin:api_call_base#' + sentence + '\n')
+        if with_base:
+            with open(grandfatherdir + '/data/memn2n/train/gbdt/chat.txt',
+                      'r', encoding='utf-8') as hl:
+                for line in hl:
+                    line = line.strip('\n')
+                    cls, sentence = line.split('#')
+                    f.writelines('plugin:api_call_base#' + sentence + '\n')
 
 
 if __name__ == "__main__":

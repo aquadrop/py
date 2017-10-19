@@ -106,3 +106,5 @@ ckpt/
 log/
 model/
 .vscode/
+summaries/
+weights/

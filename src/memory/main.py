@@ -89,7 +89,6 @@ def prepare_data(args):
     train, test, val = data_utils.load_dialog(
         data_dir=DATA_DIR,
         candid_dic=candid2idx)
-    # print(train)
     ##
     # get metadata
     metadata = data_utils.build_vocab(train + test + val, candidates)
@@ -237,7 +236,8 @@ class InteractiveSession():
                 preds, top_probs = self.model.predict(s, q)
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
-                r = translator.en2cn(r)
+                if config.FIX_VOCAB:
+                    r = translator.en2cn(r)
                 r = data_utils.tokenize(r)
                 u.append('$u')
                 # u.append('#' + str(self.nid))
@@ -376,7 +376,6 @@ def main(args):
                     if i % eval_interval == 0 and i:
                         train_preds = batch_predict(model, train['s'], train['q'], len(
                             train['s']), batch_size=BATCH_SIZE)
-                        print(len(train['q']))
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
                                 print_out = recover(train['q'][error],\

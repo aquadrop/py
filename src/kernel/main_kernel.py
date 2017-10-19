@@ -80,10 +80,10 @@ class MainKernel:
     def kernel(self, q, user='solr'):
         if not q:
             return 'api_call_error'
-        rande_rendered, wild_card = self.range_render(q)
+        range_rendered, wild_card = self.range_render(q)
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
-            api = self.gbdt_reply(rande_rendered, requested)
+            api = self.gbdt_reply(range_rendered, requested)
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
@@ -100,21 +100,33 @@ class MainKernel:
                 return self.render_response(response)
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
-            api = self.sess.reply(rande_rendered)
+            api = self.sess.reply(range_rendered)
+            print(range_rendered, api)
             if api.startswith('api_call_slot'):
-                api_json = self.api_call_slot_json_render(api)
-                response, avails = self.belief_tracker.memory_kernel(q, api_json)
-
+                if api.startswith('api_call_slot_virtual_category'):
+                    response = api
+                    avails = []
+                else:
+                    api_json = self.api_call_slot_json_render(api)
+                    response, avails = self.belief_tracker.memory_kernel(q, api_json)
+                memory = response
+                if response.startswith('api_call_search'):
+                    print('clear memory')
+                    self.sess.clear_memory()
+                    self.belief_tracker.clear_memory()
+                    memory = ''
                 # print(response, type(response))
             elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(query=q)
                 response = answer
+                memory = api
                 avails = []
             else:
                 response = api
+                memory = api
                 avails = []
-            self.sess.append_memory(response)
+            self.sess.append_memory(memory)
             render = self.render_response(response) + '#avail_vals:' + str(avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(user, 'memory', q, api, render))
             return render
@@ -139,6 +151,8 @@ class MainKernel:
         return query, wild_card
 
     def render_response(self, response):
+        if response.startswith('api_call_slot_virtual_category'):
+            return '您要买什么?'
         if response.startswith('api_call_request_'):
             if response.startswith('api_call_request_ambiguity_removal_'):
                 params = response.replace(
@@ -185,11 +199,19 @@ if __name__ == '__main__':
     # data_dir = os.path.join(
     #     grandfatherdir, 'data/memn2n/processed/data.pkl')
     # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    # config = {"belief_graph": "../../model/graph/belief_graph.pkl",
+    #           "solr.facet": 'on',
+    #           "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/metadata.pkl'),
+    #           "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/data.pkl'),
+    #           "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
+    #           "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
+    #           "clf": 'memory'  # or memory
+    #           }
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
               "solr.facet": 'on',
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
+              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
               "clf": 'memory'  # or memory
               }
