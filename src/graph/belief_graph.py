@@ -45,8 +45,32 @@ class Graph(Node, object):
         # value is a list of nodes that share the same.
         self.node_header = dict()
         self.id_node = dict()
+        """
+        key as slot, value as type
+        """
         self.slots = dict()
         self.slots_trans = dict()
+        self.range_adapter_mapper = dict()
+        self._prebuild_range_adaper()
+        """
+        price:price
+        tv.size, phone.size, pc.size: __inch__
+        tv.distance: __meter__
+        ac.power: ac.power
+        """
+
+    def _prebuild_range_adaper(self):
+        self.range_adapter_mapper['price'] = 'price'
+        self.range_adapter_mapper['tv.size'] = '__inch__'
+        self.range_adapter_mapper['phone.size'] = '__inch__'
+        self.range_adapter_mapper['pc.size'] = '__inch__'
+        self.range_adapter_mapper['tv.distance'] = '__meter__'
+        self.range_adapter_mapper['ac.power_float'] = 'ac.power'
+        self.range_adapter_mapper['fr.height'] = '__meter__'
+        self.range_adapter_mapper['fr.width'] = '__meter__'
+
+    def range_adapter(self, key):
+        return self.range_adapter_mapper[key]
 
     def is_entity_value(self, value):
         if len(self.node_header[value]) == 1:
@@ -72,6 +96,8 @@ class Graph(Node, object):
         return self.node_header[self.ROOT][0]
 
     def get_field_type(self, field):
+        if field not in self.slots:
+            return None
         return self.slots[field]
 
     def get_nodes_by_slot(self, slot):

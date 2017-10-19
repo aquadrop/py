@@ -47,7 +47,7 @@ jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
 STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',', '.',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
-STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ',',',
+STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
                     '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
@@ -152,9 +152,11 @@ def rule_base_num_retreive(query):
     ac_power_single = r"([-+]?\d*\.\d+|\d+)[p|P|匹]"
     price_single = r"([-+]?\d*\.\d+|\d+)[块|元]"
 
-    dual = {"_inch_": inch_dual, "_meter_": meter_dual, "ac.power": ac_power_dual,
+    dual = {"__inch__": inch_dual, "__meter__": meter_dual,
+            "ac.power": ac_power_dual,
             "price": price_dual}
-    single = {"_inch_": inch_single, "_meter_": meter_single, "ac.power": ac_power_single,
+    single = {"__inch__": inch_single, "__meter__": meter_single,
+              "ac.power": ac_power_single,
               "price": price_single}
 
     wild_card = dict()
@@ -176,17 +178,17 @@ def rule_base_num_retreive(query):
 
     if flag:
         return render, wild_card
-    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级)"
-    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级)"
+    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K)"
+    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K)"
     remove_regex = r"\d+[个|只|条|部|本|台]"
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
     if numbers:
-        wild_card['price'] = numbers
+        wild_card['number'] = numbers
         return render, wild_card
     render, numbers = range_extract(price_single_default, query, True, True)
     if numbers:
-        wild_card['price'] = numbers
+        wild_card['number'] = numbers
     return render, wild_card
 
 
@@ -222,8 +224,8 @@ def range_extract(pattern, query, single, range_render=False):
 
 
 if __name__ == "__main__":
-    print(' '.join(jieba_cut('华为num元手机phone.mmem')))
-    print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('5000电视'))
-    print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
+    # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
+    # print(rule_base_num_retreive('50寸电视'))
+    print(rule_base_num_retreive('哪点事'))
+    # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

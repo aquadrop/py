@@ -21,7 +21,8 @@ import memory.config as config
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-translator=Translator()
+translator = Translator()
+
 
 class Memn2nSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -45,6 +46,7 @@ class Memn2nSession():
             return
         if config.FIX_VOCAB:
             m = translator.en2cn(m)
+            print('translated..', m)
         m = tokenize(m)
         m.append('$r')
         self.context.append(m)

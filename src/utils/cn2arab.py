@@ -16,9 +16,10 @@ digit_list = ['零', '一', '二', '三', '四',
               '〇', '壹', '贰', '叁', '肆',
               '伍', '陆', '柒', '捌', '玖',
               '拾', '佰', '仟', '萬',
-              '亿', '億', '幺', '两','点']
+              '亿', '億', '幺', '两',
+              '点']
 
-skip_gram = ['三星', '一加', '三菱', '三门']
+skip_gram = ['三星', '一加', '三菱', '三门','万达','一楼','二楼','三楼','四楼','五楼','六楼']
 
 convert_list = {'0':'零','1':'一','2':'二','3':'三','4':'四','5':'五','6':'六','7':'七','8':'八','9':'久'}
 
@@ -48,6 +49,17 @@ def new_cn2arab(query):
                 numstring = []
             result.append(char)
         else:
+            if char == '点':
+                try:
+                    pre = query[i - 1]
+                    post = query[i + 1]
+                    if pre in digit_list and post in digit_list:
+                        numstring.append(char)
+                    else:
+                        result.append(char)
+                    continue
+                except:
+                    continue
             # if char in convert_list:
             #     char = convert_list[char]
             if i < len(query) - 1:
@@ -158,7 +170,7 @@ def cn2arab_core(chinese_digits):
     return float(result * dig_mul)
 
 if __name__ == '__main__':
-    s = ['42到50买一个三星手机两千','3千','五十点二','三百','3百','两万','2万','2十万','100万','35','两千','1千零1百', '我要买一个两千到三千点二的手机']
+    s = ['十五哪点事','那点,42到50买一个三星手机两千一点五','3千','五十点二','三百','3百','两万','2万','2十万','100万','35','两千','1千零1百', '我要买一个两千到三千点二的手机']
     for ss in s:
         # print(ss, cn2arab(ss)[1])
         print(new_cn2arab(ss))
