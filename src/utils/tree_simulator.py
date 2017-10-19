@@ -190,7 +190,7 @@ def gen_sessions(belief_tracker, output_files):
         search_node = belief_tracker.search_node
         prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买']
         postfix = ['吧', '呢', '']
-        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1,0.15,0.15])
+        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1, 0.15, 0.15])
         if 'brand' in slot_values_mapper:
             lang += slot_values_mapper['brand'] + \
                 np.random.choice(['的', ''], p=[0.7, 0.3])
@@ -212,7 +212,7 @@ def gen_sessions(belief_tracker, output_files):
                 trans = search_node.get_node_slot_trans(k)
                 if fresh or 'range' in lang:
                     lang += trans + 'range'
-                    if k in ['tv.size', 'phone.size','pc.size']:
+                    if k in ['tv.size', 'phone.size', 'pc.size']:
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
@@ -223,10 +223,10 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['tv.distance']:
                         lang += '米'
             else:
-                if v in ['电视', '冰箱', '空调','电脑']:
-                    v = np.random.choice(['台','一台','一个','个','']) + v
+                if v in ['电视', '冰箱', '空调', '电脑']:
+                    v = np.random.choice(['台', '一台', '一个', '个', '']) + v
                 if v in ['手机']:
-                    v = np.random.choice(['部','一部','一个','个','']) + v
+                    v = np.random.choice(['部', '一部', '一个', '个', '']) + v
                 lang += v + ","
 
         if lang[-1] == ',':

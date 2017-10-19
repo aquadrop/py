@@ -37,7 +37,7 @@ from datetime import datetime
 from flask import Flask
 from flask import request
 import json
-
+from tqdm import tqdm
 # from lru import LRU
 
 # pickle
@@ -54,7 +54,7 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 current_date = time.strftime("%Y.%m.%d")
-logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_error_' + current_date + '.log')
+logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + current_date + '.log')
                     ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 app = Flask(__name__)
@@ -89,6 +89,7 @@ def chat():
         args = request.args
         q = args['q']
         q = urllib.parse.unquote(q)
+        u = 'solr'
         if 'u' in args:
             u = args['u']
             if u not in lru_kernels:
@@ -109,7 +110,7 @@ def chat():
             result = {"question": q, "result": {"answer": r}, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
-        logging.info("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+        logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
@@ -118,13 +119,14 @@ if __name__ == "__main__":
     # print(SK.kernel('你叫什么名字'))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--qsize', choices={'1', '5', '200'},
-                        default='5', help='q_size initializes number of the starting instances...')
+    parser.add_argument('--qsize', choices={'1', '20', '200'},
+                        default='200', help='q_size initializes number of the starting instances...')
     args = parser.parse_args()
 
     QSIZE = int(args.qsize)
 
-    for i in range(QSIZE):
+    for i in tqdm(range(QSIZE)):
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
+    print('web started...')
     app.run(host='0.0.0.0', port=21303, threaded=True)
