@@ -6,3 +6,4 @@ jieba
 lru-dict
 flask
 gensim
+tqdm

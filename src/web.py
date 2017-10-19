@@ -37,7 +37,7 @@ from datetime import datetime
 from flask import Flask
 from flask import request
 import json
-
+from tqdm import tqdm
 # from lru import LRU
 
 # pickle
@@ -118,13 +118,14 @@ if __name__ == "__main__":
     # print(SK.kernel('你叫什么名字'))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--qsize', choices={'1', '5', '200'},
-                        default='5', help='q_size initializes number of the starting instances...')
+    parser.add_argument('--qsize', choices={'1', '20', '200'},
+                        default='200', help='q_size initializes number of the starting instances...')
     args = parser.parse_args()
 
     QSIZE = int(args.qsize)
 
-    for i in range(QSIZE):
+    for i in tqdm(range(QSIZE)):
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
+    print('web started...')
     app.run(host='0.0.0.0', port=21303, threaded=True)

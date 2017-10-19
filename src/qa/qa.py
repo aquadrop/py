@@ -12,7 +12,7 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding
 from qa.base import BaseKernel
 
-THRESHOLD = 0.93
+THRESHOLD = 0.95
 
 
 class Qa:
