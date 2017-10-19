@@ -181,6 +181,11 @@ def gen_sessions(belief_tracker, output_files):
         else:
             return np.random.choice(search_node.get_children_names_by_slot(field))
 
+    def get_avail_brands(category):
+        category_node = belief_graph.get_nodes_by_value(category)[0]
+        brands = category_node.get_children_names_by_slot('brand')
+        return brands
+
     def get_requested_field():
         requested = np.random.choice(
             ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.2, 0.5, 0.3, 0])
@@ -263,6 +268,7 @@ def gen_sessions(belief_tracker, output_files):
     with_multiple = False
     mlt_container = []
     mlt_candidates = []
+    with_qa = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -297,6 +303,23 @@ def gen_sessions(belief_tracker, output_files):
             '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
             + '\t' + api
         mlt_container.append(mlt_line)
+
+        if with_qa:
+            filling_slots = belief_tracker.filling_slots
+            if 'category' in filling_slots:
+                qa = np.random.choice([filling_slots['category'], ''])\
+                     + np.random.choice(['在哪里', '在什么地方', '在几楼'])
+                line = qa + '\t' + 'api_call_query_location_' + 'category:' + filling_slots['category']
+                container.append(line)
+
+                brands = get_avail_brands(filling_slots['category'])
+                if brands:
+                    brand = np.random.choice(brands)
+                    qa = brand + np.random.choice([filling_slots['category'], '']) + np.random.choice(['多少钱', '什么价格'])
+                    line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
+                           + brand + ',' + 'category:' + filling_slots['category']
+                    container.append(line)
+
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
@@ -329,7 +352,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 30000:
+            if i >= 200:
                 break
 
     # lower everything
