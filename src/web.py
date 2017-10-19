@@ -54,7 +54,7 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 current_date = time.strftime("%Y.%m.%d")
-logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_error_' + current_date + '.log')
+logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + current_date + '.log')
                     ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 app = Flask(__name__)
@@ -89,6 +89,7 @@ def chat():
         args = request.args
         q = args['q']
         q = urllib.parse.unquote(q)
+        u = 'solr'
         if 'u' in args:
             u = args['u']
             if u not in lru_kernels:
@@ -109,7 +110,7 @@ def chat():
             result = {"question": q, "result": {"answer": r}, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
-        logging.info("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+        logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
