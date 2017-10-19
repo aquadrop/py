@@ -51,10 +51,12 @@ from qa.qa import Qa as QA
 import memory.config as config
 
 current_date = time.strftime("%Y.%m.%d")
-logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_' + current_date + '.log')
-                    ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
+logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_' + current_date + '.log'),
+                    format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
+
+
 class MainKernel:
 
     static_memory = None
@@ -88,10 +90,12 @@ class MainKernel:
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(q, api, wild_card)
+                response, avails = self.belief_tracker.memory_kernel(
+                    q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
-                matched, answer, score = self.interactive.get_responses(query=q)
+                matched, answer, score = self.interactive.get_responses(
+                    query=q)
                 response = answer
                 avails = []
             else:
@@ -117,7 +121,8 @@ class MainKernel:
                         avails = []
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(q, api_json, wild_card)
+                        response, avails = self.belief_tracker.memory_kernel(
+                            q, api_json, wild_card)
                     memory = response
                     if response.startswith('api_call_search'):
                         print('clear memory')
@@ -127,7 +132,8 @@ class MainKernel:
                     # print(response, type(response))
                 elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                     # self.sess.clear_memory()
-                    matched, answer, score = self.interactive.get_responses(query=q)
+                    matched, answer, score = self.interactive.get_responses(
+                        query=q)
                     response = answer
                     memory = api
                     avails = []
@@ -136,8 +142,10 @@ class MainKernel:
                     memory = api
                     avails = []
             self.sess.append_memory(memory)
-            render = self.render_response(response) + '#avail_vals:' + str(avails)
-            logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(user, 'memory', q, api, render))
+            render = self.render_response(
+                response) + '#avail_vals:' + str(avails)
+            logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
+                user, 'memory', q, api, render))
             return render
 
     def gbdt_reply(self, q, requested=None):
