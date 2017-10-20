@@ -20,8 +20,8 @@ class Config(object):
     """Holds model hyperparams and data information."""
 
     batch_size = 64
-    embed_size = 300
-    hidden_size = 128
+    embed_size = 100
+    hidden_size = 64
 
     max_epochs = 345
     early_stopping = 20
@@ -49,7 +49,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    num_train = 9000
+    num_train = 30000
 
     floatX = np.float32
 
@@ -325,6 +325,7 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
+
         total_loss = []
         accuracy = 0
 
@@ -362,7 +363,8 @@ class DMN_PLUS(object):
 
         if verbose:
             sys.stdout.write('\r')
-
+        print('total_steps:', total_steps)
+        print('float_total_steps:', float(total_steps))
         return np.mean(total_loss), accuracy / float(total_steps)
 
     def __init__(self, config):

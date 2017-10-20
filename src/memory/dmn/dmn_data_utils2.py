@@ -15,11 +15,11 @@ grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
 import data_utils
 
 # temporary paths
-DATA_DIR = 'data/memn2n/train/tree'
-CANDID_PATH = 'data/memn2n/train/tree/candidates.txt'
+DATA_DIR = 'src/memory/dmn/data/tree'
+CANDID_PATH = 'src/memory/dmn/data/tree/candidates.txt'
 
-MULTI_DATA_DIR = 'data/memn2n/train/multi_tree'
-MULTI_CANDID_PATH = 'data/memn2n/train/multi_tree/candidates.txt'
+MULTI_DATA_DIR = 'src/memory/dmn/data/multi_tree'
+MULTI_CANDID_PATH = 'src/memory/dmn/data/multi_tree/candidates.txt'
 
 VOCAB_PATH = 'data/char_table/vocab.txt'
 
@@ -34,7 +34,8 @@ def load_raw_data():
     train_data, test_data, val_data = data_utils.load_dialog(
         data_dir=os.path.join(grandfatherdir, DATA_DIR),
         candid_dic=candid2idx, dmn=True)
-    print(train_data[:5])
+    print(len(train_data))
+    print(os.path.join(grandfatherdir, DATA_DIR))
     return train_data, test_data, val_data, candidates
 
 
@@ -154,7 +155,7 @@ def load_data(config, split_sentences=True):
         train_data if config.train_mode else test_data
 
     if split_sentences:
-        print(inputs)
+        # print(inputs)
         input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
         max_mask_len = max_sen_len
     else:
@@ -208,7 +209,10 @@ def load_data(config, split_sentences=True):
 def main():
     from dmn_plus import Config
     config = Config()
-    load_data(config)
+    train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
+        rel_labels, vocab, candidate_size = load_data(config)
+    print(len(train[0]))
+    print(len(valid[0]))
 
 
 if __name__ == '__main__':
