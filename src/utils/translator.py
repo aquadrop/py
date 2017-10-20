@@ -50,7 +50,7 @@ class Translator():
         return query
 
 def test():
-    with open(os.path.join(grandfatherdir,'data/memn2n/train/tree/train.txt'),'r') as f:
+    with open(os.path.join(grandfatherdir,'data/memn2n/train/tree/train.txt'),'r', encoding='utf-8') as f:
         candidates=f.readlines()
     translator=Translator(os.path.join(grandfatherdir, "model/graph/translator_graph.pkl"))
     for line in candidates:

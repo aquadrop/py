@@ -34,7 +34,7 @@ translator = Translator()
 
 
 def build_vocab_beforehand(vocab_base, vocab_path):
-    with open(vocab_base, 'r') as f:
+    with open(vocab_base, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     vocab = reduce(lambda x, y: x | y, (set(tokenize(line, char=0))
                                         for line in lines))
@@ -55,7 +55,7 @@ def build_vocab_beforehand(vocab_base, vocab_path):
     print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
-    with open(vocab_path, 'w') as f:
+    with open(vocab_path, 'w', encoding='utf-8') as f:
         json.dump(vocab, f, ensure_ascii=False)
 
 
