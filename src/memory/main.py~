@@ -442,7 +442,7 @@ def recover(index, sentence, predicted, ground, idx2w, idx2candid):
         last_sentence = recover_sentence(sentence[index - 1], idx2w)
     except:
         pass
-    return last_sentence, sentence, predicted, ground
+    return sentence, predicted, ground
 
 def recover_sentence(sentence_idx, idx2w):
     sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]
