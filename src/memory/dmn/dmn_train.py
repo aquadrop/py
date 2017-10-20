@@ -8,6 +8,8 @@ import time
 import argparse
 import os
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 parser = argparse.ArgumentParser()
 # parser.add_argument("-b", "--babi_task_id",
 #                     help="specify babi task 1-20 (default=1)")
@@ -85,7 +87,7 @@ for run in range(num_runs):
 
         if args.restore:
             print('==> restoring weights')
-            saver.restore(session, 'weights/task.weights')
+            saver.restore(session, 'weights2/task.weights')
 
         print('==> starting training')
         for epoch in range(config.max_epochs):
@@ -108,7 +110,7 @@ for run in range(num_runs):
                     print('Saving weights')
                     best_overall_val_loss = best_val_loss
                     best_val_accuracy = valid_accuracy
-                    saver.save(session, 'weights/task.weights')
+                    saver.save(session, 'weights2/task.weights')
 
             # anneal
             if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -117,8 +119,8 @@ for run in range(num_runs):
 
             prev_epoch_loss = train_loss
 
-            if epoch - best_val_epoch > config.early_stopping:
-                break
+            # if epoch - best_val_epoch > config.early_stopping:
+            #     break
             print('Total time: {}'.format(time.time() - start))
 
         print('Best validation accuracy:', best_val_accuracy)

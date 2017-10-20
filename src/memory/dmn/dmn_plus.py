@@ -13,17 +13,17 @@ from attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
 # import babi_input
-import dmn_data_utils
+import dmn_data_utils2 as dmn_data_utils
 
 
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 100
-    embed_size = 200
-    hidden_size = 125
+    batch_size = 64
+    embed_size = 300
+    hidden_size = 128
 
-    max_epochs = 256
+    max_epochs = 345
     early_stopping = 20
 
     dropout = 0.9
