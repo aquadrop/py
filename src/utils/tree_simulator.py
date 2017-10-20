@@ -9,6 +9,7 @@ sys.path.insert(0, parentdir)
 from kernel.belief_tracker import BeliefTracker
 from graph.belief_graph import Graph
 import memory.config as m_config
+from utils.translator import Translator
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -18,6 +19,7 @@ sys.path.append(grandfatherdir)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, parentdir)
 
+translator = Translator()
 
 def gen_sessions(belief_tracker, output_files):
     """
@@ -121,7 +123,7 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>"]
+        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>",'你有什么<fill>','你有哪些<fill>']
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -181,6 +183,11 @@ def gen_sessions(belief_tracker, output_files):
         else:
             return np.random.choice(search_node.get_children_names_by_slot(field))
 
+    def get_avail_brands(category):
+        category_node = belief_graph.get_nodes_by_value(category)[0]
+        brands = category_node.get_children_names_by_slot('brand')
+        return brands
+
     def get_requested_field():
         requested = np.random.choice(
             ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.2, 0.5, 0.3, 0])
@@ -223,8 +230,14 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['tv.distance']:
                         lang += '米'
             else:
-                if v in ['电视', '冰箱', '空调', '电脑']:
-                    v = np.random.choice(['台', '一台', '一个', '个', '']) + v
+                if v in ['电视', '冰箱', '空调','电脑']:
+                    if v == '电视':
+                        v = np.random.choice(['电视','电视机','彩电'])
+                    if v == '冰箱':
+                        v = np.random.choice(['冰箱','电冰箱'])
+                    if v == '电脑':
+                        v = np.random.choice(['pc', '电脑','计算机'])
+                    v = np.random.choice(['台','一台','一个','个','']) + v
                 if v in ['手机']:
                     v = np.random.choice(['部', '一部', '一个', '个', '']) + v
                 lang += v + ","
@@ -250,6 +263,7 @@ def gen_sessions(belief_tracker, output_files):
     i = 0
 
     candidates = set()
+    api_set = set()
     train_set = []
     test_set = []
     val_set = []
@@ -260,6 +274,10 @@ def gen_sessions(belief_tracker, output_files):
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     fresh = True
+    with_multiple = False
+    mlt_container = []
+    mlt_candidates = []
+    with_qa = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -289,7 +307,37 @@ def gen_sessions(belief_tracker, output_files):
         candidates.add(cls.lower())
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
+        trans_api = translator.en2cn(api)
+        if not api.startswith('api_call_search'):
+            api_set.add(api + '##' + trans_api)
         container.append(line.lower())
+        mlt_line = user_reply + '\t' + 'plugin:apl_call_slot,' +\
+            '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
+            + '\t' + api
+        mlt_container.append(mlt_line)
+
+        if with_qa:
+            filling_slots = belief_tracker.filling_slots
+            if 'category' in filling_slots:
+                if np.random.uniform() < 0.25:
+                    qa = np.random.choice([filling_slots['category'], ''])\
+                         + np.random.choice(['在哪里', '在什么地方', '在几楼'])
+                    line = qa + '\t' + 'api_call_query_location_' + 'category:'\
+                           + filling_slots['category'] + '\t' + 'placeholder'
+                    container.append(line)
+                    candidates.add('api_call_query_location_' + 'category:'\
+                           + filling_slots['category'])
+                if np.random.uniform() < 0.25:
+                    brands = get_avail_brands(filling_slots['category'])
+                    if brands:
+                        brand = np.random.choice(brands)
+                        qa = brand + np.random.choice([filling_slots['category'], '']) + np.random.choice(['多少钱', '什么价格'])
+                        line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
+                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                        container.append(line)
+                        candidates.add('api_call_query_price_' + 'brand:'\
+                               + brand + ',' + 'category:' + filling_slots['category'])
+
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
                 reh, cls = render_rhetorical(requested)
@@ -392,6 +440,10 @@ def gen_sessions(belief_tracker, output_files):
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')
+
+    with open(grandfatherdir + '/data/memn2n/train/tree/api.txt', 'w', encoding='utf-8') as af:
+        for line in api_set:
+            af.writelines(line + '\n')
 
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)
