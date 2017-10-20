@@ -49,6 +49,7 @@ from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
 from qa.qa import Qa as QA
 import memory.config as config
+from kernel.render import Render
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(filename=os.path.join(grandfatherdir, 'logs/log_corpus_' + current_date + '.log'),
@@ -65,6 +66,7 @@ class MainKernel:
         self.config = config
         self.belief_tracker = BeliefTracker(config)
         self.interactive = QA('interactive')
+        self.render = Render()
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -124,11 +126,11 @@ class MainKernel:
                         response, avails = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
                     memory = response
-                    if response.startswith('api_call_search'):
-                        print('clear memory')
-                        self.sess.clear_memory()
-                        self.belief_tracker.clear_memory()
-                        memory = ''
+                    # if response.startswith('api_call_search'):
+                    #     print('clear memory')
+                    #     self.sess.clear_memory()
+                    #     self.belief_tracker.clear_memory()
+                    #     memory = ''
                     # print(response, type(response))
                 elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                     # self.sess.clear_memory()
@@ -168,42 +170,7 @@ class MainKernel:
         return query, wild_card
 
     def render_response(self, response):
-        if response.startswith('api_call_slot_virtual_category'):
-            return '您要买什么?'
-        if response.startswith('api_call_request_'):
-            if response.startswith('api_call_request_ambiguity_removal_'):
-                params = response.replace(
-                    'api_call_request_ambiguity_removal_', '')
-                rendered = '你要哪一个呢,' + params
-                return rendered + "@@" + response
-            params = response.replace('api_call_request_', '')
-            params = self.belief_tracker.belief_graph.slots_trans[params]
-            rendered = '什么' + params
-            return rendered + "@@" + response
-        if response.startswith('api_call_rhetorical_'):
-            entity = response.replace('api_call_rhetorical_', '')
-            if entity in self.belief_tracker.avails:
-                return '我们有' + ",".join(self.belief_tracker.avails[entity])
-            else:
-                return '无法查阅'
-        if response.startswith('api_call_search_'):
-            tokens = response.replace('api_call_search_', '').split(',')
-            and_mapper = dict()
-            or_mapper = dict()
-            for t in tokens:
-                key, value = t.split(':')
-                if key == 'price':
-                    or_mapper[key] = value
-                else:
-                    and_mapper[key] = value
-            docs = solr_util.query(and_mapper, or_mapper)
-            if len(docs) > 0:
-                doc = docs[0]
-                if 'discount' in doc and doc['discount']:
-                    return '为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
-                else:
-                    return '为您推荐' + doc['title'][0]
-        return response
+        return self.render.render(response)
 
     def api_call_slot_json_render(self, api):
         api = api.replace('api_call_slot_', '').split(",")
