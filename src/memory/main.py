@@ -213,7 +213,8 @@ class InteractiveSession():
                     r.append(self.idx2candid[pred])
 
                 reply_msg = ','.join(r)
-                r = translator.en2cn(r)
+                if config.TRANSLATE >= 1:
+                    r = translator.en2cn(r)
                 r = tokenize(reply_msg)
                 u.append('$u')
                 # u.append('#' + str(self.nid))

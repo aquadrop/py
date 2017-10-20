@@ -30,10 +30,11 @@ from six.moves import range, reduce
 import numpy as np
 import tensorflow as tf
 
-translator=Translator()
+translator = Translator()
+
 
 def build_vocab_beforehand(vocab_base, vocab_path):
-    with open(vocab_base, 'r') as f:
+    with open(vocab_base, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     vocab = reduce(lambda x, y: x | y, (set(tokenize(line, char=0))
                                         for line in lines))
@@ -44,7 +45,7 @@ def build_vocab_beforehand(vocab_base, vocab_path):
                   'sys', 'feature', 'color', 'memsize', 'size', 'distance',
                   'resolution', 'panel', 'dyson', 'root', 'virtual', 'mode',
                   'energy_lvl', 'connect', 'net', 'rmem', 'mmem', 'people', 'vol', 'width', 'height',
-                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto',"1.5",'2.5','plugin'
+                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto', "1.5", '2.5', 'plugin'
                   ]
     for w in extra_list:
         vocab.append(w)
@@ -54,9 +55,8 @@ def build_vocab_beforehand(vocab_base, vocab_path):
     print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
-    with open(vocab_path, 'w') as f:
+    with open(vocab_path, 'w', encoding='utf-8') as f:
         json.dump(vocab, f, ensure_ascii=False)
-
 
 
 def load_candidates(candidates_f=CANDID_PATH):
@@ -70,27 +70,27 @@ def load_candidates(candidates_f=CANDID_PATH):
     return candidates, candid2idx, idx2candid
 
 
-def load_dialog(data_dir, candid_dic):
+def load_dialog(data_dir, candid_dic, dmn=False):
 
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
 
-    train_data = get_dialogs(train_file, candid_dic)
-    test_data = get_dialogs(test_file, candid_dic)
-    val_data = get_dialogs(val_file, candid_dic)
+    train_data = get_dialogs(train_file, candid_dic, dmn)
+    test_data = get_dialogs(test_file, candid_dic, dmn)
+    val_data = get_dialogs(val_file, candid_dic, dmn)
     return train_data, test_data, val_data
 
 
-def get_dialogs(f, candid_dic):
+def get_dialogs(f, candid_dic, dmn=False):
     '''Given a file name, read the file, retrieve the dialogs, and then convert the sentences into a single dialog.
     If max_length is supplied, any stories longer than max_length tokens will be discarded.
     '''
     with open(f) as f:
-        return parse_dialogs_per_response(f.readlines(), candid_dic)
+        return parse_dialogs_per_response(f.readlines(), candid_dic, dmn)
 
 
-def parse_dialogs_per_response(lines, candid_dic):
+def parse_dialogs_per_response(lines, candid_dic, dmn=False):
     '''
         Parse dialogs provided in the babi tasks format
     '''
@@ -98,6 +98,7 @@ def parse_dialogs_per_response(lines, candid_dic):
     context = []
     u = None
     r = None
+    # print(candid_dic)
     for line in lines:
         line = line.strip()
         if line:
@@ -120,12 +121,16 @@ def parse_dialogs_per_response(lines, candid_dic):
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
                 data.append((context[:], u[:], a))
-                u.append('$u')
-                r.append('$r')
-                salt.append('$r')
-                context.append(u)
-                context.append(r)
-                context.append(salt)
+                if dmn:
+                    context.append(u)
+                    context.append(r + salt)
+                else:
+                    u.append('$u')
+                    r.append('$r')
+                    salt.append('$r')
+                    context.append(u)
+                    context.append(r)
+                    context.append(salt)
         else:
             # clear context
             context = []
@@ -286,8 +291,6 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
-
     base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
     vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
     build_vocab_beforehand(base_vocab, vocab_path)
-
