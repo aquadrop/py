@@ -25,6 +25,8 @@ def _pickle():
     slots_trans['slot_'] = '买'
     slots_trans['virtual_'] = '虚'
     slots_trans['api_call_'] = ''
+    slots_trans['query'] = '查询'
+    slots_trans['location'] = '地点'
 
     translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
     with open(translator_graph_dir,'wb') as f:

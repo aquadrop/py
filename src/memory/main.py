@@ -440,7 +440,7 @@ def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
     sentence = recover_sentence(sentence[index], idx2w)
     last_sentence = ''
     try:
-        last_sentence = recover_sentence(stories[index - 1], idx2w)
+        last_sentence = recover_sentence(stories[index][-1], idx2w)
     except:
         pass
     return last_sentence, sentence, predicted, ground
