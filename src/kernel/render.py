@@ -36,8 +36,9 @@ sys.path.append(grandfatherdir)
 import utils.solr_util as solr_util
 
 class Render:
-    def __init__(self):
+    def __init__(self, belief_tracker):
         self.index_cls_name_mapper = dict()
+        self.belief_tracker = belief_tracker
 
     def render(self, response):
         rendered = False
@@ -78,7 +79,7 @@ class Render:
                     return '为您推荐' + doc['title'][0]
 
         if response.startswith('api_call_query_price_'):
-            params = response.replace('api_call_query_price_')
+            params = response.replace('api_call_query_price_' ,'')
             if not params:
                 return '无法查阅'
             else:
@@ -88,6 +89,6 @@ class Render:
                     mapper[key] = value
             return response
 
-        if response.startswith('api_call_query_location_'):
+        if response.startswith('api_call_query_location_', ''):
             return response
         return response

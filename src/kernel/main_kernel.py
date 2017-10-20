@@ -66,7 +66,7 @@ class MainKernel:
         self.config = config
         self.belief_tracker = BeliefTracker(config)
         self.interactive = QA('interactive')
-        self.render = Render()
+        self.render = Render(self.belief_tracker)
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
