@@ -20,8 +20,8 @@ class Config(object):
     """Holds model hyperparams and data information."""
 
     batch_size = 64
-    embed_size = 100
-    hidden_size = 64
+    embed_size = 300
+    hidden_size = 128
 
     max_epochs = 345
     early_stopping = 20

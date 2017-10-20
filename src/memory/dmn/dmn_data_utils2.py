@@ -21,7 +21,7 @@ CANDID_PATH = 'src/memory/dmn/data/tree/candidates.txt'
 MULTI_DATA_DIR = 'src/memory/dmn/data/multi_tree'
 MULTI_CANDID_PATH = 'src/memory/dmn/data/multi_tree/candidates.txt'
 
-VOCAB_PATH = 'data/char_table/vocab.txt'
+VOCAB_PATH = 'src/memory/dmn/data/vocab/vocab.txt'
 
 # can be sentence or word
 input_mask_mode = "sentence"
@@ -34,8 +34,8 @@ def load_raw_data():
     train_data, test_data, val_data = data_utils.load_dialog(
         data_dir=os.path.join(grandfatherdir, DATA_DIR),
         candid_dic=candid2idx, dmn=True)
-    print(len(train_data))
-    print(os.path.join(grandfatherdir, DATA_DIR))
+    # print(len(train_data))
+    # print(os.path.join(grandfatherdir, DATA_DIR))
     return train_data, test_data, val_data, candidates
 
 
@@ -52,15 +52,15 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         if len(inp) == 0:
             inp = [['此', '乃', '空', '文']]
         if split_sentences:
-            inp_vector = [[w2idx.get(w, 0) for w in s] for s in inp]
+            inp_vector = [[w2idx[w] for w in s] for s in inp]
             inputs.append(inp_vector)
         else:
             inp = reduce(lambda x, y: x + ['.'] + y, inp)
-            inp_vector = [w2idx.get(w, 0) for w in inp]
+            inp_vector = [w2idx[w] for w in inp]
             inputs.append(np.vstack(inp_vector).astype(floatX))
 
         question = question if len(question) else ['空']
-        q_vector = [w2idx.get(w, 0) for w in question]
+        q_vector = [w2idx[w] for w in question]
         # print(q_vector)
         questions.append(np.vstack(q_vector).astype(floatX))
 
