@@ -9,6 +9,7 @@ sys.path.insert(0, parentdir)
 from kernel.belief_tracker import BeliefTracker
 from graph.belief_graph import Graph
 import memory.config as m_config
+from utils.translator import Translator
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -18,6 +19,7 @@ sys.path.append(grandfatherdir)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, parentdir)
 
+translator = Translator()
 
 def gen_sessions(belief_tracker, output_files):
     """
@@ -121,7 +123,7 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>"]
+        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>",'你有什么<fill>','你有哪些<fill>']
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -224,6 +226,12 @@ def gen_sessions(belief_tracker, output_files):
                         lang += '米'
             else:
                 if v in ['电视', '冰箱', '空调','电脑']:
+                    if v == '电视':
+                        v = np.random.choice(['电视','电视机','彩电'])
+                    if v == '冰箱':
+                        v = np.random.choice(['冰箱','电冰箱'])
+                    if v == '电脑':
+                        v = np.random.choice(['pc', '电脑','计算机'])
                     v = np.random.choice(['台','一台','一个','个','']) + v
                 if v in ['手机']:
                     v = np.random.choice(['部','一部','一个','个','']) + v
@@ -250,6 +258,7 @@ def gen_sessions(belief_tracker, output_files):
     i = 0
 
     candidates = set()
+    api_set = set()
     train_set = []
     test_set = []
     val_set = []
@@ -289,6 +298,9 @@ def gen_sessions(belief_tracker, output_files):
         candidates.add(cls.lower())
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
+        trans_api = translator.en2cn(api)
+        if not api.startswith('api_call_search'):
+            api_set.add(api + '##' + trans_api)
         container.append(line.lower())
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
@@ -392,6 +404,10 @@ def gen_sessions(belief_tracker, output_files):
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')
+
+    with open(grandfatherdir + '/data/memn2n/train/tree/api.txt', 'w', encoding='utf-8') as af:
+        for line in api_set:
+            af.writelines(line + '\n')
 
     print('writing', len(train_set), len(
         val_set), len(test_set), len(candidates), 'base_count:', train_count)
