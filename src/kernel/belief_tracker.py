@@ -23,7 +23,7 @@ from graph.node import Node
 from graph.belief_graph import Graph
 from utils.cn2arab import *
 import utils.query_util as query_util
-
+import utils.solr_util as solr_util
 
 class BeliefTracker:
     # static
@@ -83,12 +83,15 @@ class BeliefTracker:
             query=query)
         return response
 
-    def memory_kernel(self, query, query_mapper):
+    def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
 
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
+        if wild_card:
+            self.exploit_wild_card(wild_card=wild_card)
+        print(self.requested_slots)
         api, avails = self.issue_api()
         return api, avails
 
@@ -283,8 +286,7 @@ class BeliefTracker:
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
                 if range_render:
-                    success = self.rule_base_fill(query, key)
-                    print(success)
+                    self.rule_base_fill(query, key)
                 else:
                     self.fill_slot(key, value)
                 # self.fill_slot(key, value)
@@ -704,15 +706,18 @@ class BeliefTracker:
                 'facet.field': facet_field,
                 "facet.mincount": 1
             }
+            mapper = dict()
             for key, value in self.filling_slots.items():
-                fill.append(key + ":" + str(value))
+                # fill.append(key + ":" + str(value))
+                mapper[key] = value
             while node.value != self.belief_graph.ROOT:
                 if node.slot.startswith('virtual'):
                     node = node.parent_node
                     continue
-                fill.append(node.slot + ":" + node.value)
+                # fill.append(node.slot + ":" + node.value)
+                mapper[node.slot] = node.value
                 node = node.parent_node
-            params['fq'] = " AND ".join(fill)
+            params['fq'] = solr_util.compose_fq(mapper)
             res = self.solr.query('category', params)
             facets = res.get_facet_keys_as_list(facet_field)
             return res.get_facet_keys_as_list(facet_field), len(facets)
@@ -738,15 +743,18 @@ class BeliefTracker:
                 'facet.range.end': end,
                 'facet.range.gap': gap
             }
+            mapper = dict()
             for key, value in self.filling_slots.items():
-                fill.append(key + ":" + str(value))
+                # fill.append(key + ":" + str(value))
+                mapper[key] = value
             while node.value != self.belief_graph.ROOT:
                 if node.slot.startswith('virtual'):
                     node = node.parent_node
                     continue
-                fill.append(node.slot + ":" + node.value)
+                # fill.append(node.slot + ":" + node.value)
+                mapper[node.slot] = node.value
                 node = node.parent_node
-            params['fq'] = " AND ".join(fill)
+            params['fq'] = solr_util.compose_fq(mapper)
             res = self.solr.query('category', params)
             ranges = res.get_facets_ranges()[facet_field].keys()
             ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
@@ -973,6 +981,7 @@ def test_facet():
     bt = BeliefTracker(config)
     bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
     bt.requested_slots = ['ac.power_float']
+    bt.filling_slots = {"brand":"美的","price":"[2700 TO 3300]"}
     print(bt.solr_facet())
 
 if __name__ == "__main__":

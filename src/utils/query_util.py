@@ -47,7 +47,7 @@ jieba.load_userdict(dir_path + "/../../data/dict/ext1.dic")
 STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',', '.',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
-STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ',',',
+STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
                     '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 
@@ -226,6 +226,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('电视1.5p'))
+    print(rule_base_num_retreive('哪点事'))
     # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

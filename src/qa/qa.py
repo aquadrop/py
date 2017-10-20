@@ -12,7 +12,7 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding
 from qa.base import BaseKernel
 
-THRESHOLD = 0.93
+THRESHOLD = 0.95
 
 
 class Qa:
@@ -81,7 +81,7 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer, best_score = qa.get_responses('你好')
+    best_query, best_answer, best_score = qa.get_responses('现在几点了')
     print(best_query, best_answer, best_score)
 
 
