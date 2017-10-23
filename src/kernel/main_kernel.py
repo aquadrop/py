@@ -116,6 +116,10 @@ class MainKernel:
                 return self.render_response(response)
             return self.render_response(response) + '#avail_vals:' + str(avails)
         else:
+            if q == 'clear':
+                self.belief_tracker.clear_memory()
+                self.sess.clear_memory()
+                return 'memory cleared', []
             exploited = False
             if self.belief_tracker.shall_exploit_range():
                 exploited = self.belief_tracker.exploit_wild_card(wild_card)

@@ -68,6 +68,8 @@ class BeliefTracker:
         self.place_holder = dict()
         self.avails = dict()
 
+        self.exploit_once = True
+
         # self.negative = False
         # self.negative_clf = Negative_Clf()
         # self.simple = SimpleQAKernel()
@@ -86,10 +88,10 @@ class BeliefTracker:
     def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
-
+        self.exploit_once = True
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
-        if wild_card:
+        if wild_card and self.exploit_once:
             self.exploit_wild_card(wild_card=wild_card)
         print(self.requested_slots)
         api, avails = self.issue_api()
@@ -178,6 +180,7 @@ class BeliefTracker:
         self.requested_slots.clear()
         self.machine_state = self.TRAVEL_STATE
         self.search_node = self.belief_graph.get_root_node()
+        self.exploit_once = False
         # self.requested_slots.append(self.API)
 
     def graph_render(self, value_list, required_field):
@@ -353,6 +356,7 @@ class BeliefTracker:
         :param wild_card:
         :return:
         """
+        self.exploit_once = False
         flag = False
 
         if given_slot:
@@ -363,6 +367,7 @@ class BeliefTracker:
             if not flag:
                 if self.shall_exploit_range():
                     if 'number' in wild_card:
+                        print(self.get_requested_field())
                         self.fill_slot(self.get_requested_field(), wild_card['number'])
                         flag = True
             return flag
