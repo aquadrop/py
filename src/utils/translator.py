@@ -28,6 +28,8 @@ def _pickle():
     slots_trans['sunning'] = '苏宁'
     slots_trans['plugin'] = ''
     slots_trans['act'] = ''
+    slots_trans['discount'] = '打折'
+    slots_trans['query'] = '查询'
 
     translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
     with open(translator_graph_dir,'wb') as f:

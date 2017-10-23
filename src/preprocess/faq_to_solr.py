@@ -39,4 +39,4 @@ if __name__ == "__main__":
     # pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/pc.txt')
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     print('updating')
-    update_solr("../../data/memn2n/train/faq/facility.txt")
+    update_solr("../../data/memn2n/train/faq/discount.txt")
