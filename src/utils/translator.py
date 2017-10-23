@@ -10,26 +10,33 @@ from graph.belief_graph import Graph
 import utils.query_util as query_util
 
 
-class Translator:
-    def __init__(self):
-        self._pickle()
 
-    def _pickle(self):
-        graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
-        with open(graph_dir, "rb") as input_file:
-            belief_graph = pickle.load(input_file)
-        self.dic = belief_graph.slots_trans
-        self.dic['entity'] = '实体'
-        self.dic['search_'] = '搜索'
-        self.dic['request_'] = '确认'
-        self.dic['rhetorical_'] = '反问'
-        self.dic['placeholder'] = '占位'
-        self.dic['ambiguity_removal'] = '消除歧义'
-        self.dic['slot_'] = '买'
-        self.dic['virtual_'] = '虚'
-        self.dic['api_call_'] = ''
-        self.dic['query'] = '查询'
-        self.dic['location'] = '地点'
+def _pickle():
+    graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
+    with open(graph_dir, "rb") as input_file:
+        belief_graph = pickle.load(input_file)
+    slots_trans = belief_graph.slots_trans
+    slots_trans['entity'] = '实体'
+    slots_trans['search_'] = '搜索'
+    slots_trans['request_'] = '确认'
+    slots_trans['rhetorical_'] = '反问'
+    slots_trans['placeholder'] = '占位'
+    slots_trans['ambiguity_removal'] = '消除歧义'
+    slots_trans['slot_'] = '买'
+    slots_trans['virtual_'] = '虚'
+    slots_trans['api_call_'] = ''
+    slots_trans['sunning'] = '苏宁'
+    slots_trans['plugin'] = ''
+    slots_trans['act'] = ''
+
+    translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
+    with open(translator_graph_dir,'wb') as f:
+        pickle.dump(slots_trans,f)
+
+
+class Translator():
+    def __init__(self,path=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")):
+        self.dic=self._load(path)
 
     def _load(self,path):
         with open(path,'rb') as f:
@@ -45,10 +52,11 @@ class Translator:
             query=query.replace(v,k)
         return query
 
+
 def test():
     with open(os.path.join(grandfatherdir,'data/memn2n/train/tree/train.txt'),'r', encoding='utf-8') as f:
         candidates=f.readlines()
-    translator=Translator()
+    translator=Translator(os.path.join(grandfatherdir, "model/graph/translator_graph.pkl"))
     for line in candidates:
         line = line.strip('\n')
         line = translator.en2cn(line)
@@ -56,6 +64,6 @@ def test():
         print(line)
 
 
-
 if __name__ == '__main__':
-    test()
+    _pickle()
+    # test()
