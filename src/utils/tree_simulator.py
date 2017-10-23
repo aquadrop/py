@@ -60,13 +60,16 @@ def gen_sessions(belief_tracker, output_files):
                 fields.append('ac.power_float')
             n = np.random.randint(
                 0, np.min([len(fields), num_rnd_external_max]) + 1)
-            picked_fields = set()
-            for i in range(n):
-                if np.random.uniform() < 0.25 and 'brand' in fields:
-                    picked_fields.add('brand')
-                    continue
-                if 'brand' in picked_fields and np.random.uniform() < 0.1:
-                    picked_fields.add(np.random.choice(fields))
+            fields = list(belief_tracker.requested_slots)
+
+            picked_fields = np.random.choice(fields, n).tolist()
+            # picked_fields = set()
+            # for i in range(n):
+            #     if np.random.uniform() < 0.25 and 'brand' in fields:
+            #         picked_fields.add('brand')
+            #         continue
+            #     if 'brand' in picked_fields and np.random.uniform() < 0.1:
+            #         picked_fields.add(np.random.choice(fields))
             for f in picked_fields:
                 value = random_property_value(f, node)
                 # weird
