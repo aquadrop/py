@@ -60,7 +60,13 @@ def gen_sessions(belief_tracker, output_files):
                 fields.append('ac.power_float')
             n = np.random.randint(
                 0, np.min([len(fields), num_rnd_external_max]) + 1)
-            picked_fields = np.random.choice(fields, n)
+            picked_fields = set()
+            for i in range(n):
+                if np.random.uniform() < 0.25 and 'brand' in fields:
+                    picked_fields.add('brand')
+                    continue
+                if 'brand' in picked_fields and np.random.uniform() < 0.1:
+                    picked_fields.add(np.random.choice(fields))
             for f in picked_fields:
                 value = random_property_value(f, node)
                 # weird
@@ -190,7 +196,7 @@ def gen_sessions(belief_tracker, output_files):
 
     def get_requested_field():
         requested = np.random.choice(
-            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.2, 0.5, 0.3, 0])
+            ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
         return requested
 
     def render_lang(slot_values_mapper, fresh):
@@ -270,6 +276,7 @@ def gen_sessions(belief_tracker, output_files):
     train_gbdt = set()
 
     container = []
+    single_container = []
     duplicate_removal = set()
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
@@ -298,7 +305,7 @@ def gen_sessions(belief_tracker, output_files):
             gbdt = 'plugin:' + 'api_call_slot' + '|'\
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()]) \
                    + '#' + user_reply
-        requested = belief_tracker.get_requested_field()
+
         gbdt = gbdt.lower()
         train_gbdt.add(gbdt)
 
@@ -307,6 +314,10 @@ def gen_sessions(belief_tracker, output_files):
         candidates.add(cls.lower())
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
+        if requested == 'category':
+            single_container.append(line)
+            single_container.append('')
+        requested = belief_tracker.get_requested_field()
         trans_api = translator.en2cn(api)
         if not api.startswith('api_call_search'):
             api_set.add(api + '##' + trans_api)
@@ -357,6 +368,7 @@ def gen_sessions(belief_tracker, output_files):
             container.append(line.lower())
             # check duplicate
             bulk = '#'.join(container).lower()
+            single_bulk = '#'.join(single_container).lower()
             if bulk not in duplicate_removal:
                 duplicate_removal.add(bulk)
                 mapper[which].extend(container)
@@ -364,9 +376,14 @@ def gen_sessions(belief_tracker, output_files):
                 #     print(a)
             else:
                 print('# duplicate #')
+            if single_bulk not in duplicate_removal:
+                duplicate_removal.add(single_bulk)
+                mapper[which].extend(single_container)
+
             which = np.random.choice(
                 ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
             container = []
+            single_container = []
             # print(line)
             i += 1
             print(i)
@@ -424,6 +441,21 @@ def gen_sessions(belief_tracker, output_files):
                 for line in cf:
                     line = line.strip('\n')
                     if train_count > 0.9 * base_count:
+                        f.writelines(line + '\n')
+
+    with_faq = True
+    if with_faq:
+        faq = set()
+        with open(grandfatherdir + '/data/memn2n/train/faq/facility.txt', encoding='utf-8') as cf:
+            for line in cf:
+                a, b = line.strip('\n').split('\t')
+                candidates.add(b)
+                line = '\t'.join([a, b, 'placeholder'])
+                faq.add(line)
+            for i in range(1, len(output_files)):
+                with open(output_files[i], 'a', encoding='utf-8') as f:
+                    for line in faq:
+                        f.writelines('\n')
                         f.writelines(line + '\n')
 
     # candidate

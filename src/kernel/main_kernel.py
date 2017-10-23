@@ -145,8 +145,7 @@ class MainKernel:
                         # print('clear memory')
                         # self.sess.clear_memory()
                         # self.belief_tracker.clear_memory()
-                        # memory = ''
-                        pass
+                        memory = ''
                     # print(response, type(response))
                 # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 #     # self.sess.clear_memory()
