@@ -60,7 +60,7 @@ def gen_sessions(belief_tracker, output_files):
                 fields.append('ac.power_float')
             n = np.random.randint(
                 0, np.min([len(fields), num_rnd_external_max]) + 1)
-            fields = list(belief_tracker.requested_slots)
+            # fields = list(belief_tracker.requested_slots)
 
             picked_fields = np.random.choice(fields, n).tolist()
             # picked_fields = set()
@@ -390,7 +390,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 30000:
+            if i >= 60000:
                 break
 
     # lower everything
@@ -451,7 +451,19 @@ def gen_sessions(belief_tracker, output_files):
         faq = set()
         with open(grandfatherdir + '/data/memn2n/train/faq/facility.txt', encoding='utf-8') as cf:
             for line in cf:
-                a, b = line.strip('\n').split('\t')
+                a, b, c = line.strip('\n').split('\t')
+                candidates.add(b)
+                line = '\t'.join([a, b, 'placeholder'])
+                faq.add(line)
+            for i in range(1, len(output_files)):
+                with open(output_files[i], 'a', encoding='utf-8') as f:
+                    for line in faq:
+                        f.writelines('\n')
+                        f.writelines(line + '\n')
+
+        with open(grandfatherdir + '/data/memn2n/train/faq/discount.txt', encoding='utf-8') as cf:
+            for line in cf:
+                a, b, c = line.strip('\n').split('\t')
                 candidates.add(b)
                 line = '\t'.join([a, b, 'placeholder'])
                 faq.add(line)
