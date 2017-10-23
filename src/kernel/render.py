@@ -46,6 +46,7 @@ class Render:
         self._load_major_render(config['renderer_file'])
         self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
+        self.faq = QA('faq')
         print('attaching rendering file...')
 
     def _load_major_render(self, file):
@@ -75,6 +76,10 @@ class Render:
         if response.startswith('api_call_base') or response.startswith('api_call_greet'):
             # self.sess.clear_memory()
             matched, answer, score = self.interactive.get_responses(
+                query=q)
+            return answer
+        if response.startswith('api_call_faq'):
+            matched, answer, score = self.faq.get_responses(
                 query=q)
             return answer
         if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
