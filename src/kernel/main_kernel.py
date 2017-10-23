@@ -62,11 +62,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 class MainKernel:
 
     static_memory = None
+    static_render = None
 
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
-        self.render = Render(self.belief_tracker, config)
+        # self.render = Render(self.belief_tracker, config)
+        self._load_render(config)
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -80,6 +82,13 @@ class MainKernel:
             MainKernel.static_memory = self.memory
         else:
             self.memory = MainKernel.static_memory
+
+    def _load_render(self, config):
+        if not MainKernel.static_render:
+            self.render = Render(self.belief_tracker, config)
+            MainKernel.static_render = self.render
+        else:
+            self.render = MainKernel.static_render
 
     def kernel(self, q, user='solr'):
         if not q:
@@ -133,10 +142,11 @@ class MainKernel:
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
-                        print('clear memory')
-                        self.sess.clear_memory()
-                        self.belief_tracker.clear_memory()
-                        memory = ''
+                        # print('clear memory')
+                        # self.sess.clear_memory()
+                        # self.belief_tracker.clear_memory()
+                        # memory = ''
+                        pass
                     # print(response, type(response))
                 # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 #     # self.sess.clear_memory()

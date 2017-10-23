@@ -46,7 +46,7 @@ class Render:
         self._load_major_render(config['renderer_file'])
         self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
-        # print('attaching rendering file...')
+        print('attaching rendering file...')
 
     def _load_major_render(self, file):
         self.major_render_mapper = dict()
