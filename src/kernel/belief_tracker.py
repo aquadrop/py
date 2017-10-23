@@ -365,11 +365,10 @@ class BeliefTracker:
                 self.fill_slot(given_slot, wild_card[adapter])
                 flag = True
             if not flag:
-                if self.shall_exploit_range():
-                    if 'number' in wild_card:
-                        print(self.get_requested_field())
-                        self.fill_slot(self.get_requested_field(), wild_card['number'])
-                        flag = True
+                if 'number' in wild_card:
+                    print(self.get_requested_field())
+                    self.fill_slot(given_slot, wild_card['number'])
+                    flag = True
             return flag
 
         for slot in self.requested_slots:
