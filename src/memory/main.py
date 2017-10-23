@@ -4,7 +4,7 @@ import gensim
 import sys
 import os
 import time
-
+import traceback
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
@@ -379,7 +379,7 @@ def main(args):
                             train['s']), batch_size=BATCH_SIZE)
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
-                                print_out = recover(error, train['a'], train['q'],\
+                                print_out = recover(error, train['s'], train['q'],\
                                                                       train_preds[error], train['a'][error],\
                                                                       idx2w, idx2candid)
                                 print(print_out)

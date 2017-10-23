@@ -334,7 +334,8 @@ class BeliefTracker:
                     #     self.machine_state = self.NO_CHILD_STATE
                     # else:
                     self.move_to_node(self.belief_graph.get_root_node())
-                    return self.color_graph(query=query, slot_values_mapper=slot_values_mapper)
+                    # return self.color_graph(query=query, slot_values_mapper=slot_values_mapper)
+                    self.clear_memory()
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
