@@ -85,7 +85,7 @@ class Render:
             else:
                 mapper = dict()
                 for kv in params.split(','):
-                    key, value = kv.split(',')
+                    key, value = kv.split(':')
                     mapper[key] = value
             return response
 
