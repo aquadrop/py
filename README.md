@@ -3,7 +3,8 @@ chatbot powered by memory network
 
 One Paragraph of project description goes here
 
-## Getting Started
+## Tips
+head data | awk 'BEGIN {FS="\t"}; {print $2}'
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 

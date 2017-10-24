@@ -206,9 +206,7 @@ def load_data(config, split_sentences=True):
 
     if config.train_mode:
         total_num = min(len(questions), config.total_num)
-        questions = questions[:total_num]
         num_train = int(total_num * 0.8)
-        print(len(questions))
         print(total_num)
         print(num_train)
         train = questions[:num_train], inputs[:num_train], \
@@ -216,10 +214,10 @@ def load_data(config, split_sentences=True):
             input_lens[:num_train], input_masks[:num_train], \
             answers[:num_train], rel_labels[:num_train]
 
-        valid = questions[num_train:], inputs[num_train:], \
-            q_lens[num_train:], input_lens[num_train:], \
-            input_masks[num_train:], \
-            answers[num_train:], rel_labels[num_train:]
+        valid = questions[num_train:total_num], inputs[num_train:total_num], \
+            q_lens[num_train:total_num], input_lens[num_train:total_num], \
+            input_masks[num_train:total_num], \
+            answers[num_train:total_num], rel_labels[num_train:total_num]
         return train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
             rel_labels.shape[1], len(
                 vocab), candidate_size, candid2idx, idx2candid, w2idx, idx2w

@@ -78,7 +78,7 @@ class Render:
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             return answer
-        if response.startswith('api_call_faq'):
+        if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
             matched, answer, score = self.faq.get_responses(
                 query=q)
             return answer
@@ -129,7 +129,7 @@ class Render:
                     if key in ['category', 'brand']:
                         and_mapper[key] = value
                     else:
-                        and_mapper[key] = value
+                        or_mapper[key] = value
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]

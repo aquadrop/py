@@ -234,12 +234,16 @@ def gen_sessions(belief_tracker, output_files):
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
+                    if k in ['ac.power_float']:
+                        lang += np.random.choice(['p', '匹'])
                 else:
                     lang += trans + 'range'
                     if k in ['tv.size', 'phone.size']:
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
+                    if k in ['ac.power_float']:
+                        lang += np.random.choice(['p', '匹', ''])
             else:
                 if v in ['电视', '冰箱', '空调', '电脑']:
                     if v == '电视':
@@ -394,7 +398,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 60000:
+            if i >= 50000:
                 break
 
     # lower everything
@@ -485,9 +489,10 @@ def gen_sessions(belief_tracker, output_files):
                 candidates.add(line)
     candidates = list(candidates)
     candidates.sort()
-    if len(candidates) < m_config.CANDIDATE_POOL:
-        for i in range(m_config.CANDIDATE_POOL - len(candidates)):
-            candidates.append('reserved_' + str(i + len(candidates)))
+    len_origin = len(candidates)
+    if len_origin < m_config.CANDIDATE_POOL:
+        for i in range(m_config.CANDIDATE_POOL - len_origin):
+            candidates.append('reserved_' + str(i + len_origin))
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')

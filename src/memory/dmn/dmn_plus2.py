@@ -20,7 +20,7 @@ import dmn_data_utils2 as dmn_data_utils
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 128
+    batch_size = 64
     embed_size = 300
     hidden_size = 128
 
@@ -50,7 +50,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    total_num = 10
+    total_num = 200000
 
     floatX = np.float32
 
