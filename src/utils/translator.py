@@ -25,6 +25,12 @@ def _pickle():
     slots_trans['slot_'] = '买'
     slots_trans['virtual_'] = '虚'
     slots_trans['api_call_'] = ''
+    slots_trans['sunning'] = '苏宁'
+    slots_trans['plugin'] = ''
+    slots_trans['act'] = ''
+    slots_trans['discount'] = '打折'
+    slots_trans['query'] = '查询'
+    slots_trans['float'] = ''
 
     translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
     with open(translator_graph_dir,'wb') as f:
@@ -49,6 +55,7 @@ class Translator():
             query=query.replace(v,k)
         return query
 
+
 def test():
     with open(os.path.join(grandfatherdir,'data/memn2n/train/tree/train.txt'),'r', encoding='utf-8') as f:
         candidates=f.readlines()
@@ -58,7 +65,6 @@ def test():
         line = translator.en2cn(line)
         line = query_util.tokenize(line, char=0)
         print(line)
-
 
 
 if __name__ == '__main__':

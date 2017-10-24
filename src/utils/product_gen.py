@@ -263,7 +263,7 @@ def update_solr(solr_file):
             # line = str.encode(line)
             print(line)
             line = str.encode(line)
-            req = urllib.request.Request(url='http://10.89.100.12:11403/solr/category/update?commit=true',
+            req = urllib.request.Request(url='http://localhost:11403/solr/category/update?commit=true',
                                   data=line)
             headers = {"content-type": "text/json"}
             req.add_header('Content-type', 'application/json')
@@ -274,11 +274,11 @@ def update_solr(solr_file):
 
 
 if __name__ == "__main__":
-    phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
-    ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
-    tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
-    pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/pc.txt')
-    fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
+    # phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/shouji.txt')
+    # ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/kongtiao.txt')
+    # tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/dianshi.txt')
+    # pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/pc.txt')
+    # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     print('updating')
     update_solr("../../data/raw/product_ac.txt")
     update_solr("../../data/raw/pc.txt")
