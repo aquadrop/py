@@ -11,6 +11,16 @@ candidate_path = os.path.join(
     parentdir, 'data/memn2n/train/tree/candidates.txt')
 
 
+def candid():
+    with open(candidate_path, 'r') as f:
+        candidates = f.readlines()
+    for i in range(5000):
+        candidates.append('reserved_' + str(i) + '\n')
+    with open(candidate_path, 'w') as f:
+        for l in candidates:
+            f.write(l)
+
+
 def update():
     reserved_idx = 0
     candidate = []
@@ -29,9 +39,11 @@ def update():
     for line in extra_data:
         line = line.strip()
         if len(line):
+            line = line.lower()
             candid = line.split('\t')[1]
             # if candid not in candidate:
             #     candidate.append(candid)
+
             if candid not in candidate:
                 print(candid)
                 candidate[reserved_idx] = candid
@@ -41,6 +53,7 @@ def update():
         train_data.pop()
     train_data.append('\n')
     train_data.extend(extra_data)
+    train_data.append('\n')
 
     with open(train_path, 'w') as f:
         for l in train_data:
@@ -51,6 +64,7 @@ def update():
 
 
 def main():
+    # candid()
     update()
 
 
