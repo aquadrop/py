@@ -1,28 +1,34 @@
-import os
+import argparse
+import pickle as pkl
+import gensim
 import sys
-
-parentdir = os.path.dirname(os.path.dirname(
+import os
+import time
+import traceback
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-# print(parentdir)
+sys.path.insert(0, parentdir)
+import memory.config as config
 
-extra_path = os.path.join(parentdir, 'data/memn2n/train/tree/extra/data')
-train_path = os.path.join(parentdir, 'data/memn2n/train/tree/train.txt')
+extra_path = os.path.join(grandfatherdir, 'data/memn2n/train/tree/extra/data')
+train_path = os.path.join(grandfatherdir, 'data/memn2n/train/tree/train.txt')
 candidate_path = os.path.join(
-    parentdir, 'data/memn2n/train/tree/candidates.txt')
+    grandfatherdir, 'data/memn2n/train/tree/candidates.txt')
 
 
 def update():
     reserved_idx = 0
-    candidate = []
+    candidate = set()
     with open(extra_path, 'r') as f:
         extra_data = f.readlines()
     with open(train_path, 'r') as f:
         train_data = f.readlines()
     with open(candidate_path, 'r') as f:
         for line in f:
-            line = line.strip()
+            line = line.strip('\n')
             if len(line):
-                candidate.append(line)
+                candidate.add(line)
                 if line.find('reserved_') == -1:
                     reserved_idx += 1
 
@@ -32,10 +38,15 @@ def update():
             candid = line.split('\t')[1]
             # if candid not in candidate:
             #     candidate.append(candid)
-            if candid not in candidate:
-                print(candid)
-                candidate[reserved_idx] = candid
-                reserved_idx += 1
+            candidate.add(candid)
+
+    candidate = list(candidate)
+    candidate.sort()
+    print('new candidates num', len(candidate))
+    len_origin = len(candidate)
+    if len_origin < config.CANDIDATE_POOL:
+        for i in range(config.CANDIDATE_POOL - len_origin):
+            candidate.append('reserved_' + str(i + len_origin))
 
     while train_data[-1] == '\n':
         train_data.pop()
