@@ -342,7 +342,9 @@ def gen_sessions(belief_tracker, output_files):
         container.append(line.lower())
         if api.startswith('api_call_search'):
             if np.random.uniform() < 0.4:
-                container.append('\t'.join(render_deny()))
+                a, b, c = render_deny()
+                candidates.add(b)
+                container.append('\t'.join([a, b, c]))
         mlt_line = user_reply + '\t' + 'plugin:apl_call_slot,' +\
             '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
             + '\t' + api
