@@ -232,12 +232,16 @@ def gen_sessions(belief_tracker, output_files):
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
+                    if k in ['ac.power_float']:
+                        lang += np.random.choice(['p', '匹'])
                 else:
                     lang += trans + 'range'
                     if k in ['tv.size', 'phone.size']:
                         lang += '寸'
                     if k in ['tv.distance']:
                         lang += '米'
+                    if k in ['ac.power_float']:
+                        lang += np.random.choice(['p', '匹', ''])
             else:
                 if v in ['电视', '冰箱', '空调','电脑']:
                     if v == '电视':
