@@ -110,37 +110,28 @@ class DMN_PLUS(object):
         self.w2idx = metadata['w2idx']
         self.idx2w = metadata['idx2w']
 
-        # if self.config.train_mode:
-        #     self.train, self.valid, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-        #             self.config, split_sentences=True)
-
-        # else:
-        #     self.test, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-        #             self.config, split_sentences=True)
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
 
     def add_placeholders(self):
         """add data placeholder to graph"""
         self.question_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size, self.max_q_len), name='question')
+            tf.int32, shape=(None, self.max_q_len), name='question')
         self.question_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='question_len')
+            tf.int32, shape=(None,), name='question_len')
 
         self.input_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.max_input_len, self.max_sen_len), name='input')
+            None, self.max_input_len, self.max_sen_len), name='input')
         self.input_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='input_len')
+            tf.int32, shape=(None,), name='input_len')
 
         self.answer_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='answer')
+            tf.int32, shape=(None,), name='answer')
         # self.answer_len_placeholder = tf.placeholder(
         #     tf.int32, shape=(self.config.batch_size,))
 
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.num_supporting_facts), name='rel_label')
+            None, self.num_supporting_facts), name='rel_label')
 
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
@@ -389,19 +380,13 @@ class DMN_PLUS(object):
         # print('float_total_steps:', float(total_steps))
         return np.mean(total_loss), accuracy / float(total_steps)
 
-    def predict(self, session, inputs, max_input_len, max_sen_len, questions, max_q_len):
+    def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
         dropout = 0.9
-        # answer = np.zeros((self.config.batch_size,))
-        # rel_label = np.zeros(
-        #     (self.config.batch_size, self.num_supporting_facts))
-
         feed = {
             self.question_placeholder: questions,
             self.input_placeholder: inputs,
-            self.question_len_placeholder: max_q_len,
-            self.input_len_placeholder: max_input_len,
-            # self.answer_placeholder: answer,
-            # self.rel_label_placeholder: rel_label,
+            self.question_len_placeholder: q_lens,
+            self.input_len_placeholder: input_lens,
             self.dropout_placeholder: dropout
         }
         pred = session.run([self.pred], feed_dict=feed)

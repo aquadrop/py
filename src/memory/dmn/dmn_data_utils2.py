@@ -15,16 +15,27 @@ grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
 import data_utils
 
 # temporary paths
-DATA_DIR = 'src/memory/dmn/data/tree'
-CANDID_PATH = 'src/memory/dmn/data/tree/candidates.txt'
+DATA_DIR = 'data/memn2n/train/tree'
+CANDID_PATH = 'data/memn2n/train/tree/candidates.txt'
 
-MULTI_DATA_DIR = 'src/memory/dmn/data/multi_tree'
-MULTI_CANDID_PATH = 'src/memory/dmn/data/multi_tree/candidates.txt'
+MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
+MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
 
 VOCAB_PATH = 'src/memory/dmn/data/vocab/vocab.txt'
 
 # can be sentence or word
 input_mask_mode = "sentence"
+
+
+def get_candidates_word_dict():
+    with open(os.path.join(grandfatherdir, VOCAB_PATH), 'r') as f:
+        vocab = json.load(f)
+    w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+
+    candidates, candid2idx, idx2candid = data_utils.load_candidates(
+        candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
+
+    return idx2candid, w2idx
 
 
 def load_raw_data():
@@ -36,7 +47,7 @@ def load_raw_data():
         candid_dic=candid2idx, dmn=True)
     # print(len(train_data))
     # print(os.path.join(grandfatherdir, DATA_DIR))
-    return train_data, test_data, val_data, candidates
+    return train_data, test_data, val_data, candidates, candid2idx, idx2candid
 
 
 def process_data(data_raw, floatX, w2idx, split_sentences=True):
@@ -145,14 +156,20 @@ def load_data(config, split_sentences=True):
         config.embedding_init,
         (len(vocab), config.embed_size))
 
-    train_data, val_data, test_data, candidates = load_raw_data()
+    train_data, val_data, test_data, candidates, candid2idx, idx2candid = load_raw_data()
 
     train_data = process_data(train_data, config.floatX, w2idx)
     val_data = process_data(val_data, config.floatX, w2idx)
     test_data = process_data(test_data, config.floatX, w2idx)
 
-    inputs, questions, answers, input_masks, rel_labels = \
-        train_data if config.train_mode else test_data
+    # print(len(train_data[0]))
+
+    for t, v in zip(train_data, val_data):
+        t += v
+
+    inputs, questions, answers, input_masks, rel_labels = train_data if config.train_mode else test_data
+
+    # print(len(train_data[0]))
 
     if split_sentences:
         # print(inputs)
@@ -188,17 +205,20 @@ def load_data(config, split_sentences=True):
     candidate_size = len(candidates)
 
     if config.train_mode:
-        train = questions[:config.num_train], inputs[:config.num_train], \
-            q_lens[:config.num_train],  \
-            input_lens[:config.num_train], input_masks[:config.num_train], \
-            answers[:config.num_train], rel_labels[:config.num_train]
+        num_train = int(len(questions) * 0.8)
+        print(num_train)
+        train = questions[:num_train], inputs[:num_train], \
+            q_lens[:num_train],  \
+            input_lens[:num_train], input_masks[:num_train], \
+            answers[:num_train], rel_labels[:num_train]
 
-        valid = questions[config.num_train:], inputs[config.num_train:], \
-            q_lens[config.num_train:], input_lens[config.num_train:], \
-            input_masks[config.num_train:], \
-            answers[config.num_train:], rel_labels[config.num_train:]
+        valid = questions[num_train:], inputs[num_train:], \
+            q_lens[num_train:], input_lens[num_train:], \
+            input_masks[num_train:], \
+            answers[num_train:], rel_labels[num_train:]
         return train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], len(vocab), candidate_size
+            rel_labels.shape[1], len(
+                vocab), candidate_size, candid2idx, idx2candid, w2idx, idx2w
 
     else:
         test = questions, inputs, q_lens, input_lens, input_masks, answers, rel_labels

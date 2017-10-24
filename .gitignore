@@ -108,4 +108,5 @@ model/
 .vscode/
 summaries/
 weights/
-weights2/
+weights*/
+processed/
