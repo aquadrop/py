@@ -30,7 +30,8 @@ def update():
         for line in f:
             line = line.strip('\n').lower()
             if len(line):
-                candidate.add(line)
+                if not line.find('reserved_'):
+                    candidate.add(line)
                 if line.find('reserved_') == -1:
                     reserved_idx += 1
 
