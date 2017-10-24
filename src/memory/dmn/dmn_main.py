@@ -22,7 +22,8 @@ sys.path.insert(0, grandfatherdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-import dmn_data_utils2
+import dmn_data_utils2 as dmn_data_utils
+from dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
@@ -30,7 +31,7 @@ translator = Translator()
 def prepare_data(args, config):
     train, valid, word_embedding, max_q_len, max_input_len, max_sen_len, \
         num_supporting_facts, vocab_size, candidate_size, candid2idx, \
-        idx2candid, w2idx, idx2w = dmn_data_utils2.load_data(
+        idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
 
     metadata = dict()
@@ -77,7 +78,6 @@ def main(args):
     args = parse_args(args)
     # print(args)
 
-    from dmn_plus2 import Config
     config = Config()
 
     if args['prep_data']:
@@ -85,7 +85,6 @@ def main(args):
         prepare_data(args, config)
         sys.exit()
 
-    from dmn_plus2 import DMN_PLUS
     model = DMN_PLUS(config)
 
     config.l2 = args['l2_loss'] if args['l2_loss'] is not None else 0.001
@@ -118,7 +117,7 @@ def main(args):
 
             if args.restore:
                 print('==> restoring weights')
-                saver.restore(session, 'weights2/task.weights')
+                saver.restore(session, 'weights3/task.weights')
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -179,6 +178,7 @@ def main(args):
             while query != 'exit':
                 query = input('>> ')
                 print('>> ' + isess.reply(query))
+                print('Done.')
 
 
 class InteractiveSession():
@@ -189,7 +189,7 @@ class InteractiveSession():
         self.model = model
         self.session = session
         self.config = config
-        self.idx2candid, self.w2idx = dmn_data_utils2.get_candidates_word_dict()
+        self.idx2candid, self.w2idx = dmn_data_utils.get_candidates_word_dict()
 
     def reply(self, msg):
         line = msg.strip().lower()
@@ -207,10 +207,10 @@ class InteractiveSession():
             inputs.append(inp_vector)
             questions.append(np.vstack(q_vector).astype(np.float32))
 
-            input_lens, sen_lens, max_sen_len = dmn_data_utils2.get_sentence_lens(
+            input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
                 inputs)
 
-            q_lens = dmn_data_utils2.get_lens(questions)
+            q_lens = dmn_data_utils.get_lens(questions)
             # max_q_len = np.max(q_lens)
 
             # max_input_len = min(np.max(input_lens),
@@ -220,21 +220,16 @@ class InteractiveSession():
             max_sen_len = self.model.max_sen_len
             max_q_len = self.model.max_q_len
 
-            inputs = dmn_data_utils2.pad_inputs(inputs, input_lens, max_input_len,
-                                                "split_sentences", sen_lens, max_sen_len)
+            inputs = dmn_data_utils.pad_inputs(inputs, input_lens, max_input_len,
+                                               "split_sentences", sen_lens, max_sen_len)
 
             # inputs = [inputs[0] for _ in range(self.config.batch_size)]
             inputs = np.asarray(inputs)
-            print('inputs:', inputs.shape)
 
-            questions = dmn_data_utils2.pad_inputs(
+            questions = dmn_data_utils.pad_inputs(
                 questions, q_lens, max_q_len)
             # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
-            print('questions:', questions.shape)
-
-            print('q_lens:', q_lens)
-            print('input_lens:', input_lens)
 
             preds = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)

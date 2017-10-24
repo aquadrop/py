@@ -27,7 +27,7 @@ class Config(object):
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.9
+    dropout = 0.5
     lr = 0.001
     l2 = 0.001
 
@@ -381,13 +381,12 @@ class DMN_PLUS(object):
         return np.mean(total_loss), accuracy / float(total_steps)
 
     def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
-        dropout = 0.9
         feed = {
             self.question_placeholder: questions,
             self.input_placeholder: inputs,
             self.question_len_placeholder: q_lens,
             self.input_len_placeholder: input_lens,
-            self.dropout_placeholder: dropout
+            self.dropout_placeholder: self.config.dropout
         }
         pred = session.run([self.pred], feed_dict=feed)
 

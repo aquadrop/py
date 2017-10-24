@@ -21,6 +21,7 @@ sys.path.insert(0, parentdir)
 
 translator = Translator()
 
+
 def gen_sessions(belief_tracker, output_files):
     """
     :param belief_tracker:
@@ -132,7 +133,8 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>",'你有什么<fill>','你有哪些<fill>']
+        template = ["你们这都有什么<fill>", "<fill>都有哪些",
+                    "你们这儿都卖什么<fill>", '你有什么<fill>', '你有哪些<fill>']
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -239,14 +241,14 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['tv.distance']:
                         lang += '米'
             else:
-                if v in ['电视', '冰箱', '空调','电脑']:
+                if v in ['电视', '冰箱', '空调', '电脑']:
                     if v == '电视':
-                        v = np.random.choice(['电视','电视机','彩电'])
+                        v = np.random.choice(['电视', '电视机', '彩电'])
                     if v == '冰箱':
-                        v = np.random.choice(['冰箱','电冰箱'])
+                        v = np.random.choice(['冰箱', '电冰箱'])
                     if v == '电脑':
-                        v = np.random.choice(['pc', '电脑','计算机'])
-                    v = np.random.choice(['台','一台','一个','个','']) + v
+                        v = np.random.choice(['pc', '电脑', '计算机'])
+                    v = np.random.choice(['台', '一台', '一个', '个', '']) + v
                 if v in ['手机']:
                     v = np.random.choice(['部', '一部', '一个', '个', '']) + v
                 lang += v + ","
@@ -335,22 +337,24 @@ def gen_sessions(belief_tracker, output_files):
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
                     qa = np.random.choice([filling_slots['category'], ''])\
-                         + np.random.choice(['在哪里', '在什么地方', '在几楼'])
+                        + np.random.choice(['在哪里', '在什么地方', '在几楼'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
-                           + filling_slots['category'] + '\t' + 'placeholder'
+                        + filling_slots['category'] + '\t' + 'placeholder'
                     container.append(line)
-                    candidates.add('api_call_query_location_' + 'category:'\
-                           + filling_slots['category'])
+                    candidates.add('api_call_query_location_' + 'category:'
+                                   + filling_slots['category'])
                 if np.random.uniform() < 0.25:
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = brand + np.random.choice([filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['多少钱', '什么价格'])
+                        qa = brand + np.random.choice(
+                            [filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['多少钱', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                            + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
                         container.append(line)
-                        candidates.add('api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'])
+                        candidates.add('api_call_query_price_' + 'brand:'
+                                       + brand + ',' + 'category:' + filling_slots['category'])
 
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0.25:
