@@ -56,7 +56,7 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
-os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
+# os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
 
 class MainKernel:
