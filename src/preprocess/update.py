@@ -22,11 +22,13 @@ def update():
     candidate = set()
     with open(extra_path, 'r') as f:
         extra_data = f.readlines()
+        extra_data = [a.lower() for a in extra_data]
     with open(train_path, 'r') as f:
         train_data = f.readlines()
+        train_data = [a.lower() for a in train_data]
     with open(candidate_path, 'r') as f:
         for line in f:
-            line = line.strip('\n')
+            line = line.strip('\n').lower()
             if len(line):
                 candidate.add(line)
                 if line.find('reserved_') == -1:
@@ -35,7 +37,7 @@ def update():
     for line in extra_data:
         line = line.strip()
         if len(line):
-            candid = line.split('\t')[1]
+            candid = line.split('\t')[1].lower()
             # if candid not in candidate:
             #     candidate.append(candid)
             candidate.add(candid)
