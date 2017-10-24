@@ -20,7 +20,7 @@ def update_solr(solr_file):
                 # line = str.encode(line)
                 print(line)
                 line = str.encode(line)
-                req = urllib.request.Request(url='http://localhost:11403/solr/faq/update?commit=true',
+                req = urllib.request.Request(url='http://10.89.100.12:11403/solr/faq/update?commit=true',
                                       data=line)
                 headers = {"content-type": "text/json"}
                 req.add_header('Content-type', 'application/json')
