@@ -121,6 +121,7 @@ class MainKernel:
                 self.sess.clear_memory()
                 return 'memory cleared@@[]'
             exploited = False
+            prefix = ''
             if self.belief_tracker.shall_exploit_range():
                 exploited = self.belief_tracker.exploit_wild_card(wild_card)
                 if exploited:
@@ -138,7 +139,6 @@ class MainKernel:
                 response = api
                 memory = api
                 avails = []
-                prefix = ''
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
