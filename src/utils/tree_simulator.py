@@ -485,9 +485,10 @@ def gen_sessions(belief_tracker, output_files):
                 candidates.add(line)
     candidates = list(candidates)
     candidates.sort()
-    if len(candidates) < m_config.CANDIDATE_POOL:
-        for i in range(m_config.CANDIDATE_POOL - len(candidates)):
-            candidates.append('reserved_' + str(i + len(candidates)))
+    len_origin = len(candidates)
+    if len_origin < m_config.CANDIDATE_POOL:
+        for i in range(m_config.CANDIDATE_POOL - len_origin):
+            candidates.append('reserved_' + str(i + len_origin))
     with open(output_files[0], 'w', encoding='utf-8') as f:
         for line in candidates:
             f.writelines(line + '\n')
