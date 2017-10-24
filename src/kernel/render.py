@@ -129,7 +129,7 @@ class Render:
                     if key in ['category', 'brand']:
                         and_mapper[key] = value
                     else:
-                        and_mapper[key] = value
+                        or_mapper[key] = value
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]
