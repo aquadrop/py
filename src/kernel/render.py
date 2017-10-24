@@ -78,7 +78,7 @@ class Render:
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             return answer
-        if response.startswith('api_call_faq'):
+        if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
             matched, answer, score = self.faq.get_responses(
                 query=q)
             return answer

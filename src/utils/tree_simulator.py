@@ -390,7 +390,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 60000:
+            if i >= 50000:
                 break
 
     # lower everything
