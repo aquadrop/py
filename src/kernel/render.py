@@ -44,7 +44,7 @@ class Render:
     def __init__(self, belief_tracker, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['renderer_file'])
-        self.belief_tracker = belief_tracker
+        # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
         self.faq = QA('faq')
         print('attaching rendering file...')
@@ -72,8 +72,9 @@ class Render:
             return api
         return np.random.choice(self.major_render_mapper[api])
 
-    def render(self, q, response):
-        if response.startswith('api_call_base') or response.startswith('api_call_greet'):
+    def render(self, q, response, avails, prefix=''):
+        if response.startswith('api_call_base') or response.startswith('api_call_greet')\
+                or response.startswith('reserved_'):
             # self.sess.clear_memory()
             matched, answer, score = self.interactive.get_responses(
                 query=q)
@@ -98,8 +99,8 @@ class Render:
             return self.render_api(response)
         if response.startswith('api_call_rhetorical_'):
             entity = response.replace('api_call_rhetorical_', '')
-            if entity in self.belief_tracker.avails and len(self.belief_tracker.avails[entity]) > 0:
-                return '我们有' + ",".join(self.belief_tracker.avails[entity])
+            if entity in avails and len(avails[entity]) > 0:
+                return '我们有' + ",".join(avails[entity])
             else:
                 return '无法查阅'
         if response.startswith('api_call_search_'):
@@ -165,4 +166,7 @@ class Render:
             facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
             response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
             return response
+
+        if np.random.uniform() < 0.8:
+            response = prefix + response
         return response

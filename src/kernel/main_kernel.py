@@ -135,6 +135,10 @@ class MainKernel:
             if not exploited:
                 api = self.sess.reply(range_rendered)
                 print(range_rendered, api)
+                response = api
+                memory = api
+                avails = []
+                prefix = ''
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
@@ -150,6 +154,16 @@ class MainKernel:
                         # self.sess.clear_memory()
                         # self.belief_tracker.clear_memory()
                         memory = ''
+                if api == 'api_call_deny_all':
+                    response, avails = self.deny_call(slot=None)
+                    memory = response
+                    prefix = 'OK..'
+                    print('tree rendered after deny..', response)
+                if api == 'api_call_deny_brand':
+                    response, avails = self.deny_call(slot='brand')
+                    memory = response
+                    prefix = 'OK..'
+                    print('tree rendered after deny brand..', response)
                     # print(response, type(response))
                 # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 #     # self.sess.clear_memory()
@@ -158,12 +172,8 @@ class MainKernel:
                 #     response = answer
                 #     memory = api
                 #     avails = []
-                else:
-                    response = api
-                    memory = api
-                    avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response) + '@@#avail_vals:' + str(avails)
+            render = self.render.render(q, response, prefix) + '@@#avail_vals:' + str(avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
                 user, 'memory', q, api, render))
             return render
