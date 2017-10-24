@@ -66,8 +66,8 @@ class Graph(Node, object):
         self.range_adapter_mapper['pc.size'] = '__inch__'
         self.range_adapter_mapper['tv.distance'] = '__meter__'
         self.range_adapter_mapper['ac.power_float'] = 'ac.power'
-        self.range_adapter_mapper['fr.height'] = '__meter__'
-        self.range_adapter_mapper['fr.width'] = '__meter__'
+        self.range_adapter_mapper['fr.height'] = 'height'
+        self.range_adapter_mapper['fr.width'] = 'width'
 
     def range_adapter(self, key):
         return self.range_adapter_mapper[key]
