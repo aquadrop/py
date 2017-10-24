@@ -34,20 +34,22 @@ def prepare_data(args, config):
         idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
 
+    print(train)
+    print(valid)
     metadata = dict()
     metadata['train'] = train
-    metadata['valid'] = valid
-    metadata['word_embedding'] = word_embedding
-    metadata['max_q_len'] = max_q_len
-    metadata['max_input_len'] = max_input_len
-    metadata['max_sen_len'] = max_sen_len
-    metadata['num_supporting_facts'] = num_supporting_facts
-    metadata['vocab_size'] = vocab_size
-    metadata['candidate_size'] = candidate_size
-    metadata['candid2idx'] = candid2idx
-    metadata['idx2candid'] = idx2candid
-    metadata['w2idx'] = w2idx
-    metadata['idx2w'] = idx2w
+    # metadata['valid'] = valid
+    # metadata['word_embedding'] = word_embedding
+    # metadata['max_q_len'] = max_q_len
+    # metadata['max_input_len'] = max_input_len
+    # metadata['max_sen_len'] = max_sen_len
+    # metadata['num_supporting_facts'] = num_supporting_facts
+    # metadata['vocab_size'] = vocab_size
+    # metadata['candidate_size'] = candidate_size
+    # metadata['candid2idx'] = candid2idx
+    # metadata['idx2candid'] = idx2candid
+    # metadata['w2idx'] = w2idx
+    # metadata['idx2w'] = idx2w
 
     with open(config.metadata_path, 'wb') as f:
         pickle.dump(metadata, f)

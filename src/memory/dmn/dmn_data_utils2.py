@@ -63,15 +63,15 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         if len(inp) == 0:
             inp = [['此', '乃', '空', '文']]
         if split_sentences:
-            inp_vector = [[w2idx[w] for w in s] for s in inp]
+            inp_vector = [[w2idx.get(w, 0) for w in s] for s in inp]
             inputs.append(inp_vector)
         else:
             inp = reduce(lambda x, y: x + ['.'] + y, inp)
-            inp_vector = [w2idx[w] for w in inp]
+            inp_vector = [w2idx.get(w, 0) for w in inp]
             inputs.append(np.vstack(inp_vector).astype(floatX))
 
         question = question if len(question) else ['空']
-        q_vector = [w2idx[w] for w in question]
+        q_vector = [w2idx.get(w, 0) for w in question]
         # print(q_vector)
         questions.append(np.vstack(q_vector).astype(floatX))
 
@@ -205,7 +205,11 @@ def load_data(config, split_sentences=True):
     candidate_size = len(candidates)
 
     if config.train_mode:
-        num_train = int(len(questions) * 0.8)
+        total_num = min(len(questions), config.total_num)
+        questions = questions[:total_num]
+        num_train = int(total_num * 0.8)
+        print(len(questions))
+        print(total_num)
         print(num_train)
         train = questions[:num_train], inputs[:num_train], \
             q_lens[:num_train],  \

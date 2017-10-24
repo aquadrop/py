@@ -50,7 +50,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    num_train = 30000
+    total_num = 10
 
     floatX = np.float32
 
@@ -60,6 +60,7 @@ class Config(object):
     train_mode = True
 
     metadata_path = 'processed/metadata.pkl'
+    data_path = 'processed/data.pkl'
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
