@@ -274,6 +274,16 @@ def gen_sessions(belief_tracker, output_files):
     def render_api(api):
         return api[0]
 
+    def render_deny():
+        prefix = np.random.choice(['我不要', '不要', '不要这个', '不想要'])
+        lang = prefix
+        cls = 'api_call_deny_all'
+        if 'brand' in belief_tracker.filling_slots:
+            if np.random.uniform() < 0.7:
+                lang += belief_tracker.filling_slots['brand']
+                cls = 'api_call_deny_brand'
+        return lang, cls, 'placeholder'
+
     requested = get_requested_field()
     i = 0
 
@@ -294,6 +304,7 @@ def gen_sessions(belief_tracker, output_files):
     mlt_container = []
     mlt_candidates = []
     with_qa = True
+    with_deny = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -331,6 +342,11 @@ def gen_sessions(belief_tracker, output_files):
         if not api.startswith('api_call_search'):
             api_set.add(api + '##' + trans_api)
         container.append(line.lower())
+        if api.startswith('api_call_search'):
+            if np.random.uniform() < 0.4:
+                a, b, c = render_deny()
+                candidates.add(b)
+                container.append('\t'.join([a, b, c]))
         mlt_line = user_reply + '\t' + 'plugin:apl_call_slot,' +\
             '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
             + '\t' + api
@@ -398,7 +414,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 50000:
+            if i >= 60000:
                 break
 
     # lower everything
@@ -541,10 +557,10 @@ if __name__ == "__main__":
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     bt = BeliefTracker(config)
 
-    output_files = ['../../data/memn2n/train/tree/candidates.txt',
-                    '../../data/memn2n/train/tree/train.txt',
-                    '../../data/memn2n/train/tree/val.txt',
-                    '../../data/memn2n/train/tree/test.txt',
+    output_files = ['../../data/memn2n/train/tree/origin/candidates.txt',
+                    '../../data/memn2n/train/tree/origin/train.txt',
+                    '../../data/memn2n/train/tree/origin/val.txt',
+                    '../../data/memn2n/train/tree/origin/test.txt',
                     '../../data/memn2n/train/gbdt/train.txt']
 
     gen_sessions(bt, output_files)

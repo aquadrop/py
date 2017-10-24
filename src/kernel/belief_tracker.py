@@ -97,6 +97,30 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    def deny_call(self, slot=None):
+        """
+
+        :param slot: if slot == None, deny all but category
+        :return:
+        """
+        if not slot:
+            if 'category' in self.filling_slots:
+                value = self.filling_slots['category']
+                self.move_to_node(self.belief_graph.get_nodes_by_value(value)[0])
+                self.machine_state = self.API_REQUEST_STATE
+            else:
+                self.clear_memory()
+            api, avails = self.issue_api()
+            return api, avails
+        if slot in self.filling_slots:
+            del self.filling_slots[slot]
+        if slot in self.requested_slots:
+            del self.requested_slots[slot]
+        self.requested_slots.index(slot)
+        api, avails = self.issue_api()
+        return api, avails
+
+
     def user_wild_card(self, wild_card):
         if 'price' in wild_card:
             pass
