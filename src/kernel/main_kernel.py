@@ -173,7 +173,7 @@ class MainKernel:
                 #     memory = api
                 #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, prefix) + '@@#avail_vals:' + str(avails)
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
                 user, 'memory', q, api, render))
             return render

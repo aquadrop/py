@@ -72,7 +72,7 @@ class Render:
             return api
         return np.random.choice(self.major_render_mapper[api])
 
-    def render(self, q, response, avails, prefix=''):
+    def render(self, q, response, avails=dict(), prefix=''):
         if response.startswith('api_call_base') or response.startswith('api_call_greet')\
                 or response.startswith('reserved_'):
             # self.sess.clear_memory()
