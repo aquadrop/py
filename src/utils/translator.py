@@ -32,6 +32,8 @@ def _pickle():
     slots_trans['query'] = '查询'
     slots_trans['float'] = ''
     slots_trans['deny'] = '拒绝'
+    slots_trans['all'] = '所有'
+
 
     translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
     with open(translator_graph_dir,'wb') as f:
