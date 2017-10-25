@@ -188,7 +188,7 @@ def main():
         grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     data_dir = os.path.join(
         grandfatherdir, 'data/memn2n/processed/data.pkl')
-    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt3')
     config = {"metadata_dir": metadata_dir,
               "data_dir": data_dir, "ckpt_dir": ckpt_dir}
     mi = MemInfer(config)
