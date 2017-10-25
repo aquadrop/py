@@ -309,11 +309,11 @@ def gen_sessions(belief_tracker, output_files):
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     fresh = True
-    with_multiple = False
+    with_multiple = True
     mlt_container = []
-    mlt_candidates = []
+    mlt_candidates = set()
+    mlt_duplicate_removal = set()
     with_qa = True
-    with_deny = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -388,10 +388,13 @@ def gen_sessions(belief_tracker, output_files):
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
                 memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+                mlt_memory_line = reh + '\t' + "plugin:api_call_sunning," + "act:" + cls + '\t' + 'placeholder'
                 cls = cls.lower()
                 candidates.add(cls)
                 memory_line = memory_line.lower()
                 container.append(memory_line)
+                mlt_container.append(mlt_memory_line.lower())
+                mlt_candidates.add('act:' + cls)
                 train_gbdt.add(rhetorical.lower())
         # print(line)
         if not requested:
@@ -429,9 +432,16 @@ def gen_sessions(belief_tracker, output_files):
     # print('writing', len(train_set), len(
     #     val_set), len(test_set), len(candidates))
     #
-    with_base = True
+    with_base = False
     with_gbdt = False
     base_count = 0
+
+    if with_multiple:
+        candidates = mlt_candidates
+        container = mlt_container
+        for i in range(0, len(output_files) - 1):
+            output_files[i] = output_files[i].replace('tree', 'mlt_tree')
+
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
