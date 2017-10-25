@@ -117,18 +117,20 @@ def main(args):
 
             if args['restore']:
                 print('==> restoring weights')
-                saver.restore(session, 'weights4/task.weights')
+                saver.restore(session, 'weights5/task.weights')
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
                 print('Epoch {}'.format(epoch))
                 start = time.time()
 
-                train_loss, train_accuracy = model.run_epoch(
+                train_loss, train_accuracy, train_error = model.run_epoch(
                     session, model.train, epoch, train_writer,
                     train_op=model.train_step, train=True)
-                valid_loss, valid_accuracy = model.run_epoch(
+                valid_loss, valid_accuracy, valid_error = model.run_epoch(
                     session, model.valid)
+                print('Training error:\n{}'.format(train_error))
+                print('Validation error:\n{}'.format(valid_error))
                 print('Training loss: {}'.format(train_loss))
                 print('Validation loss: {}'.format(valid_loss))
                 print('Training accuracy: {}'.format(train_accuracy))
@@ -141,7 +143,7 @@ def main(args):
                         print('Saving weights')
                         best_overall_val_loss = best_val_loss
                         best_val_accuracy = valid_accuracy
-                        saver.save(session, 'weights4/task.weights')
+                        saver.save(session, 'weights5/task.weights')
 
                 # anneal
                 if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -166,7 +168,7 @@ def main(args):
             session.run(init)
 
             # restore checkpoint
-            ckpt = tf.train.get_checkpoint_state('weights3/')
+            ckpt = tf.train.get_checkpoint_state('weights5/')
             if ckpt and ckpt.model_checkpoint_path:
                 print('\n>> restoring checkpoint from',
                       ckpt.model_checkpoint_path)

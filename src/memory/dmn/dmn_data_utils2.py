@@ -15,8 +15,8 @@ grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
 import data_utils
 
 # temporary paths
-DATA_DIR = 'data/memn2n/train/tree'
-CANDID_PATH = 'data/memn2n/train/tree/candidates.txt'
+DATA_DIR = 'data/memn2n/train/tree/origin'
+CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
 
 MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
 MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
@@ -165,6 +165,8 @@ def load_data(config, split_sentences=True):
     # print(len(train_data[0]))
 
     for t, v in zip(train_data, val_data):
+        t += v
+    for t, v in zip(train_data, test_data):
         t += v
 
     inputs, questions, answers, input_masks, rel_labels = train_data if config.train_mode else test_data

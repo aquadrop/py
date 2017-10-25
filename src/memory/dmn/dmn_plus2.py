@@ -27,7 +27,7 @@ class Config(object):
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.5
+    dropout = 0.7
     lr = 0.001
     l2 = 0.001
 
@@ -113,6 +113,9 @@ class DMN_PLUS(object):
 
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
+
+        # print(self.idx2w)
+        # print(self.idx2candid)
 
     def add_placeholders(self):
         """add data placeholder to graph"""
@@ -342,6 +345,7 @@ class DMN_PLUS(object):
 
         total_loss = []
         accuracy = 0
+        error = []
 
         # shuffle data
         p = np.random.permutation(len(data[0]))
@@ -367,7 +371,18 @@ class DMN_PLUS(object):
 
             answers = a[step *
                         config.batch_size:(step + 1) * config.batch_size]
+            questions = qp[step *
+                           config.batch_size:(step + 1) * config.batch_size]
             accuracy += np.sum(pred == answers) / float(len(answers))
+
+            for Q, A, P in zip(questions, answers, pred):
+                if A != P:
+                    Q = ''.join([self.idx2w.get(idx, '')
+                                 for idx in Q.astype(np.int32).tolist()])
+                    A = self.idx2candid[A]
+                    P = self.idx2candid[P]
+                    error.append((Q, A, P))
+                    # print((Q, A, P))
 
             total_loss.append(loss)
             if verbose and step % verbose == 0:
@@ -377,9 +392,8 @@ class DMN_PLUS(object):
 
         if verbose:
             sys.stdout.write('\r')
-        # print('total_steps:', total_steps)
-        # print('float_total_steps:', float(total_steps))
-        return np.mean(total_loss), accuracy / float(total_steps)
+
+        return np.mean(total_loss), accuracy / float(total_steps), error
 
     def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
         feed = {
