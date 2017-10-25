@@ -41,7 +41,10 @@ from qa.qa import Qa as QA
 
 
 class Render:
-    def __init__(self, belief_tracker, config):
+
+    prefix = ['这样啊..', 'OK..', '好吧']
+
+    def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['renderer_file'])
         # self.belief_tracker = belief_tracker
@@ -57,7 +60,11 @@ class Render:
                 key, replies = line.split('|')
                 key = key.split('##')[0]
                 replies = replies.split('/')
-                self.major_render_mapper[key] = replies
+                filtered = []
+                for r in replies:
+                    if r:
+                        filtered.append(r)
+                self.major_render_mapper[key] = filtered
 
     def render_mapper(self, mapper):
         mapper_render = []
@@ -66,6 +73,9 @@ class Render:
         if 'category' in mapper:
             mapper_render.append(mapper['category'])
         return ''.join(mapper_render)
+
+    def random_prefix(self):
+        return np.random.choice(self.prefix)
 
     def render_api(self, api):
         if api not in self.major_render_mapper:
@@ -96,6 +106,8 @@ class Render:
             # params = self.belief_tracker.belief_graph.slots_trans[params]
             # rendered = '什么' + params
             # return rendered + "@@" + response
+            if prefix:
+                return prefix + self.render_api(response)
             return self.render_api(response)
         if response.startswith('api_call_rhetorical_'):
             entity = response.replace('api_call_rhetorical_', '')
@@ -167,6 +179,4 @@ class Render:
             response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
             return response
 
-        if np.random.uniform() < 0.8:
-            response = prefix + response
         return response
