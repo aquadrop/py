@@ -83,11 +83,11 @@ def info():
     result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
     return json.dumps(result, ensure_ascii=False)
 
-@app.route('/e/log', methods=['GET', 'POST'])
-def info():
-    size = len(lru_kernels)
-    result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
-    return json.dumps(result, ensure_ascii=False)
+# @app.route('/e/log', methods=['GET', 'POST'])
+# def info():
+#     size = len(lru_kernels)
+#     result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
+#     return json.dumps(result, ensure_ascii=False)
 
 
 @app.route('/e/chat', methods=['GET', 'POST'])
