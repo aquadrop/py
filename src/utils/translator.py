@@ -33,6 +33,7 @@ def _pickle():
     slots_trans['float'] = ''
     slots_trans['deny'] = '拒绝'
     slots_trans['all'] = '所有'
+    slots_trans['location'] = '地点'
 
 
     translator_graph_dir=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")
