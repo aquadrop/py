@@ -223,7 +223,7 @@ class BeliefTracker:
         return self.requested_slots[0]
 
     # a tree rendering process...
-    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True):
+    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True, recursive=True):
         """
         gen api_call_ambiguity_...
             api_call_request_brand...
@@ -232,6 +232,7 @@ class BeliefTracker:
         :param values_marker:
         :param query
         :param range_render
+        :param recursive prevent recursison
         :return:
         """
 
@@ -360,9 +361,14 @@ class BeliefTracker:
                     #     # remain in the current node
                     #     self.machine_state = self.NO_CHILD_STATE
                     # else:
-                    self.move_to_node(self.belief_graph.get_root_node())
-                    # return self.color_graph(query=query, slot_values_mapper=slot_values_mapper)
-                    self.clear_memory()
+                    if recursive:
+                        self.move_to_node(self.belief_graph.get_root_node())
+                        self.machine_state = self.TRAVEL_STATE
+                        self.clear_memory()
+                        return self.color_graph(query=query, slot_values_mapper=slot_values_mapper, recursive=False)
+                    else:
+                        self.clear_memory()
+                        self.move_to_node(self.belief_graph.get_root_node())
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
