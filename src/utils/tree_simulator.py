@@ -202,11 +202,11 @@ def gen_sessions(belief_tracker, output_files):
             ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
         return requested
 
-    def render_lang(slot_values_mapper, fresh):
+    def render_lang(slot_values_mapper, fresh, thesaurus):
         search_node = belief_tracker.search_node
-        prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买']
+        prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买','有没有']
         postfix = ['吧', '呢', '']
-        lang = np.random.choice(prefix, p=[0.1, 0.4, 0.1, 0.1, 0.15, 0.15])
+        lang = np.random.choice(prefix)
         if 'brand' in slot_values_mapper:
             lang += slot_values_mapper['brand'] + \
                 np.random.choice(['的', ''], p=[0.7, 0.3])
@@ -253,6 +253,10 @@ def gen_sessions(belief_tracker, output_files):
                     v = np.random.choice(['台','一台','一个','个','']) + v
                 if v in ['手机']:
                     v = np.random.choice(['部', '一部', '一个', '个', '']) + v
+                if v in thesaurus:
+                    choice = thesaurus[v]
+                    choice.append(v)
+                    v = np.random.choice(choice)
                 lang += v + ","
 
         if lang[-1] == ',':
@@ -285,6 +289,13 @@ def gen_sessions(belief_tracker, output_files):
     requested = get_requested_field()
     i = 0
 
+    thesaurus =  dict()
+    with open('../../data/gen_product/thesaurus.txt', 'r') as f:
+        for line in f:
+            line = line.strip('\n')
+            key, value = line.split('#')
+            thesaurus[key] = value.split(',')
+
     candidates = set()
     api_set = set()
     train_set = []
@@ -314,7 +325,7 @@ def gen_sessions(belief_tracker, output_files):
                 required_field=requested)
         belief_tracker.color_graph(
             slot_values_mapper=slot_values_mapper, range_render=False)
-        user_reply = render_lang(slot_values_mapper, fresh)
+        user_reply = render_lang(slot_values_mapper, fresh, thesaurus)
         if not fresh:
             gbdt = 'plugin:' + 'api_call_slot' + '|'\
                 + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
