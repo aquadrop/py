@@ -56,7 +56,7 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
-os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
+# os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
 
 class MainKernel:
@@ -121,6 +121,7 @@ class MainKernel:
                 self.sess.clear_memory()
                 return 'memory cleared@@[]'
             exploited = False
+            prefix = ''
             if self.belief_tracker.shall_exploit_range():
                 exploited = self.belief_tracker.exploit_wild_card(wild_card)
                 if exploited:
@@ -135,6 +136,9 @@ class MainKernel:
             if not exploited:
                 api = self.sess.reply(range_rendered)
                 print(range_rendered, api)
+                response = api
+                memory = api
+                avails = []
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
@@ -150,6 +154,16 @@ class MainKernel:
                         # self.sess.clear_memory()
                         # self.belief_tracker.clear_memory()
                         memory = ''
+                if api == 'api_call_deny_all':
+                    response, avails = self.belief_tracker.deny_call(slot=None)
+                    memory = response
+                    prefix = self.render.random_prefix()
+                    print('tree rendered after deny..', response)
+                if api == 'api_call_deny_brand':
+                    response, avails = self.belief_tracker.deny_call(slot='brand')
+                    memory = response
+                    prefix = self.render.random_prefix()
+                    print('tree rendered after deny brand..', response)
                     # print(response, type(response))
                 # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
                 #     # self.sess.clear_memory()
@@ -158,12 +172,8 @@ class MainKernel:
                 #     response = answer
                 #     memory = api
                 #     avails = []
-                else:
-                    response = api
-                    memory = api
-                    avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response) + '@@#avail_vals:' + str(avails)
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
                 user, 'memory', q, api, render))
             return render

@@ -48,7 +48,8 @@ STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
-                    '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
+                    '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '=',"%","……",
+                    "啊", "呢", "哦", "哈","呀","捏","撒","哟","呐","吧","吗","嘛"])
 
 
 def tokenize(sent, char=config.TOKENIZE_CHAR):
@@ -140,6 +141,14 @@ def jieba_cut(query, smart=True):
         result.append(s)
     return result
 
+def remove_stop_words(q):
+    # q = re.sub(ur"[\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）：；《）《》“”()»〔〕-]+", "", q)
+
+    pu = re.compile(r'[啊|呢|哦|哈|呀|捏|撒|哟|呐|吧|吗|么|嘛]')
+    try:
+        return re.sub(pu, '', q.decode('utf-8'))
+    except:
+        return q
 
 def rule_base_num_retreive(query):
     inch_dual = r"(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸)"

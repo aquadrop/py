@@ -97,6 +97,31 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    def deny_call(self, slot=None):
+        """
+
+        :param slot: if slot == None, deny all but category
+        :return:
+        """
+        if not slot:
+            if 'category' in self.filling_slots:
+                value = self.filling_slots['category']
+                self.move_to_node(self.belief_graph.get_nodes_by_value(value)[0])
+                self.machine_state = self.API_REQUEST_STATE
+            else:
+                self.clear_memory()
+            api, avails = self.issue_api()
+            return api, avails
+        if slot in self.filling_slots:
+            del self.filling_slots[slot]
+        if slot in self.requested_slots:
+            del self.requested_slots[slot]
+        self.requested_slots.insert(0, slot)
+        self.machine_state = self.API_REQUEST_STATE
+        api, avails = self.issue_api()
+        return api, avails
+
+
     def user_wild_card(self, wild_card):
         if 'price' in wild_card:
             pass
@@ -199,7 +224,7 @@ class BeliefTracker:
         return self.requested_slots[0]
 
     # a tree rendering process...
-    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True):
+    def color_graph(self, slot_values_mapper, query=None, values_marker=None, range_render=True, recursive=True):
         """
         gen api_call_ambiguity_...
             api_call_request_brand...
@@ -208,6 +233,7 @@ class BeliefTracker:
         :param values_marker:
         :param query
         :param range_render
+        :param recursive prevent recursison
         :return:
         """
 
@@ -336,9 +362,14 @@ class BeliefTracker:
                     #     # remain in the current node
                     #     self.machine_state = self.NO_CHILD_STATE
                     # else:
-                    self.move_to_node(self.belief_graph.get_root_node())
-                    # return self.color_graph(query=query, slot_values_mapper=slot_values_mapper)
-                    self.clear_memory()
+                    if recursive:
+                        self.move_to_node(self.belief_graph.get_root_node())
+                        self.machine_state = self.TRAVEL_STATE
+                        self.clear_memory()
+                        return self.color_graph(query=query, slot_values_mapper=slot_values_mapper, recursive=False)
+                    else:
+                        self.clear_memory()
+                        self.move_to_node(self.belief_graph.get_root_node())
 
         if len(self.requested_slots) == 0:
             self.machine_state = self.API_CALL_STATE
@@ -663,7 +694,7 @@ class BeliefTracker:
     def is_key_type(self, slot):
         return self.search_node.get_field_type(slot) == Node.KEY
 
-    def solr_facet(self):
+    def solr_facet(self, prefix='facet_'):
         if self.config['solr.facet'] != 'on':
             return ['facet is off'], 0
         node = self.search_node
@@ -708,7 +739,7 @@ class BeliefTracker:
             params = {
                 'q': '*:*',
                 'facet': True,
-                'facet.field': facet_field,
+                'facet.field': prefix + facet_field,
                 "facet.mincount": 1
             }
             mapper = dict()
@@ -723,9 +754,12 @@ class BeliefTracker:
                 mapper[node.slot] = node.value
                 node = node.parent_node
             params['fq'] = solr_util.compose_fq(mapper)
-            res = self.solr.query('category', params)
-            facets = res.get_facet_keys_as_list(facet_field)
-            return res.get_facet_keys_as_list(facet_field), len(facets)
+            try:
+                res = self.solr.query('category', params)
+            except:
+                return self.solr_facet(prefix='')
+            facets = res.get_facet_keys_as_list(prefix + facet_field)
+            return facets, len(facets)
         else:
             start = 1
             gap = 1
@@ -802,7 +836,7 @@ class BeliefTracker:
             avails, num_avails = self.solr_facet()
             self.avails.clear()
             self.avails[slot] = avails
-            if attend_facet:
+            if attend_facet and self.belief_graph.get_field_type(slot) == Node.KEY:
                 if num_avails == 1:
                     self.fill_slot(slot, avails[0])
                     if len(self.requested_slots) == 0:
