@@ -116,7 +116,8 @@ class BeliefTracker:
             del self.filling_slots[slot]
         if slot in self.requested_slots:
             del self.requested_slots[slot]
-        self.requested_slots.index(slot)
+        self.requested_slots.insert(0, slot)
+        self.machine_state = self.API_REQUEST_STATE
         api, avails = self.issue_api()
         return api, avails
 
@@ -835,7 +836,7 @@ class BeliefTracker:
             avails, num_avails = self.solr_facet()
             self.avails.clear()
             self.avails[slot] = avails
-            if attend_facet:
+            if attend_facet and self.belief_graph.get_field_type(slot) == Node.KEY:
                 if num_avails == 1:
                     self.fill_slot(slot, avails[0])
                     if len(self.requested_slots) == 0:
