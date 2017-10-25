@@ -155,14 +155,14 @@ class MainKernel:
                         # self.belief_tracker.clear_memory()
                         memory = ''
                 if api == 'api_call_deny_all':
-                    response, avails = self.deny_call(slot=None)
+                    response, avails = self.belief_tracker.deny_call(slot=None)
                     memory = response
-                    prefix = 'OK..'
+                    prefix = self.render.random_prefix()
                     print('tree rendered after deny..', response)
                 if api == 'api_call_deny_brand':
-                    response, avails = self.deny_call(slot='brand')
+                    response, avails = self.belief_tracker.deny_call(slot='brand')
                     memory = response
-                    prefix = 'OK..'
+                    prefix = self.render.random_prefix()
                     print('tree rendered after deny brand..', response)
                     # print(response, type(response))
                 # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
