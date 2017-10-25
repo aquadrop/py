@@ -41,12 +41,16 @@ from qa.qa import Qa as QA
 
 
 class Render:
-    def __init__(self, belief_tracker, config):
+
+    prefix = ['这样啊..', 'OK..', '好吧']
+
+    def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['renderer_file'])
-        self.belief_tracker = belief_tracker
+        # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
-        # print('attaching rendering file...')
+        self.faq = QA('faq')
+        print('attaching rendering file...')
 
     def _load_major_render(self, file):
         self.major_render_mapper = dict()
@@ -56,7 +60,11 @@ class Render:
                 key, replies = line.split('|')
                 key = key.split('##')[0]
                 replies = replies.split('/')
-                self.major_render_mapper[key] = replies
+                filtered = []
+                for r in replies:
+                    if r:
+                        filtered.append(r)
+                self.major_render_mapper[key] = filtered
 
     def render_mapper(self, mapper):
         mapper_render = []
@@ -66,15 +74,25 @@ class Render:
             mapper_render.append(mapper['category'])
         return ''.join(mapper_render)
 
+
+    def random_prefix(self):
+        return np.random.choice(self.prefix)
+
     def render_api(self, api):
         if api not in self.major_render_mapper:
             return api
         return np.random.choice(self.major_render_mapper[api])
 
-    def render(self, q, response):
-        if response.startswith('api_call_base') or response.startswith('api_call_greet'):
+    def render(self, q, response, avails=dict(), prefix=''):
+        if response.startswith('api_call_base') or response.startswith('api_call_greet')\
+                or response.startswith('reserved_'):
             # self.sess.clear_memory()
             matched, answer, score = self.interactive.get_responses(
+                query=q)
+            return answer
+
+        if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
+            matched, answer, score = self.faq.get_responses(
                 query=q)
             return answer
         if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
@@ -90,11 +108,13 @@ class Render:
             # params = self.belief_tracker.belief_graph.slots_trans[params]
             # rendered = '什么' + params
             # return rendered + "@@" + response
+            if prefix:
+                return prefix + self.render_api(response)
             return self.render_api(response)
         if response.startswith('api_call_rhetorical_'):
             entity = response.replace('api_call_rhetorical_', '')
-            if entity in self.belief_tracker.avails and len(self.belief_tracker.avails[entity]) > 0:
-                return '我们有' + ",".join(self.belief_tracker.avails[entity])
+            if entity in avails and len(avails[entity]) > 0:
+                return '我们有' + ",".join(avails[entity])
             else:
                 return '无法查阅'
         if response.startswith('api_call_search_'):
@@ -124,7 +144,7 @@ class Render:
                     if key in ['category', 'brand']:
                         and_mapper[key] = value
                     else:
-                        and_mapper[key] = value
+                        or_mapper[key] = value
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]
@@ -160,4 +180,5 @@ class Render:
             facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
             response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
             return response
+
         return response

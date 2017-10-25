@@ -113,6 +113,7 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
                 if config.FIX_VOCAB:
                     r = translator.en2cn(r)
                 r = tokenize(r)
+                placeholder = salt == 'placeholder'
                 if config.FIX_VOCAB:
                     salt = translator.en2cn(salt)
                 salt = tokenize(salt)
@@ -130,7 +131,8 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
                     salt.append('$r')
                     context.append(u)
                     context.append(r)
-                    context.append(salt)
+                    if not placeholder:
+                        context.append(salt)
         else:
             # clear context
             context = []
