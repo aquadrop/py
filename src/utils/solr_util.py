@@ -66,7 +66,7 @@ def solr_qa(core, query):
     return docs
 
 
-def solr_facet(mappers, facet_field, is_range):
+def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
 
     def render_range(a, gap):
         if len(a) == 0:
@@ -106,13 +106,16 @@ def solr_facet(mappers, facet_field, is_range):
         params = {
             'q': '*:*',
             'facet': True,
-            'facet.field': facet_field,
+            'facet.field': prefix + facet_field,
             "facet.mincount": 1
         }
         params['fq'] = compose_fq(mappers)
-        res = solr.query('category', params)
-        facets = res.get_facet_keys_as_list(facet_field)
-        return res.get_facet_keys_as_list(facet_field), len(facets)
+        try:
+            res = solr.query('category', params)
+        except:
+            return solr_facet(mappers, facet_field, is_range, prefix='')
+        facets = res.get_facet_keys_as_list(prefix + facet_field)
+        return facets, len(facets)
     else:
         start = 1
         gap = 1

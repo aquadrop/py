@@ -687,7 +687,7 @@ class BeliefTracker:
     def is_key_type(self, slot):
         return self.search_node.get_field_type(slot) == Node.KEY
 
-    def solr_facet(self):
+    def solr_facet(self, prefix='facet_'):
         if self.config['solr.facet'] != 'on':
             return ['facet is off'], 0
         node = self.search_node
@@ -732,7 +732,7 @@ class BeliefTracker:
             params = {
                 'q': '*:*',
                 'facet': True,
-                'facet.field': facet_field,
+                'facet.field': prefix + facet_field,
                 "facet.mincount": 1
             }
             mapper = dict()
@@ -747,9 +747,12 @@ class BeliefTracker:
                 mapper[node.slot] = node.value
                 node = node.parent_node
             params['fq'] = solr_util.compose_fq(mapper)
-            res = self.solr.query('category', params)
-            facets = res.get_facet_keys_as_list(facet_field)
-            return res.get_facet_keys_as_list(facet_field), len(facets)
+            try:
+                res = self.solr.query('category', params)
+            except:
+                return self.solr_facet(prefix='')
+            facets = res.get_facet_keys_as_list(prefix + facet_field)
+            return facets, len(facets)
         else:
             start = 1
             gap = 1
