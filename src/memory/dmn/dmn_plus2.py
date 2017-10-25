@@ -50,7 +50,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    total_num = 200000
+    total_num = 150000
 
     floatX = np.float32
 
