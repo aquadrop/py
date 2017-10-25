@@ -129,8 +129,10 @@ def main(args):
                     train_op=model.train_step, train=True)
                 valid_loss, valid_accuracy, valid_error = model.run_epoch(
                     session, model.valid)
-                print('Training error:\n{}'.format(train_error))
-                print('Validation error:\n{}'.format(valid_error))
+                print('Training error:')
+                for e in train_error:
+                    print(e)
+                # print('Validation error:')
                 print('Training loss: {}'.format(train_loss))
                 print('Validation loss: {}'.format(valid_loss))
                 print('Training accuracy: {}'.format(train_accuracy))
