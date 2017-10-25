@@ -85,7 +85,7 @@ class MainKernel:
 
     def _load_render(self, config):
         if not MainKernel.static_render:
-            self.render = Render(self.belief_tracker, config)
+            self.render = Render(config)
             MainKernel.static_render = self.render
         else:
             self.render = MainKernel.static_render

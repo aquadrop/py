@@ -44,7 +44,7 @@ class Render:
 
     prefix = ['这样啊..', 'OK..', '好吧']
 
-    def __init__(self, belief_tracker, config):
+    def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['renderer_file'])
         # self.belief_tracker = belief_tracker
@@ -60,7 +60,11 @@ class Render:
                 key, replies = line.split('|')
                 key = key.split('##')[0]
                 replies = replies.split('/')
-                self.major_render_mapper[key] = replies
+                filtered = []
+                for r in replies:
+                    if r:
+                        filtered.append(r)
+                self.major_render_mapper[key] = filtered
 
     def render_mapper(self, mapper):
         mapper_render = []
