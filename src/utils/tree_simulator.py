@@ -254,7 +254,7 @@ def gen_sessions(belief_tracker, output_files):
                 if v in ['手机']:
                     v = np.random.choice(['部', '一部', '一个', '个', '']) + v
                 if v in thesaurus:
-                    choice = thesaurus[v]
+                    choice = thesaurus[v][:]
                     choice.append(v)
                     v = np.random.choice(choice)
                 lang += v + ","
