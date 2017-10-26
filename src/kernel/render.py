@@ -101,7 +101,7 @@ class Render:
                     query=q)
                 return answer
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return '您要买什么?'
+                return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     # params = response.replace(
