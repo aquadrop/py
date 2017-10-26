@@ -124,7 +124,13 @@ class BeliefTracker:
 
     def rule_base_filter(self, query, query_mapper):
         if 'brand' in query_mapper:
-            if query_mapper['brand'] not in query:
+            shall_pass = False
+            for t in query_mapper['brand']:
+                if t in query:
+                    shall_pass = True
+                    break
+
+            if not shall_pass:
                 del query_mapper['brand']
                 brand_nodes = self.belief_graph.get_nodes_by_slot('brand')
                 for bn in brand_nodes:
