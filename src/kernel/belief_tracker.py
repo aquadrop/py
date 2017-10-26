@@ -339,14 +339,14 @@ class BeliefTracker:
                 nodes = self.belief_graph.get_nodes_by_value(value)
             else:
                 nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
-            if len(nodes) == 1:
+            if len(nodes) == 1 and nodes[0].has_ancestor_by_value(self.search_node.value):
                 node = nodes[0]
                 #
-                if node.has_ancestor_by_value(self.search_node.value):
-                    if node.parent_node != self.search_node:
-                        # move to parent node if relation is grand
-                        self.move_to_node(node.parent_node)
-                    self.fill_slot(node.slot, node.value)
+
+                if node.parent_node != self.search_node:
+                    # move to parent node if relation is grand
+                    self.move_to_node(node.parent_node)
+                self.fill_slot(node.slot, node.value)
             else:
                 filtered = []
                 # ambiguity state, 删除非self.search_node节点
