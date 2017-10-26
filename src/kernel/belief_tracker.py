@@ -88,7 +88,7 @@ class BeliefTracker:
     def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
-        # self.rule_base_filter(query, query_mapper)
+        self.rule_base_filter(query, query_mapper)
         self.exploit_once = True
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
@@ -123,9 +123,13 @@ class BeliefTracker:
         return api, avails
 
     def rule_base_filter(self, query, query_mapper):
-        if 'brand' in query_mapper and self.machine_state == self.API_REQUEST_STATE:
+        if 'brand' in query_mapper:
             if query_mapper['brand'] not in query:
                 del query_mapper['brand']
+                brand_nodes = self.belief_graph.get_nodes_by_slot('brand')
+                for bn in brand_nodes:
+                    if bn.value in query:
+                        query_mapper['brand'] = bn.value
 
     def user_wild_card(self, wild_card):
         if 'price' in wild_card:
