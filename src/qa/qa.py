@@ -42,6 +42,7 @@ class Qa:
             # print(score)
 
         if best_score < THRESHOLD:
+            print('redirecting to third party', best_score)
             return query, self.base.kernel(query), best_score
             # return query, 'api_call_base', best_score
         else:

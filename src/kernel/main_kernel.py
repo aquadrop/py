@@ -85,7 +85,7 @@ class MainKernel:
 
     def _load_render(self, config):
         if not MainKernel.static_render:
-            self.render = Render(self.belief_tracker, config)
+            self.render = Render(config)
             MainKernel.static_render = self.render
         else:
             self.render = MainKernel.static_render
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     #           "solr.facet": 'on',
     #           "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/metadata.pkl'),
     #           "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/data.pkl'),
-    #           "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
+    #           "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
     #           "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
     #           "clf": 'memory'  # or memory
     #           }

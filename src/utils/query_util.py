@@ -49,7 +49,7 @@ STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',
 
 STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
                     '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '=',"%","……",
-                    "啊", "呢", "哦", "哈","呀","捏","撒","哟","呐","吧","吗","嘛"])
+                    "啊", "呢", "吗"])
 
 
 def tokenize(sent, char=config.TOKENIZE_CHAR):
@@ -237,6 +237,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('哪点事三人,高4米'))
+    print(rule_base_num_retreive('哪点事三人,高4米呵呵'))
     # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))
