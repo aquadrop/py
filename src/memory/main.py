@@ -369,7 +369,7 @@ def main(args):
                         print('saving model...', i, '++',
                               str(best_cost) + '-->' + str(cost_total))
                         best_cost = cost_total
-                        model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt',
+                        model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt3',
                                          global_step=i)
             else:
                 if i % 1 == 0 and i:
@@ -406,7 +406,7 @@ def main(args):
                         if train_acc > lowest_val_acc:
                             print('saving model...', train_acc, lowest_val_acc)
                             lowest_val_acc = train_acc
-                            model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt',
+                            model.saver.save(model.get_sess(), CKPT_DIR + '/memn2n_model.ckpt3',
                                              global_step=i)
         # close file
         total_end = time.clock()

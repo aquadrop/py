@@ -987,7 +987,7 @@ def test():
     #     grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     # data_dir = os.path.join(
     #     grandfatherdir, 'data/memn2n/processed/data.pkl')
-    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
+    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt3')
     #
     # memInfer = MemInfer(metadata_dir, data_dir, ckpt_dir)
     # sess = memInfer.getSession()
@@ -999,7 +999,7 @@ def test():
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'off'
-    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt3")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     bt = BeliefTracker(config)
 
@@ -1021,7 +1021,7 @@ def test_facet():
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'on'
-    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt3")
     bt = BeliefTracker(config)
     bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
     bt.requested_slots = ['ac.power_float']

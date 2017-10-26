@@ -63,7 +63,7 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'on',
               "metadata_dir": os.path.join(parentdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(parentdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt'),
+              "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt3'),
               "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
               "renderer_file": os.path.join(parentdir, 'model/render/render.txt'),
               "clf": 'memory'  # or memory
