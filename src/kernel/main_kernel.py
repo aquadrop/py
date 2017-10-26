@@ -95,6 +95,7 @@ class MainKernel:
             return 'api_call_error'
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
+        prob = -1
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
             api = self.gbdt_reply(range_rendered, requested)
