@@ -9,8 +9,8 @@ parentdir = os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
-grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__)))))
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
 
 import data_utils
 
@@ -21,7 +21,7 @@ CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
 MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
 MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
 
-VOCAB_PATH = 'src/memory/dmn/data/vocab/vocab.txt'
+VOCAB_PATH = 'data/char_table/dmn_vocab.txt'
 
 # can be sentence or word
 input_mask_mode = "sentence"
@@ -231,7 +231,7 @@ def load_data(config, split_sentences=True):
 
 
 def main():
-    from dmn_plus import Config
+    from dmn_plus2 import Config
     config = Config()
     train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
         rel_labels, vocab, candidate_size = load_data(config)

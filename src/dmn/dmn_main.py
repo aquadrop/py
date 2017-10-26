@@ -35,8 +35,9 @@ def prepare_data(args, config):
             config, split_sentences=True)
 
     metadata = dict()
-    metadata['train'] = train
-    metadata['valid'] = valid
+    data=dict()
+    data['train'] = train
+    data['valid'] = valid
     metadata['word_embedding'] = word_embedding
     metadata['max_q_len'] = max_q_len
     metadata['max_input_len'] = max_input_len
@@ -51,6 +52,8 @@ def prepare_data(args, config):
 
     with open(config.metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
+    with open(config.data_path, 'wb') as f:
+        pickle.dump(data, f)
 
 
 def parse_args(args):
@@ -85,14 +88,9 @@ def main(args):
         prepare_data(args, config)
         sys.exit()
 
-    model = DMN_PLUS(config)
-
-    config.l2 = args['l2_loss'] if args['l2_loss'] is not None else 0.001
-    config.strong_supervision = args['strong_supervision'] \
-        if args['strong_supervision'] is not None else False
-    num_runs = args['num_runs'] if args['num_runs'] is not None else 1
 
     if args['train']:
+        model = DMN_PLUS(config)
         print('Training DMN-PLUS start')
 
         best_overall_val_loss = float('inf')
@@ -117,7 +115,7 @@ def main(args):
 
             if args['restore']:
                 print('==> restoring weights')
-                saver.restore(session, 'weights5/task.weights')
+                saver.restore(session, config.ckpt_path+'weights5/task.weights')
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -145,7 +143,7 @@ def main(args):
                         print('Saving weights')
                         best_overall_val_loss = best_val_loss
                         best_val_accuracy = valid_accuracy
-                        saver.save(session, 'weights5/task.weights')
+                        saver.save(session, config.ckpt_path+'weights5/task.weights')
 
                 # anneal
                 if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -161,6 +159,8 @@ def main(args):
             print('Best validation accuracy:', best_val_accuracy)
 
     else:  # inference
+        config.train_mode=False
+        model = DMN_PLUS(config)
         print('Predict start')
         print('==> initializing variables')
         init = tf.global_variables_initializer()
@@ -170,7 +170,7 @@ def main(args):
             session.run(init)
 
             # restore checkpoint
-            ckpt = tf.train.get_checkpoint_state('weights5/')
+            ckpt = tf.train.get_checkpoint_state(config.ckpt_path+'weights5/')
             if ckpt and ckpt.model_checkpoint_path:
                 print('\n>> restoring checkpoint from',
                       ckpt.model_checkpoint_path)
@@ -182,7 +182,6 @@ def main(args):
             while query != 'exit':
                 query = input('>> ')
                 print('>> ' + isess.reply(query))
-                print('Done.')
 
 
 class InteractiveSession():
@@ -193,7 +192,8 @@ class InteractiveSession():
         self.model = model
         self.session = session
         self.config = config
-        self.idx2candid, self.w2idx = dmn_data_utils.get_candidates_word_dict()
+        self.idx2candid = self.model.idx2candid
+        self.w2idx = self.model.w2idx
 
     def reply(self, msg):
         line = msg.strip().lower()

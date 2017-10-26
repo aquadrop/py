@@ -59,8 +59,10 @@ class Config(object):
 
     train_mode = True
 
-    metadata_path = 'processed/metadata.pkl'
-    data_path = 'processed/data.pkl'
+    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
+    data_path='/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
+    ckpt_path='/home/ecovacs/work/memory_py/model/dmn/'
+
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -93,12 +95,9 @@ class DMN_PLUS(object):
 
     def load_data(self, debug=False):
         """Loads data from metadata"""
-        print('Load metadata')
-
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
-        self.train = metadata['train']
-        self.valid = metadata['valid']
+
         self.word_embedding = metadata['word_embedding']
         self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
@@ -110,6 +109,18 @@ class DMN_PLUS(object):
         self.idx2candid = metadata['idx2candid']
         self.w2idx = metadata['w2idx']
         self.idx2w = metadata['idx2w']
+
+        if self.config.train_mode:
+            print('Load metadata (training mode)')
+
+            with open(self.config.data_path, 'rb') as f:
+                data = pickle.load(f)
+
+            self.train = data['train']
+            self.valid = data['valid']
+        else:
+            print('Load metadata (infer mode)')
+
 
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
@@ -417,3 +428,7 @@ class DMN_PLUS(object):
         self.calculate_loss = self.add_loss_op(self.output)
         self.train_step = self.add_training_op(self.calculate_loss)
         self.merged = tf.summary.merge_all()
+
+if __name__ == '__main__':
+    config=Config()
+    dmn=DMN_PLUS(config)
