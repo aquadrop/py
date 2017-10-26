@@ -415,7 +415,7 @@ if __name__ == "__main__":
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'off'
-    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt3")
+    # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     bt = BeliefTracker(config)
 

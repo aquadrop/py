@@ -211,7 +211,7 @@ if __name__ == '__main__':
     #     grandfatherdir, 'data/memn2n/processed/metadata.pkl')
     # data_dir = os.path.join(
     #     grandfatherdir, 'data/memn2n/processed/data.pkl')
-    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt3')
+    # ckpt_dir = os.path.join(grandfatherdir, 'model/memn2n/ckpt')
     # config = {"belief_graph": "../../model/graph/belief_graph.pkl",
     #           "solr.facet": 'on',
     #           "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/metadata.pkl'),
@@ -224,7 +224,7 @@ if __name__ == '__main__':
               "solr.facet": 'on',
               "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt3'),
+              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
               "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
               "clf": 'memory'  # or memory
