@@ -83,20 +83,21 @@ def batch_predict(model, S, Q, n, batch_size):
 
 def prepare_data(args):
     if config.MAINTAIN_CANDIDATES >= 1 and config.FIX_VOCAB >=1:
-        # get candidates (restaurants)
-        candidates, candid2idx, idx2candid = data_utils.load_candidates(
-            candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
-    else:
         # ELSE
         # read data and metadata from pickled files
         with open(P_DATA_DIR + 'metadata.pkl', 'rb') as f:
             metadata = pkl.load(f)
         with open(P_DATA_DIR + 'data.pkl', 'rb') as f:
             data_ = pkl.load(f)
-
-        # read content of data and metadata
+            # read content of data and metadata
         candidates = data_['candidates']
         candid2idx, idx2candid = metadata['candid2idx'], metadata['idx2candid']
+    else:
+        # get candidates (restaurants)
+        candidates, candid2idx, idx2candid = data_utils.load_candidates(
+            candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
+
+
     # get data
     train, test, val = data_utils.load_dialog(
         data_dir=DATA_DIR,
