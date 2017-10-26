@@ -304,8 +304,11 @@ def gen_sessions(belief_tracker, output_files):
     train_gbdt = set()
 
     container = []
+    flow_container = []
     single_container = []
     duplicate_removal = set()
+    flow_removal = set()
+    flows = list()
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
     fresh = True
@@ -343,6 +346,7 @@ def gen_sessions(belief_tracker, output_files):
         candidates.add(cls.lower())
         api = render_api(belief_tracker.issue_api(attend_facet=False))
         line = user_reply + '\t' + cls + '\t' + api
+        flow = cls + '\t' + api
         if requested == 'category':
             single_container.append(line)
             single_container.append('')
@@ -351,6 +355,7 @@ def gen_sessions(belief_tracker, output_files):
         if not api.startswith('api_call_search'):
             api_set.add(api + '##' + trans_api)
         container.append(line.lower())
+        flow_container.append(flow.lower())
         if api.startswith('api_call_search'):
             if np.random.uniform() < 0.4:
                 a, b, c = render_deny()
@@ -369,7 +374,10 @@ def gen_sessions(belief_tracker, output_files):
                          + np.random.choice(['在哪里', '在什么地方', '在几楼'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                            + filling_slots['category'] + '\t' + 'placeholder'
+                    flow = 'api_call_query_location_' + 'category:'\
+                           + filling_slots['category'] + '\t' + 'placeholder'
                     container.append(line)
+                    # flow_container.append(flow.lower())
                     candidates.add('api_call_query_location_' + 'category:'\
                            + filling_slots['category'])
                 if np.random.uniform() < 0.25:
@@ -379,6 +387,9 @@ def gen_sessions(belief_tracker, output_files):
                         qa = brand + np.random.choice([filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['多少钱', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                        flow = 'api_call_query_price_' + 'brand:'\
+                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                        # flow_container.append(flow.lower())
                         container.append(line)
                         candidates.add('api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'])
@@ -388,10 +399,12 @@ def gen_sessions(belief_tracker, output_files):
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
                 memory_line = reh + '\t' + cls + '\t' + 'placeholder'
+                flow = cls + '\t' + 'placeholder'
                 cls = cls.lower()
                 candidates.add(cls)
                 memory_line = memory_line.lower()
                 container.append(memory_line)
+                # flow_container.append(flow.lower())
                 train_gbdt.add(rhetorical.lower())
         # print(line)
         if not requested:
@@ -400,6 +413,7 @@ def gen_sessions(belief_tracker, output_files):
             belief_tracker.clear_memory()
             line = ''
             container.append(line.lower())
+            flow_container.append(line.lower())
             # check duplicate
             bulk = '#'.join(container).lower()
             single_bulk = '#'.join(single_container).lower()
@@ -414,10 +428,15 @@ def gen_sessions(belief_tracker, output_files):
                 duplicate_removal.add(single_bulk)
                 mapper[which].extend(single_container)
 
+            flow_bulk = '#'.join(flow_container).lower()
+            if flow_bulk not in flow_removal:
+                flow_removal.add(flow_bulk)
+                flows.extend(flow_container)
             which = np.random.choice(
                 ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
             container = []
             single_container = []
+            flow_container = []
             # print(line)
             i += 1
             print(i)
@@ -429,6 +448,13 @@ def gen_sessions(belief_tracker, output_files):
     # print('writing', len(train_set), len(
     #     val_set), len(test_set), len(candidates))
     #
+
+    with_flow = True
+    if with_flow:
+        with open(grandfatherdir + '/data/memn2n/train/tree/origin/flow.txt', 'w', encoding='utf-8') as f:
+            for line in flows:
+                f.writelines(line + '\n')
+
     with_base = True
     with_gbdt = False
     base_count = 0
@@ -525,7 +551,7 @@ def gen_sessions(belief_tracker, output_files):
             af.writelines(line + '\n')
 
     print('writing', len(train_set), len(
-        val_set), len(test_set), len(candidates), 'base_count:', train_count)
+        val_set), len(test_set), len_origin, len(candidates), 'base_count:', train_count)
 
     if not with_gbdt:
         return
