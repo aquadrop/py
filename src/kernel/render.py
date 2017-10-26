@@ -190,5 +190,5 @@ class Render:
         except:
             matched, answer, score = self.interactive.get_responses(
                 query=q)
-            logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+            logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
             return answer

@@ -122,11 +122,12 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    STOP_WORDS = ['的']
     def rule_base_filter(self, query, query_mapper):
         if 'brand' in query_mapper:
             shall_pass = False
             for t in query_mapper['brand']:
-                if t in query:
+                if t in query and t not in self.STOP_WORDS:
                     shall_pass = True
                     break
 
@@ -769,10 +770,10 @@ class BeliefTracker:
                 mapper[node.slot] = node.value
                 node = node.parent_node
             params['fq'] = solr_util.compose_fq(mapper)
-            try:
-                res = self.solr.query('category', params)
-            except:
-                return self.solr_facet(prefix='')
+            # try:
+            res = self.solr.query('category', params)
+            # except:
+            #     return self.solr_facet(prefix='')
             facets = res.get_facet_keys_as_list(prefix + facet_field)
             return facets, len(facets)
         else:
