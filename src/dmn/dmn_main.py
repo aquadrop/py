@@ -58,8 +58,8 @@ def prepare_data(args, config):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description='DMN-PLUS')
-    parser.add_argument("-r", "--restore",
-                        help="restore previously trained weights (default=false)")
+    parser.add_argument("-r", "--restore",action='store_true',
+                        help="restore previously trained weights")
     parser.add_argument("-s", "--strong_supervision",
                         help="use labelled supporting facts (default=false)")
     # parser.add_argument("-t", "--dmn_type",
@@ -115,7 +115,7 @@ def main(args):
 
             if args['restore']:
                 print('==> restoring weights')
-                saver.restore(session, config.ckpt_path+'weights5/task.weights')
+                saver.restore(session, config.ckpt_path+'dmn.weights')
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -143,7 +143,7 @@ def main(args):
                         print('Saving weights')
                         best_overall_val_loss = best_val_loss
                         best_val_accuracy = valid_accuracy
-                        saver.save(session, config.ckpt_path+'weights5/task.weights')
+                        saver.save(session, config.ckpt_path+'dmn.weights')
 
                 # anneal
                 if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -170,7 +170,7 @@ def main(args):
             session.run(init)
 
             # restore checkpoint
-            ckpt = tf.train.get_checkpoint_state(config.ckpt_path+'weights5/')
+            ckpt = tf.train.get_checkpoint_state(config.ckpt_path)
             if ckpt and ckpt.model_checkpoint_path:
                 print('\n>> restoring checkpoint from',
                       ckpt.model_checkpoint_path)

@@ -21,7 +21,7 @@ CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
 MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
 MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
 
-VOCAB_PATH = 'data/char_table/dmn_vocab.txt'
+VOCAB_PATH = 'data/char_table/vocab.txt'
 
 # can be sentence or word
 input_mask_mode = "sentence"

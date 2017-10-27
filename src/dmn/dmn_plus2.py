@@ -61,7 +61,7 @@ class Config(object):
 
     metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
     data_path='/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
-    ckpt_path='/home/ecovacs/work/memory_py/model/dmn/'
+    ckpt_path='/home/ecovacs/work/memory_py/model/dmn/ckpt/'
 
 
 
