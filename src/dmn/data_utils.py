@@ -6,19 +6,19 @@ import os
 import sys
 import jieba
 
-
 import json
-
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
-import memory.config as config
+from dmn_plus2 import Config
+
+config = Config()
 
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
 CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
 
@@ -45,7 +45,8 @@ def build_vocab_beforehand(vocab_base, vocab_path):
                   'sys', 'feature', 'color', 'memsize', 'size', 'distance',
                   'resolution', 'panel', 'dyson', 'root', 'virtual', 'mode',
                   'energy_lvl', 'connect', 'net', 'rmem', 'mmem', 'people', 'vol', 'width', 'height',
-                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto', "1.5", '2.5', 'plugin'
+                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto', "1.5", '2.5',
+                  'plugin'
                   ]
     for w in extra_list:
         vocab.append(w)
@@ -67,11 +68,11 @@ def load_candidates(candidates_f=CANDID_PATH):
             candid2idx[line.strip()] = i
             idx2candid[i] = line.strip()
             candidates.append(line.strip())
+
     return candidates, candid2idx, idx2candid
 
 
 def load_dialog(data_dir, candid_dic, dmn=False):
-
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
@@ -105,16 +106,16 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
             if '\t' in line:
                 print(line)
                 u, r, salt = line.split('\t')
-                if config.MULTILABEL >= 1:
+                if config.multi_label >= 1:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
                     a = candid_dic[r]
                 u = tokenize(u)
-                if config.FIX_VOCAB:
+                if config.fix_vocab:
                     r = translator.en2cn(r)
                 r = tokenize(r)
                 placeholder = salt == 'placeholder'
-                if config.FIX_VOCAB:
+                if config.fix_vocab:
                     salt = translator.en2cn(salt)
                 salt = tokenize(salt)
 
@@ -124,7 +125,8 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
                 data.append((context[:], u[:], a))
                 if dmn:
                     context.append(u)
-                    context.append(r + salt)
+                    r = r if placeholder else r + salt
+                    context.append(r)
                 else:
                     u.append('$u')
                     r.append('$r')
@@ -140,13 +142,13 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
     return data
 
 
-def build_vocab(data, candidates, memory_size=config.MAX_MEMORY_SIZE):
-    if config.FIX_VOCAB:
+def build_vocab(data, candidates, memory_size=config.max_memory_size):
+    if config.fix_vocab:
         with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
             vocab = json.load(f)
     else:
         vocab = reduce(lambda x, y: x | y, (set(
-            list(chain.from_iterable(s)) + q) for s, q, a in data))
+                list(chain.from_iterable(s)) + q) for s, q, a in data))
         # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
         #                                      for candidate in candidates))
         vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
@@ -169,13 +171,13 @@ def build_vocab(data, candidates, memory_size=config.MAX_MEMORY_SIZE):
     sentence_size = max(query_size, sentence_size)  # for the position
 
     return {
-        'w2idx': w2idx,
-        'idx2w': vocab,
-        'sentence_size': sentence_size,
+        'w2idx'                  : w2idx,
+        'idx2w'                  : vocab,
+        'sentence_size'          : sentence_size,
         'candidate_sentence_size': candidate_sentence_size,
-        'memory_size': memory_size,
-        'vocab_size': vocab_size,
-        'n_cand': len(candidates)
+        'memory_size'            : memory_size,
+        'vocab_size'             : vocab_size,
+        'n_cand'                 : len(candidates)
     }  # metadata
 
 
@@ -187,7 +189,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
         tokens = tokenize(candidate)
         lc = max(0, sentence_size - len(tokens))
         C.append(
-            [word_idx[w] if w in word_idx else 0 for w in tokens] + [0] * lc)
+                [word_idx[w] if w in word_idx else 0 for w in tokens] + [0] * lc)
     # print(C)
     return tf.constant(C, shape=shape)
 
@@ -212,7 +214,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         for i, sentence in enumerate(story, 1):
             ls = max(0, sentence_size - len(sentence))
             ss.append(
-                [word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
+                    [word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
         # print(np.asarray(ss).shape)
         # take only the most recent sentences that fit in memory
         ss = ss[::-1][:memory_size][::-1]
@@ -246,14 +248,14 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
     n_cand = metadata['n_cand']
 
     trainS, trainQ, trainA = vectorize_data(
-        train_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+            train_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     # print(trainS[0])
     # print(trainQ[0])
     # print(trainA[0])
     valS, valQ, valA = vectorize_data(
-        val_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+            val_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     testS, testQ, testA = vectorize_data(
-        test_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+            test_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     n_train = len(trainS)
     n_val = len(valS)
     n_test = len(testS)

@@ -15,8 +15,11 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 import data_utils
 
 # temporary paths
-DATA_DIR = 'data/memn2n/train/tree/origin'
-CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
+# DATA_DIR = 'data/memn2n/train/tree/origin'
+# CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
+
+DATA_DIR = 'data/memn2n/train/multi_tree/'
+CANDID_PATH = 'data/memn2n/train/multi_tree/candidates.txt'
 
 MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
 MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
@@ -197,6 +200,13 @@ def load_data(config, split_sentences=True):
 
     questions = pad_inputs(questions, q_lens, max_q_len)
 
+
+    candidate_size = len(candidates)
+
+    origin_answers=answers
+    answers=[np.sum(np.eye(candidate_size)[np.asarray(a)],axis=0) for a in answers]
+
+
     answers = np.stack(answers)
 
     rel_labels = np.zeros((len(rel_labels), len(rel_labels[0])))
@@ -219,7 +229,7 @@ def load_data(config, split_sentences=True):
         valid = questions[num_train:total_num], inputs[num_train:total_num], \
             q_lens[num_train:total_num], input_lens[num_train:total_num], \
             input_masks[num_train:total_num], \
-            answers[num_train:total_num], rel_labels[num_train:total_num]
+            answers[num_train:total_num],rel_labels[num_train:total_num]
         return train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
             rel_labels.shape[1], len(
                 vocab), candidate_size, candid2idx, idx2candid, w2idx, idx2w
