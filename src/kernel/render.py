@@ -121,7 +121,7 @@ class Render:
                 if entity in avails and len(avails[entity]) > 0:
                     return '我们有' + ",".join(avails[entity])
                 else:
-                    return '无法查阅'
+                    return np.random.choice(['我们这里卖各种空调电视电脑冰箱等,价格不等','各种冰箱空调等,价格在3000-18000'])
             if response.startswith('api_call_search_'):
                 tokens = response.replace('api_call_search_', '').split(',')
 
@@ -162,7 +162,7 @@ class Render:
             if response.startswith('api_call_query_price_'):
                 params = response.replace('api_call_query_price_' ,'')
                 if not params:
-                    return '无法查阅'
+                    return '价位在3000-18000'
                 else:
                     mapper = dict()
                     for kv in params.split(','):
