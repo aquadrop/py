@@ -121,7 +121,8 @@ class Render:
                 if entity in avails and len(avails[entity]) > 0:
                     return '我们有' + ",".join(avails[entity])
                 else:
-                    return np.random.choice(['我们这里卖各种空调电视电脑冰箱等,价格不等','各种冰箱空调等,价格在3000-18000'])
+                    return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
+                                             '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
             if response.startswith('api_call_search_'):
                 tokens = response.replace('api_call_search_', '').split(',')
 
