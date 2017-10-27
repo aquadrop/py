@@ -104,11 +104,11 @@ def gen_sessions(belief_tracker, output_files):
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
-        if len(belief_graph.get_nodes_by_value(pick)) > 1:
+        if len(belief_graph.get_nodes_by_value(pick)) > 0:
             slot_values_mapper[belief_graph.get_nodes_by_value(pick)[
                 0].slot] = pick
         else:
-            slot_values_mapper['ambiguity_removal'] = pick
+            slot_values_mapper['ambiguity_removal'] = belief_graph.slots_trans[pick]
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
         #
         # fields = list(my_search_node.fields.keys())
@@ -184,7 +184,13 @@ def gen_sessions(belief_tracker, output_files):
         #
         #     return value
         if field == 'ambiguity_removal':
-            return np.random.choice(list(belief_tracker.ambiguity_slots.keys()))
+            value = np.random.choice(list(belief_tracker.ambiguity_slots.keys()))
+            # nodes = belief_graph.get_nodes_by_value(value)
+            # if len(nodes) > 0:
+            #     slot = nodes[0].slot
+            #     del slot_values_mapper[field]
+            #     slot_values_mapper[slot] = value
+            return value
 
         if belief_graph.get_field_type(field) == 'range':
             # return search_node.get_node_slot_trans(field) + 'range'
