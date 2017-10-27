@@ -27,6 +27,9 @@ Render. render api_call_request_price to 什么价格...
 """
 import os
 import sys
+import logging
+import traceback
+import time
 
 import numpy as np
 
@@ -38,7 +41,10 @@ sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
 from qa.qa import Qa as QA
-
+current_date = time.strftime("%Y.%m.%d")
+logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
+                    'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
+                    format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 class Render:
 
@@ -83,100 +89,106 @@ class Render:
         return np.random.choice(self.major_render_mapper[api])
 
     def render(self, q, response, avails=dict(), prefix=''):
-        if response.startswith('api_call_base') or response.startswith('api_call_greet')\
-                or response.startswith('reserved_'):
-            # self.sess.clear_memory()
-            matched, answer, score = self.interactive.get_responses(
-                query=q)
-            return answer
-        if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
-            matched, answer, score = self.faq.get_responses(
-                query=q)
-            return answer
-        if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-            return '您要买什么?'
-        if response.startswith('api_call_request_'):
-            if response.startswith('api_call_request_ambiguity_removal_'):
-                # params = response.replace(
-                #     'api_call_request_ambiguity_removal_', '')
-                # rendered = '你要哪一个呢,' + params
+        try:
+            if response.startswith('api_call_base') or response.startswith('api_call_greet')\
+                    or response.startswith('reserved_'):
+                # self.sess.clear_memory()
+                matched, answer, score = self.interactive.get_responses(
+                    query=q)
+                return answer
+            if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
+                matched, answer, score = self.faq.get_responses(
+                    query=q)
+                return answer
+            if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
+                return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
+            if response.startswith('api_call_request_'):
+                if response.startswith('api_call_request_ambiguity_removal_'):
+                    # params = response.replace(
+                    #     'api_call_request_ambiguity_removal_', '')
+                    # rendered = '你要哪一个呢,' + params
+                    # return rendered + "@@" + response
+                    return self.render_api(response)
+                # params = response.replace('api_call_request_', '')
+                # params = self.belief_tracker.belief_graph.slots_trans[params]
+                # rendered = '什么' + params
                 # return rendered + "@@" + response
+                if prefix:
+                    return prefix + self.render_api(response)
                 return self.render_api(response)
-            # params = response.replace('api_call_request_', '')
-            # params = self.belief_tracker.belief_graph.slots_trans[params]
-            # rendered = '什么' + params
-            # return rendered + "@@" + response
-            if prefix:
-                return prefix + self.render_api(response)
-            return self.render_api(response)
-        if response.startswith('api_call_rhetorical_'):
-            entity = response.replace('api_call_rhetorical_', '')
-            if entity in avails and len(avails[entity]) > 0:
-                return '我们有' + ",".join(avails[entity])
-            else:
-                return '无法查阅'
-        if response.startswith('api_call_search_'):
-            tokens = response.replace('api_call_search_', '').split(',')
+            if response.startswith('api_call_rhetorical_'):
+                entity = response.replace('api_call_rhetorical_', '')
+                if entity in avails and len(avails[entity]) > 0:
+                    return '我们有' + ",".join(avails[entity])
+                else:
+                    return '无法查阅'
+            if response.startswith('api_call_search_'):
+                tokens = response.replace('api_call_search_', '').split(',')
 
-            and_mapper = dict()
-            or_mapper = dict()
-            for t in tokens:
-                key, value = t.split(':')
-                if key == 'price':
-                    or_mapper[key] = value
-                else:
-                    and_mapper[key] = value
-            docs = solr_util.query(and_mapper, or_mapper)
-            if len(docs) > 0:
-                doc = docs[0]
-                if 'discount' in doc and doc['discount']:
-                    return '为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
-                else:
-                    return '为您推荐' + doc['title'][0]
-            else:
-                # use loose search, brand and category is mandatory
-                and_mapper.clear()
-                or_mapper.clear()
+                and_mapper = dict()
+                or_mapper = dict()
                 for t in tokens:
                     key, value = t.split(':')
-                    if key in ['category', 'brand']:
-                        and_mapper[key] = value
-                    else:
+                    if key == 'price':
                         or_mapper[key] = value
+                    else:
+                        and_mapper[key] = value
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]
                     if 'discount' in doc and doc['discount']:
-                        return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
+                        return '为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
                     else:
-                        return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0]
+                        return '为您推荐' + doc['title'][0]
+                else:
+                    # use loose search, brand and category is mandatory
+                    and_mapper.clear()
+                    or_mapper.clear()
+                    for t in tokens:
+                        key, value = t.split(':')
+                        if key in ['category', 'brand']:
+                            and_mapper[key] = value
+                        else:
+                            or_mapper[key] = value
+                    docs = solr_util.query(and_mapper, or_mapper)
+                    if len(docs) > 0:
+                        doc = docs[0]
+                        if 'discount' in doc and doc['discount']:
+                            return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
+                        else:
+                            return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0]
+                    return response
+
+            if response.startswith('api_call_query_price_'):
+                params = response.replace('api_call_query_price_' ,'')
+                if not params:
+                    return '无法查阅'
+                else:
+                    mapper = dict()
+                    for kv in params.split(','):
+                        key, value = kv.split(':')
+                        mapper[key] = value
+
+                facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
+                response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
                 return response
 
-        if response.startswith('api_call_query_price_'):
-            params = response.replace('api_call_query_price_' ,'')
-            if not params:
-                return '无法查阅'
-            else:
-                mapper = dict()
-                for kv in params.split(','):
-                    key, value = kv.split(':')
-                    mapper[key] = value
+            if response.startswith('api_call_query_location_'):
+                params = response.replace('api_call_query_location_', '')
+                if not params:
+                    return '无法查阅'
+                else:
+                    mapper = dict()
+                    for kv in params.split(','):
+                        key, value = kv.split(':')
+                        mapper[key] = value
+                facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
+                response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
+                return response
 
-            facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
-            response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
             return response
-
-        if response.startswith('api_call_query_location_'):
-            params = response.replace('api_call_query_location_', '')
-            if not params:
-                return '无法查阅'
-            else:
-                mapper = dict()
-                for kv in params.split(','):
-                    key, value = kv.split(':')
-                    mapper[key] = value
-            facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
-            response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
-            return response
-
-        return response
+        except:
+            matched, answer, score = self.interactive.get_responses(
+                query=q)
+            logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
+            return answer

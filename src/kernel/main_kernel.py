@@ -95,6 +95,7 @@ class MainKernel:
             return 'api_call_error'
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
+        prob = -1
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
             api = self.gbdt_reply(range_rendered, requested)
@@ -134,8 +135,8 @@ class MainKernel:
                     #     self.belief_tracker.clear_memory()
                     #     memory = ''
             if not exploited:
-                api = self.sess.reply(range_rendered)
-                print(range_rendered, api)
+                api, prob = self.sess.reply(range_rendered)
+                print(range_rendered, api, prob)
                 response = api
                 memory = api
                 avails = []
@@ -174,8 +175,8 @@ class MainKernel:
                 #     avails = []
             self.sess.append_memory(memory)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
-            logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
-                user, 'memory', q, api, render))
+            logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
+                user, 'memory', q, api, prob, render))
             return render
 
     def gbdt_reply(self, q, requested=None):
