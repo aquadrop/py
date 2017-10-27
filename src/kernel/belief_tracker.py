@@ -126,10 +126,12 @@ class BeliefTracker:
     def rule_base_filter(self, query, query_mapper):
         if 'brand' in query_mapper:
             shall_pass = False
-            for t in query_mapper['brand']:
-                if t in query and t not in self.STOP_WORDS:
-                    shall_pass = True
-                    break
+            # for t in query_mapper['brand']:
+            #     if t in query and t not in self.STOP_WORDS:
+            #         shall_pass = True
+            #         break
+            if query_mapper['brand'] in query:
+                shall_pass = True
 
             if not shall_pass:
                 del query_mapper['brand']
