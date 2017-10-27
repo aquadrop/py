@@ -101,7 +101,7 @@ class Render:
                     query=q)
                 return answer
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return '您要买什么?'
+                return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     # params = response.replace(
@@ -121,7 +121,8 @@ class Render:
                 if entity in avails and len(avails[entity]) > 0:
                     return '我们有' + ",".join(avails[entity])
                 else:
-                    return '无法查阅'
+                    return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
+                                             '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
             if response.startswith('api_call_search_'):
                 tokens = response.replace('api_call_search_', '').split(',')
 
@@ -162,7 +163,7 @@ class Render:
             if response.startswith('api_call_query_price_'):
                 params = response.replace('api_call_query_price_' ,'')
                 if not params:
-                    return '无法查阅'
+                    return '价位在3000-18000'
                 else:
                     mapper = dict()
                     for kv in params.split(','):
@@ -190,5 +191,5 @@ class Render:
         except:
             matched, answer, score = self.interactive.get_responses(
                 query=q)
-            logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+            logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
             return answer

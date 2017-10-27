@@ -122,13 +122,16 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails
 
+    STOP_WORDS = ['的']
     def rule_base_filter(self, query, query_mapper):
         if 'brand' in query_mapper:
             shall_pass = False
-            for t in query_mapper['brand']:
-                if t in query:
-                    shall_pass = True
-                    break
+            # for t in query_mapper['brand']:
+            #     if t in query and t not in self.STOP_WORDS:
+            #         shall_pass = True
+            #         break
+            if query_mapper['brand'] in query:
+                shall_pass = True
 
             if not shall_pass:
                 del query_mapper['brand']
@@ -305,6 +308,14 @@ class BeliefTracker:
             if self.AMBIGUITY_PICK in self.requested_slots and flag:
                 self.requested_slots.remove(self.AMBIGUITY_PICK)
             # del slot_values_mapper[self.AMBIGUITY_PICK]
+        else:
+            # rule based
+            if self.AMBIGUITY_PICK in slot_values_mapper:
+                value = slot_values_mapper[self.AMBIGUITY_PICK]
+                del slot_values_mapper[self.AMBIGUITY_PICK]
+                slot_values_mapper[self.API] = value
+                values_marker[self.API] = 0
+
         # look for virtual memory
         if self.VIRTUAL in slot_values_mapper:
             self.machine_state = self.API_REQUEST_STATE
@@ -339,14 +350,14 @@ class BeliefTracker:
                 nodes = self.belief_graph.get_nodes_by_value(value)
             else:
                 nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
-            if len(nodes) == 1:
+            if len(nodes) == 1 and nodes[0].has_ancestor_by_value(self.search_node.value):
                 node = nodes[0]
                 #
-                if node.has_ancestor_by_value(self.search_node.value):
-                    if node.parent_node != self.search_node:
-                        # move to parent node if relation is grand
-                        self.move_to_node(node.parent_node)
-                    self.fill_slot(node.slot, node.value)
+
+                if node.parent_node != self.search_node:
+                    # move to parent node if relation is grand
+                    self.move_to_node(node.parent_node)
+                self.fill_slot(node.slot, node.value)
             else:
                 filtered = []
                 # ambiguity state, 删除非self.search_node节点
@@ -769,10 +780,10 @@ class BeliefTracker:
                 mapper[node.slot] = node.value
                 node = node.parent_node
             params['fq'] = solr_util.compose_fq(mapper)
-            try:
-                res = self.solr.query('category', params)
-            except:
-                return self.solr_facet(prefix='')
+            # try:
+            res = self.solr.query('category', params)
+            # except:
+            #     return self.solr_facet(prefix='')
             facets = res.get_facet_keys_as_list(prefix + facet_field)
             return facets, len(facets)
         else:

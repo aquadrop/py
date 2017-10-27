@@ -110,10 +110,7 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
             "facet.mincount": 1
         }
         params['fq'] = compose_fq(mappers)
-        try:
-            res = solr.query('category', params)
-        except:
-            return solr_facet(mappers, facet_field, is_range, prefix='')
+        res = solr.query('category', params)
         facets = res.get_facet_keys_as_list(prefix + facet_field)
         return facets, len(facets)
     else:

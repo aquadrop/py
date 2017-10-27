@@ -82,9 +82,22 @@ def batch_predict(model, S, Q, n, batch_size):
 
 
 def prepare_data(args):
-    # get candidates (restaurants)
-    candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
+    if config.MAINTAIN_CANDIDATES >= 1 and config.FIX_VOCAB >=1:
+        # ELSE
+        # read data and metadata from pickled files
+        with open(P_DATA_DIR + 'metadata.pkl', 'rb') as f:
+            metadata = pkl.load(f)
+        with open(P_DATA_DIR + 'data.pkl', 'rb') as f:
+            data_ = pkl.load(f)
+            # read content of data and metadata
+        candidates = data_['candidates']
+        candid2idx, idx2candid = metadata['candid2idx'], metadata['idx2candid']
+    else:
+        # get candidates (restaurants)
+        candidates, candid2idx, idx2candid = data_utils.load_candidates(
+            candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
+
+
     # get data
     train, test, val = data_utils.load_dialog(
         data_dir=DATA_DIR,
@@ -395,8 +408,8 @@ def main(args):
                         print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
                               format(i, train_acc, val_acc))
                         print('time:{}'.format(end - begin))
-                        log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
-                                                                cost_total / (eval_interval * len(batches))))
+                        # log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
+                        #                                         cost_total / (eval_interval * len(batches))))
                         cost_total = 0.  # empty cost
                         begin = end
                         #
