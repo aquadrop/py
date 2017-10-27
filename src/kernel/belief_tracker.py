@@ -308,6 +308,14 @@ class BeliefTracker:
             if self.AMBIGUITY_PICK in self.requested_slots and flag:
                 self.requested_slots.remove(self.AMBIGUITY_PICK)
             # del slot_values_mapper[self.AMBIGUITY_PICK]
+        else:
+            # rule based
+            if self.AMBIGUITY_PICK in slot_values_mapper:
+                value = slot_values_mapper[self.AMBIGUITY_PICK]
+                del slot_values_mapper[self.AMBIGUITY_PICK]
+                slot_values_mapper[self.API] = value
+                values_marker[self.API] = 0
+
         # look for virtual memory
         if self.VIRTUAL in slot_values_mapper:
             self.machine_state = self.API_REQUEST_STATE
