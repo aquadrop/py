@@ -38,7 +38,10 @@ class Memn2nSession():
         self.model = model
 
     def clear_memory(self, history=0):
-        self.context = self.context[-history:]
+        if history == 0:
+            self.context = []
+        else:
+            self.context = self.context[-history:]
         self.nid = 1
 
     def append_memory(self, m):
