@@ -384,7 +384,7 @@ def gen_sessions(belief_tracker, output_files):
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
                     qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
-                         + np.random.choice(['在哪里', '在什么地方', '在几楼'])
+                         + np.random.choice(['在哪里', '在什么地方', '在几楼', '在哪里卖', '在哪里买', '在什么地方买'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                            + filling_slots['category'] + '\t' + 'placeholder'
                     flow = 'api_call_query_location_' + 'category:'\
@@ -398,7 +398,7 @@ def gen_sessions(belief_tracker, output_files):
                     if brands:
                         brand = np.random.choice(brands)
                         qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', ''])\
-                             + np.random.choice(['多少钱', '什么价格'])
+                             + np.random.choice(['多少钱', '什么价格', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
@@ -413,7 +413,9 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
+                        qa = np.random.choice(['你们', '你这里', '']) + \
+                             np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
+                             + np.random.choice(['都有哪些品牌', '都有哪些牌子', '都有什么品牌', '都有什么牌子'])
                         line = qa + '\t' + 'api_call_query_brand_category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
