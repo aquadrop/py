@@ -34,7 +34,7 @@ def compose_fq(mapper, option_fields=['price']):
     fq = '*:*'
     if len(must_mapper) > 0:
         must = " AND ".join(["{}:{}".format(key, value) for key, value in must_mapper.items()])
-        fq = must
+        fq = "*:* AND " + must
     if len(option_mapper) > 0:
         fq = fq + ' OR ' + " OR ".join(["{}:{}".format(key, value) for key, value in option_mapper.items()])
 

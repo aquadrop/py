@@ -102,7 +102,7 @@ class MainKernel:
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(
+                response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                     q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
@@ -146,8 +146,11 @@ class MainKernel:
                         avails = []
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(
+                        response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
+                        if should_clear_memory:
+                            print('restart suning session..')
+                            self.sess.clear_memory(history=2)
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
