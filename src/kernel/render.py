@@ -174,6 +174,20 @@ class Render:
                 response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
                 return response
 
+            if response.startswith('api_call_query_brand_'):
+                params = response.replace('api_call_query_brand_' ,'')
+                if not params:
+                    raise ValueError('api_call_query must have params provided...')
+                else:
+                    mapper = dict()
+                    for kv in params.split(','):
+                        key, value = kv.split(':')
+                        mapper[key] = value
+
+                facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
+                response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
+                return response
+
             if response.startswith('api_call_query_location_'):
                 params = response.replace('api_call_query_location_', '')
                 if not params:
@@ -189,6 +203,7 @@ class Render:
 
             return response
         except:
+            print(traceback.format_exc())
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))

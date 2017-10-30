@@ -390,7 +390,8 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = brand + np.random.choice([filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['多少钱', '什么价格'])
+                        qa = brand + np.random.choice([filling_slots['category'], '的', ''])\
+                             + np.random.choice(['多少钱', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
@@ -405,7 +406,7 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = np.random.choice([filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
+                        qa = np.random.choice([filling_slots['category'], '的', '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
                         line = qa + '\t' + 'api_call_query_brand_category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
