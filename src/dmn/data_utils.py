@@ -13,7 +13,7 @@ sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
-from dmn_plus2 import Config
+from dmn.dmn_plus2 import Config
 
 config = Config()
 

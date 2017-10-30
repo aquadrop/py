@@ -13,17 +13,17 @@ import sys
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-import dmn_data_utils2 as dmn_data_utils
-from dmn_plus2 import Config, DMN_PLUS
+import dmn.dmn_data_utils2 as dmn_data_utils
+from dmn.dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
@@ -38,11 +38,21 @@ class DmnSession():
         self.idx2candid = self.model.idx2candid
         self.w2idx = self.model.w2idx
 
+    def append_memory(self, m):
+        if not m:
+            return
+        m = translator.en2cn(m)
+        m = tokenize(m)
+        self.context.append(m)
+
+    def clear_memory(self):
+        self.context = [['此', '乃', '空', '文']]
+
     def reply(self, msg):
         line = msg.strip().lower()
         if line == 'clear':
             self.context = []
-            replp_msg = 'memory cleared!'
+            reply_msg = 'memory cleared!'
         else:
             inputs = []
             questions = []
@@ -55,7 +65,7 @@ class DmnSession():
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                inputs)
+                    inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
             # max_q_len = np.max(q_lens)
@@ -74,7 +84,7 @@ class DmnSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                questions, q_lens, max_q_len)
+                    questions, q_lens, max_q_len)
             # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
 
@@ -88,7 +98,7 @@ class DmnSession():
             r = tokenize(r)
             self.context.append(r)
 
-        return reply_msg
+        return reply_msg, "..."
 
 
 class DmnInfer:
@@ -97,9 +107,8 @@ class DmnInfer:
         self.model = self._load_model()
         self.session = tf.Session()
 
-
     def _load_model(self):
-        self.config.train_mode=False
+        self.config.train_mode = False
         model = DMN_PLUS(self.config)
         return model
 
@@ -110,7 +119,7 @@ class DmnInfer:
         self.session.run(init)
 
         # restore checkpoint
-        ckpt = tf.train.get_checkpoint_state(self.config.ckpt_path+'weights5/')
+        ckpt = tf.train.get_checkpoint_state(self.config.ckpt_path)
         if ckpt and ckpt.model_checkpoint_path:
             print('\n>> restoring checkpoint from',
                   ckpt.model_checkpoint_path)

@@ -34,7 +34,7 @@ from datetime import datetime
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 import traceback
@@ -42,6 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
+from dmn.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
@@ -53,15 +54,17 @@ from kernel.render import Render
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
-                    'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
+                                                               'logs/log_corpus_' + current_date + '.log'), 'w',
+                                                  'utf-8')],
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
+
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
 
 class MainKernel:
-
     static_memory = None
+    static_dmn = None
     static_render = None
 
     def __init__(self, config):
@@ -72,9 +75,12 @@ class MainKernel:
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
+        elif config['clf'] == 'dmn':
+            self._load_dmn(config)
+            self.sess = self.dmn.get_session()
         else:
             self.sess = Multilabel_Clf.load(
-                model_path=config['gbdt_model_path'])
+                    model_path=config['gbdt_model_path'])
 
     def _load_memory(self, config):
         if not MainKernel.static_memory:
@@ -82,6 +88,13 @@ class MainKernel:
             MainKernel.static_memory = self.memory
         else:
             self.memory = MainKernel.static_memory
+
+    def _load_dmn(self, config):
+        if not MainKernel.static_dmn:
+            self.dmn = DmnInfer()
+            MainKernel.static_dmn = self.dmn
+        else:
+            self.dmn = MainKernel.static_dmn
 
     def _load_render(self, config):
         if not MainKernel.static_render:
@@ -103,11 +116,11 @@ class MainKernel:
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
                 response, avails = self.belief_tracker.memory_kernel(
-                    q, api, wild_card)
+                        q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(
-                    query=q)
+                        query=q)
                 response = answer
                 avails = []
             else:
@@ -147,7 +160,7 @@ class MainKernel:
                     else:
                         api_json = self.api_call_slot_json_render(api)
                         response, avails = self.belief_tracker.memory_kernel(
-                            q, api_json, wild_card)
+                                q, api_json, wild_card)
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -166,17 +179,18 @@ class MainKernel:
                     prefix = self.render.random_prefix()
                     print('tree rendered after deny brand..', response)
                     # print(response, type(response))
-                # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
-                #     # self.sess.clear_memory()
-                #     matched, answer, score = self.interactive.get_responses(
-                #         query=q)
-                #     response = answer
-                #     memory = api
-                #     avails = []
+                    # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
+                    #     # self.sess.clear_memory()
+                    #     matched, answer, score = self.interactive.get_responses(
+                    #         query=q)
+                    #     response = answer
+                    #     memory = api
+                    #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
+                avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
-                user, 'memory', q, api, prob, render))
+                    user, 'memory', q, api, prob, render))
             return render
 
     def gbdt_reply(self, q, requested=None):
@@ -221,14 +235,14 @@ if __name__ == '__main__':
     #           "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
     #           "clf": 'memory'  # or memory
     #           }
-    config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
-              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
-              "clf": 'memory'  # or memory
+    config = {"belief_graph"    : "../../model/graph/belief_graph.pkl",
+              "solr.facet"      : 'on',
+              "metadata_dir"    : os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
+              "data_dir"        : os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "ckpt_dir"        : os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
+              "gbdt_model_path" : grandfatherdir + '/model/ml/belief_clf.pkl',
+              "renderer_file"   : os.path.join(grandfatherdir, 'model/render/render.txt'),
+              "clf"             : 'dmn'  # or memory ,dmn ,gbdt
               }
     kernel = MainKernel(config)
     while True:

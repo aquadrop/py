@@ -121,7 +121,8 @@ class Render:
                 if entity in avails and len(avails[entity]) > 0:
                     return '我们有' + ",".join(avails[entity])
                 else:
-                    return '无法查阅'
+                    return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
+                                             '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
             if response.startswith('api_call_search_'):
                 tokens = response.replace('api_call_search_', '').split(',')
 
@@ -162,7 +163,7 @@ class Render:
             if response.startswith('api_call_query_price_'):
                 params = response.replace('api_call_query_price_' ,'')
                 if not params:
-                    return '无法查阅'
+                    return '价位在3000-18000'
                 else:
                     mapper = dict()
                     for kv in params.split(','):
@@ -171,6 +172,20 @@ class Render:
 
                 facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
                 response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
+                return response
+
+            if response.startswith('api_call_query_brand_'):
+                params = response.replace('api_call_query_brand_' ,'')
+                if not params:
+                    raise ValueError('api_call_query must have params provided...')
+                else:
+                    mapper = dict()
+                    for kv in params.split(','):
+                        key, value = kv.split(':')
+                        mapper[key] = value
+
+                facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
+                response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
                 return response
 
             if response.startswith('api_call_query_location_'):
@@ -188,6 +203,7 @@ class Render:
 
             return response
         except:
+            print(traceback.format_exc())
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))

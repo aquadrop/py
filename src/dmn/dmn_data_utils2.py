@@ -6,20 +6,20 @@ import numpy as np
 from functools import reduce
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 
-import data_utils
+import dmn.data_utils
 
 # temporary paths
 # DATA_DIR = 'data/memn2n/train/tree/origin'
 # CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
 
-DATA_DIR = 'data/memn2n/train/multi_tree/'
-CANDID_PATH = 'data/memn2n/train/multi_tree/candidates.txt'
+DATA_DIR = 'data/memn2n/train/tree/origin/'
+CANDID_PATH = 'data/memn2n/train/tree/origin/candidates.txt'
 
 MULTI_DATA_DIR = 'data/memn2n/train/tree/multi_tree'
 MULTI_CANDID_PATH = 'data/memn2n/train/tree/multi_tree/candidates.txt'
@@ -36,18 +36,18 @@ def get_candidates_word_dict():
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
 
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
+            candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
 
     return idx2candid, w2idx
 
 
 def load_raw_data():
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
+            candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
 
     train_data, test_data, val_data = data_utils.load_dialog(
-        data_dir=os.path.join(grandfatherdir, DATA_DIR),
-        candid_dic=candid2idx, dmn=True)
+            data_dir=os.path.join(grandfatherdir, DATA_DIR),
+            candid_dic=candid2idx, dmn=True)
     # print(len(train_data))
     # print(os.path.join(grandfatherdir, DATA_DIR))
     return train_data, test_data, val_data, candidates, candid2idx, idx2candid
@@ -85,10 +85,10 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         if not split_sentences:
             if input_mask_mode == 'word':
                 input_masks.append(
-                    np.array([index for index, w in enumerate(inp)], dtype=np.int32))
+                        np.array([index for index, w in enumerate(inp)], dtype=np.int32))
             elif input_mask_mode == 'sentence':
                 input_masks.append(
-                    np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
+                        np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
             else:
                 raise Exception("invalid input_mask_mode")
 
@@ -137,7 +137,8 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
                 lens[i] = max_len
             padded_sentences = np.vstack(padded_sentences)
             padded_sentences = np.pad(padded_sentences, ((
-                0, max_len - lens[i]), (0, 0)), 'constant', constant_values=0)
+                                                             0, max_len - lens[i]), (0, 0)), 'constant',
+                                      constant_values=0)
             padded[i] = padded_sentences
         return padded
 
@@ -147,7 +148,6 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
 
 
 def load_data(config, split_sentences=True):
-
     # fix vocab
     with open(os.path.join(grandfatherdir, VOCAB_PATH), 'r') as f:
         vocab = json.load(f)
@@ -155,9 +155,9 @@ def load_data(config, split_sentences=True):
     idx2w = dict((i + 1, c) for i, c in enumerate(vocab))
 
     word_embedding = np.random.uniform(
-        -config.embedding_init,
-        config.embedding_init,
-        (len(vocab), config.embed_size))
+            -config.embedding_init,
+            config.embedding_init,
+            (len(vocab), config.embed_size))
 
     train_data, val_data, test_data, candidates, candid2idx, idx2candid = load_raw_data()
 
@@ -200,12 +200,10 @@ def load_data(config, split_sentences=True):
 
     questions = pad_inputs(questions, q_lens, max_q_len)
 
-
     candidate_size = len(candidates)
 
-    origin_answers=answers
-    answers=[np.sum(np.eye(candidate_size)[np.asarray(a)],axis=0) for a in answers]
-
+    answers = [np.sum(np.eye(candidate_size)[np.asarray(a)], axis=0) for a in
+               answers] if config.multi_label else answers
 
     answers = np.stack(answers)
 
@@ -222,29 +220,29 @@ def load_data(config, split_sentences=True):
         print(total_num)
         print(num_train)
         train = questions[:num_train], inputs[:num_train], \
-            q_lens[:num_train],  \
-            input_lens[:num_train], input_masks[:num_train], \
-            answers[:num_train], rel_labels[:num_train]
+                q_lens[:num_train], \
+                input_lens[:num_train], input_masks[:num_train], \
+                answers[:num_train], rel_labels[:num_train]
 
         valid = questions[num_train:total_num], inputs[num_train:total_num], \
-            q_lens[num_train:total_num], input_lens[num_train:total_num], \
-            input_masks[num_train:total_num], \
-            answers[num_train:total_num],rel_labels[num_train:total_num]
+                q_lens[num_train:total_num], input_lens[num_train:total_num], \
+                input_masks[num_train:total_num], \
+                answers[num_train:total_num], rel_labels[num_train:total_num]
         return train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], len(
+               rel_labels.shape[1], len(
                 vocab), candidate_size, candid2idx, idx2candid, w2idx, idx2w
 
     else:
         test = questions, inputs, q_lens, input_lens, input_masks, answers, rel_labels
         return test, word_embedding, max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], len(vocab), candidate_size
+               rel_labels.shape[1], len(vocab), candidate_size
 
 
 def main():
     from dmn_plus2 import Config
     config = Config()
     train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
-        rel_labels, vocab, candidate_size = load_data(config)
+    rel_labels, vocab, candidate_size = load_data(config)
     print(len(train[0]))
     print(len(valid[0]))
 

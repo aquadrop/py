@@ -9,12 +9,10 @@ import numpy as np
 from copy import deepcopy
 
 import tensorflow as tf
-from attention_gru_cell import AttentionGRUCell
+from dmn.attention_gru_cell import AttentionGRUCell
 
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
-# import babi_input
-import dmn_data_utils2 as dmn_data_utils
 
 
 class Config(object):
@@ -46,24 +44,24 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1.5
 
-    num_hops = 3
+    num_hops = 2
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    total_num = 15000
+    total_num = 20000
 
     floatX = np.float32
 
-    multi_label = True
+    multi_label = False
     top_k=5
     max_memory_size = 20
     fix_vocab = True
 
     train_mode = True
 
-    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata_test.pkl'
-    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data_test.pkl'
-    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/ckpt_test/'
+    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
+    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
+    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/ckpt/'
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):

@@ -105,11 +105,11 @@ def gen_sessions(belief_tracker, output_files):
         pick = np.random.choice(availables)
         slot_values_mapper = dict()
         num_rnd_external_max = 1
-        if len(belief_graph.get_nodes_by_value(pick)) > 1:
+        if len(belief_graph.get_nodes_by_value(pick)) > 0:
             slot_values_mapper[belief_graph.get_nodes_by_value(pick)[
                 0].slot] = pick
         else:
-            slot_values_mapper['ambiguity_removal'] = pick
+            slot_values_mapper['ambiguity_removal'] = belief_graph.slots_trans[pick]
         # my_search_node = belief_tracker.ambiguity_slots[pick].parent_node
         #
         # fields = list(my_search_node.fields.keys())
@@ -186,7 +186,14 @@ def gen_sessions(belief_tracker, output_files):
         #
         #     return value
         if field == 'ambiguity_removal':
-            return np.random.choice(list(belief_tracker.ambiguity_slots.keys()))
+            value = np.random.choice(
+                list(belief_tracker.ambiguity_slots.keys()))
+            # nodes = belief_graph.get_nodes_by_value(value)
+            # if len(nodes) > 0:
+            #     slot = nodes[0].slot
+            #     del slot_values_mapper[field]
+            #     slot_values_mapper[slot] = value
+            return value
 
         if belief_graph.get_field_type(field) == 'range':
             # return search_node.get_node_slot_trans(field) + 'range'
@@ -203,6 +210,13 @@ def gen_sessions(belief_tracker, output_files):
         requested = np.random.choice(
             ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
         return requested
+
+    def render_thesaurus(v, thesaurus):
+        if v in thesaurus:
+            choice = thesaurus[v][:]
+            choice.append(v)
+            v = np.random.choice(choice)
+        return v
 
     def render_lang(slot_values_mapper, fresh, thesaurus):
         search_node = belief_tracker.search_node
@@ -372,7 +386,7 @@ def gen_sessions(belief_tracker, output_files):
             filling_slots = belief_tracker.filling_slots
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
-                    qa = np.random.choice([filling_slots['category'], ''])\
+                    qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
                         + np.random.choice(['在哪里', '在什么地方', '在几楼'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                         + filling_slots['category'] + '\t' + 'placeholder'
@@ -386,8 +400,8 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = brand + np.random.choice(
-                            [filling_slots['category'], filling_slots['category'] + '的', '']) + np.random.choice(['多少钱', '什么价格'])
+                        qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', ''])\
+                            + np.random.choice(['多少钱', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                             + brand + ',' + 'category:' + \
                             filling_slots['category'] + '\t' + 'placeholder'
@@ -399,8 +413,25 @@ def gen_sessions(belief_tracker, output_files):
                         candidates.add('api_call_query_price_' + 'brand:'
                                        + brand + ',' + 'category:' + filling_slots['category'])
 
+                # ask brand of category
+                if np.random.uniform() < 0.25:
+                    brands = get_avail_brands(filling_slots['category'])
+                    if brands:
+                        brand = np.random.choice(brands)
+                        qa = np.random.choice([render_thesaurus(
+                            filling_slots['category'], thesaurus), '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
+                        line = qa + '\t' + 'api_call_query_brand_category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
+                        flow = 'api_call_query_price_' + 'brand:'\
+                               + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
+                        # flow_container.append(flow.lower())
+                        container.append(line)
+                        candidates.add(
+                            'api_call_query_brand_category:' + filling_slots['category'])
+
         if requested and requested != 'ambiguity_removal':
-            if np.random.uniform() < 0.25:
+            if np.random.uniform() < 0:
                 reh, cls = render_rhetorical(requested)
                 rhetorical = "plugin:" + cls + '#' + requested + "$" + reh
                 memory_line = reh + '\t' + cls + '\t' + 'placeholder'
