@@ -89,9 +89,10 @@ class BeliefTracker:
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
         should_clear_memory = False
-        if len(query_mapper) == 1 or self.API not in self.filling_slots \
-                or query_mapper[self.API] != self.filling_slots[self.API]:
-            should_clear_memory = True
+        if self.API in query_mapper:
+            if len(query_mapper) == 1 or self.API not in self.filling_slots \
+                    or query_mapper[self.API] != self.filling_slots[self.API]:
+                should_clear_memory = True
         self.rule_base_filter(query, query_mapper)
         self.exploit_once = True
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
