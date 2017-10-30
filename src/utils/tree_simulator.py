@@ -208,6 +208,13 @@ def gen_sessions(belief_tracker, output_files):
             ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
         return requested
 
+    def render_thesaurus(v, thesaurus):
+        if v in thesaurus:
+            choice = thesaurus[v][:]
+            choice.append(v)
+            v = np.random.choice(choice)
+        return v
+
     def render_lang(slot_values_mapper, fresh, thesaurus):
         search_node = belief_tracker.search_node
         prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买','有没有']
@@ -376,7 +383,7 @@ def gen_sessions(belief_tracker, output_files):
             filling_slots = belief_tracker.filling_slots
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
-                    qa = np.random.choice([filling_slots['category'], ''])\
+                    qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
                          + np.random.choice(['在哪里', '在什么地方', '在几楼'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                            + filling_slots['category'] + '\t' + 'placeholder'
@@ -390,7 +397,7 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = brand + np.random.choice([filling_slots['category'], '的', ''])\
+                        qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', ''])\
                              + np.random.choice(['多少钱', '什么价格'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
@@ -406,7 +413,7 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
-                        qa = np.random.choice([filling_slots['category'], '的', '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
+                        qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '']) + np.random.choice(['都有哪些品牌', '都有哪些牌子'])
                         line = qa + '\t' + 'api_call_query_brand_category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
                                + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
