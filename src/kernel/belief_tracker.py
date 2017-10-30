@@ -8,6 +8,7 @@ import json
 
 import os
 import sys
+import random
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -216,6 +217,7 @@ class BeliefTracker:
         # self.clear_memory()
         self.filling_slots.clear()
         self.requested_slots = self.search_node.gen_required_slot_fields()
+        random.shuffle(self.requested_slots)
         self.fill_slot(node.slot, node.value)
 
     def fill_slot(self, slot, value):
