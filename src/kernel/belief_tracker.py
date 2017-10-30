@@ -779,6 +779,8 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
+            fq = solr_util.compose_fq(mapper)
+            print(fq)
             params['fq'] = solr_util.compose_fq(mapper)
             # try:
             res = self.solr.query('category', params)
