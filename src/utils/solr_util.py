@@ -59,8 +59,11 @@ def query(must_mappers, option_mapper=None):
     return docs
 
 
-def solr_qa(core, query):
-    params = {'q': query, 'q.op': 'or', 'rows':20}
+def solr_qa(core, query, field=None):
+    if not field:
+        params = {'q': query, 'q.op': 'or', 'rows':20}
+    else:
+        params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
     responses = solr.query(core, params)
     docs = responses.docs
     return docs

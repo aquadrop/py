@@ -20,8 +20,8 @@ class Qa:
         self.core = core
         self.base = BaseKernel()
 
-    def get_responses(self, query):
-        docs = solr_qa(self.core, query)
+    def get_responses(self, query, ):
+        docs = solr_qa(self.core, query, 'g')
         # print(docs)
         best_query = None
         best_answer = None
@@ -84,7 +84,7 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer, best_score = qa.get_responses('早上好')
+    best_query, best_answer, best_score = qa.get_responses('好的知道了')
     print(best_query, best_answer, best_score)
 
 
