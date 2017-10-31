@@ -164,13 +164,15 @@ def rule_base_num_retreive(query):
     people_single = r"([-+]?\d*\.\d+|\d+)人"
     height = r"高([-+]?\d*\.\d+|\d+)米"
     width = r"宽([-+]?\d*\.\d+|\d+)米"
+    memory = r"([-+]?\d*\.\d+|\d+)[g|G]"
 
     dual = {"__inch__": inch_dual, "__meter__": meter_dual,
             "ac.power": ac_power_dual,
             "price": price_dual}
     single = {"__inch__": inch_single, "__meter__": meter_single,
               "ac.power": ac_power_single,
-              "price": price_single, "people": people_single, "height": height, "width":width}
+              "price": price_single, "people": people_single, "height": height, "width":width,
+              "memory": memory}
 
     wild_card = dict()
     query = str(new_cn2arab(query))

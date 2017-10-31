@@ -68,6 +68,8 @@ class Graph(Node, object):
         self.range_adapter_mapper['ac.power_float'] = 'ac.power'
         self.range_adapter_mapper['fr.height'] = 'height'
         self.range_adapter_mapper['fr.width'] = 'width'
+        self.range_adapter_mapper['phone.rmem'] = 'memory'
+        self.range_adapter_mapper['pc.mem'] = 'memory'
 
     def range_adapter(self, key):
         return self.range_adapter_mapper[key]
