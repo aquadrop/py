@@ -203,7 +203,7 @@ def load_belief_graph(path, output_model_path):
                         # property node
                         id = str(uuid.uuid4())
                         child_node = Node(value=value, fields=dict(),
-                                    slot=slot, id=id, node_type="property")
+                                          slot=slot, id=id, node_type="property")
                         if value not in node_header:
                             node_header[value] = []
                         node_header[value].append(child_node)
@@ -258,7 +258,8 @@ def load_belief_graph_from_tables(files, output_file):
                     nodes = node_header[slot_value]
                     # print(slot_value, len(nodes))
                     if len(nodes) > 1 or len(nodes) == 0:
-                        raise ValueError('non property node value should be unique')
+                        raise ValueError(
+                            'non property node value should be unique')
                     else:
                         node = nodes[0]
                 if note == '+':
@@ -278,14 +279,15 @@ def load_belief_graph_from_tables(files, output_file):
                             except:
                                 print(line)
                             if len(nodes) > 1 or len(nodes) == 0:
-                                raise ValueError('non property node value should be unique')
+                                raise ValueError(
+                                    'non property node value should be unique')
                             else:
                                 child_node = nodes[0]
                             node.add_node(child_node)
                             continue
                         _id = str(uuid.uuid4())
                         child_node = Node(value=name, fields=dict(),
-                                    slot=slot, id=_id, node_type="property")
+                                          slot=slot, id=_id, node_type="property")
                         node.add_node(child_node)
                         if name not in node_header:
                             node_header[name] = []
@@ -368,4 +370,3 @@ if __name__ == "__main__":
     table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
-
