@@ -40,7 +40,7 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
-from qa.qa import Qa as QA
+from qa.iqa import Qa as QA
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],

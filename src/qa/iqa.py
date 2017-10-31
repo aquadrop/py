@@ -13,7 +13,7 @@ from utils.embedding_util import ff_embedding
 from qa.base import BaseKernel
 
 THRESHOLD = 0.95
-
+REACH = 0.999
 
 class Qa:
     def __init__(self, core):
@@ -27,7 +27,7 @@ class Qa:
         best_answer = None
         best_score = -1
         for index, doc in enumerate(docs):
-            if index > 9:
+            if index > 10:
                 break
             if 'g' not in doc or 'b' not in doc:
                 continue
@@ -39,6 +39,8 @@ class Qa:
                     best_score = score
                     best_query = _g
                     best_answer = b
+                    if score >= REACH:
+                        break
             # print(score)
 
         if best_score < THRESHOLD:
@@ -82,7 +84,7 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer, best_score = qa.get_responses('好的哦')
+    best_query, best_answer, best_score = qa.get_responses('早上好')
     print(best_query, best_answer, best_score)
 
 
