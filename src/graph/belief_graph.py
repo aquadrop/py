@@ -273,7 +273,10 @@ def load_belief_graph_from_tables(files, output_file):
                     names = slot_value.split(',')
                     for name in names:
                         if 'category' in slot:
-                            nodes = node_header[name]
+                            try:
+                                nodes = node_header[name]
+                            except:
+                                print(line)
                             if len(nodes) > 1 or len(nodes) == 0:
                                 raise ValueError('non property node value should be unique')
                             else:
@@ -307,5 +310,62 @@ if __name__ == "__main__":
                    '../../data/gen_product/pc.txt',
                    '../../data/gen_product/grocery.txt',
                    '../../data/gen_product/fruits.txt']
+    additional = "净水器.txt,household.txt,kitchenwares.txt,\
+剃毛器.txt,\
+加湿器.txt,\
+取暖器.txt,\
+吸尘器.txt,\
+咖啡机.txt,\
+垃圾处理机.txt,\
+多用途锅.txt,\
+干衣机.txt,\
+微波炉.txt,\
+打蛋器.txt,\
+扫地机器人.txt,\
+挂烫机.txt,\
+按摩器.txt,\
+按摩椅.txt,\
+排气扇.txt,\
+搅拌机.txt,\
+料理机.txt,\
+榨汁机.txt,\
+油烟机.txt,\
+洗碗机.txt,\
+洗衣机.txt,\
+浴霸.txt,\
+消毒柜.txt,\
+烟灶套装.txt,\
+烤箱.txt,\
+热水器.txt,\
+煮蛋器.txt,\
+燃气灶.txt,\
+电动剃须刀.txt,\
+电动牙刷.txt,\
+电压力锅.txt,\
+电吹风.txt,\
+电子秤.txt,\
+电水壶.txt,\
+电炖锅.txt,\
+电磁炉.txt,\
+电蒸炉.txt,\
+电风扇.txt,\
+电饭煲.txt,\
+电饼铛.txt,\
+相机.txt,\
+空气净化器.txt,\
+空调扇.txt,\
+美发器.txt,\
+美容器.txt,\
+豆浆机.txt,\
+足浴盆.txt,\
+酸奶机.txt,\
+采暖炉.txt,\
+除湿机.txt,\
+集成灶.txt,\
+面包机.txt,\
+饮水机.txt".split(',')
+    additional = ['../../data/gen_product/' + a for a in additional]
+    table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
+

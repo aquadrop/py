@@ -265,6 +265,44 @@ def pc_product_gen(product_file, data_file):
 
             output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
+def household_product_gen(data_file, product_file):
+    profile = dict()
+    title = []
+    with open(data_file, 'r') as infile:
+        line = infile.readline()
+        title = line.strip('\n').split("|")[4].split(',')
+        for line in infile:
+            line = line.replace(' ', '').strip('\n')
+            mark, a, b, _, c = line.split("|")
+            if mark == '*':
+                continue
+            profile[b] = c.split(",")
+
+    with open(product_file, 'w') as output:
+        for i in range(N):
+            ac = dict()
+            for key, value in profile.items():
+                data = np.random.choice(value)
+                ac[key] = data
+            ac['price'] = np.random.randint(low=2000, high=10000)
+            ac['category'] = '空调'
+            if np.random.uniform() < 0.4:
+                ac['discount'] = np.random.choice(discount)
+            ## ac.power
+            power = float(ac['ac.power_float'])
+            if power <= 1:
+                ac['ac.power'] = '1P'
+            elif power > 1 and power < 1.5:
+                ac['ac.power'] = '大1P'
+            else:
+                ac['ac.power'] = ac['ac.power_float'] + 'P'
+            tt = []
+            for t in title:
+                tt.append(ac[t])
+
+            ac['title'] = " ".join(tt)
+
+            output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
 def update_solr(solr_file):
 
