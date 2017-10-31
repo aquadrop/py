@@ -60,7 +60,7 @@ def query(must_mappers, option_mapper=None):
 
 
 def solr_qa(core, query):
-    params = {'q': query, 'q.op': 'or'}
+    params = {'q': query, 'q.op': 'or', 'rows':20}
     responses = solr.query(core, params)
     docs = responses.docs
     return docs

@@ -48,7 +48,7 @@ from utils.cn2arab import *
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
-from qa.qa import Qa as QA
+from qa.iqa import Qa as QA
 import memory.config as config
 from kernel.render import Render
 

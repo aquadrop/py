@@ -91,7 +91,7 @@ def ac_product_gen(product_file, data_file):
             for key, value in profile.items():
                 data = np.random.choice(value)
                 ac[key] = data
-            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            ac['price'] = np.random.randint(low=2000, high=10000)
             ac['category'] = '空调'
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
@@ -131,7 +131,9 @@ def tv_product_gen(product_file, data_file):
             for key, value in profile.items():
                 data = np.random.choice(value)
                 ac[key] = data
-            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            ac['price'] = np.random.randint(low=2000, high=15000)
+            if ac["brand"] == "索尼":
+                ac['price'] = np.random.randint(low=8000, high=15000)
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
             tt = []
@@ -162,7 +164,7 @@ def fr_product_gen(product_file, data_file):
             for key, value in profile.items():
                 data = np.random.choice(value)
                 ac[key] = data
-            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            ac['price'] = np.random.randint(low=2000, high=14000)
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
             tt = []
@@ -193,21 +195,28 @@ def phone_product_gen(product_file, data_file):
             for key, value in profile.items():
                 data = np.random.choice(value)
                 ac[key] = data
-            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            ac['price'] = np.random.randint(low=2000, high=10000)
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
             ac["phone.series"] = ""
             if ac["brand"] == "苹果":
                 ac["phone.sys"] = "ios"
                 ac["phone.series"] = np.random.choice("iphone,iphone6,iphone7,iphone8,iphonex,iphone6s,iphone7p".split(","))
+                ac['price'] = np.random.randint(low=6000, high=9000)
             else:
                 ac["phone.sys"] = "android"
             if ac["brand"] == "华为":
                 ac["phone.series"] = np.random.choice("荣耀,P9".split(","))
+                ac['price'] = np.random.randint(low=2000, high=5000)
             if ac["brand"] == "三星":
                 ac["phone.series"] = np.random.choice("galaxy,s7".split(","))
+                ac['price'] = np.random.randint(low=4000, high=5000)
             if ac["brand"] == "小米":
                 ac["phone.series"] = np.random.choice("红米".split(","))
+                ac['price'] = np.random.randint(low=1000, high=3000)
+            if ac["brand"] == "索尼":
+                ac["phone.series"] = np.random.choice("xperia".split(","))
+                ac['price'] = np.random.randint(low=8000, high=10000)
             tt = []
             for t in title:
                 tt.append(ac[t])
@@ -235,17 +244,19 @@ def pc_product_gen(product_file, data_file):
             for key, value in profile.items():
                 data = np.random.choice(value)
                 ac[key] = data
-            ac['price'] = np.random.randint(low=price[0], high=price[1])
+            ac['price'] = np.random.randint(low=3000, high=15000)
             if np.random.uniform() < 0.4:
                 ac['discount'] = np.random.choice(discount)
             ac["pc.series"] = ""
             if ac["brand"] == "苹果":
                 ac["pc.sys"] = "macos"
                 ac["pc.series"] = np.random.choice("macbookair,macbookpro".split(","))
+                ac['price'] = np.random.randint(low=7000, high=15000)
             else:
                 ac["pc.sys"] = np.random.choice(["chromeos","windows"])
             if ac["brand"] == "索尼":
                 ac["phone.series"] = np.random.choice("vaio".split(","))
+                ac['price'] = np.random.randint(low=8000, high=15000)
             tt = []
             for t in title:
                 tt.append(ac[t])
@@ -254,6 +265,44 @@ def pc_product_gen(product_file, data_file):
 
             output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
+def household_product_gen(data_file, product_file):
+    profile = dict()
+    title = []
+    with open(data_file, 'r') as infile:
+        line = infile.readline()
+        title = line.strip('\n').split("|")[4].split(',')
+        for line in infile:
+            line = line.replace(' ', '').strip('\n')
+            mark, a, b, _, c = line.split("|")
+            if mark == '*':
+                continue
+            profile[b] = c.split(",")
+
+    with open(product_file, 'w') as output:
+        for i in range(N):
+            ac = dict()
+            for key, value in profile.items():
+                data = np.random.choice(value)
+                ac[key] = data
+            ac['price'] = np.random.randint(low=2000, high=10000)
+            ac['category'] = '空调'
+            if np.random.uniform() < 0.4:
+                ac['discount'] = np.random.choice(discount)
+            ## ac.power
+            power = float(ac['ac.power_float'])
+            if power <= 1:
+                ac['ac.power'] = '1P'
+            elif power > 1 and power < 1.5:
+                ac['ac.power'] = '大1P'
+            else:
+                ac['ac.power'] = ac['ac.power_float'] + 'P'
+            tt = []
+            for t in title:
+                tt.append(ac[t])
+
+            ac['title'] = " ".join(tt)
+
+            output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
 def update_solr(solr_file):
 
@@ -281,8 +330,8 @@ if __name__ == "__main__":
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/bingxiang.txt')
     print('updating')
     # update_solr("../../data/raw/product_ac.txt")
-    update_solr("../../data/raw/pc.txt")
+    # update_solr("../../data/raw/pc.txt")
     # update_solr("../../data/raw/product_tv.txt")
-
+    #
     # update_solr("../../data/raw/product_phone.txt")
-    # update_solr("../../data/raw/product_fr.txt")
+    update_solr("../../data/raw/product_fr.txt")
