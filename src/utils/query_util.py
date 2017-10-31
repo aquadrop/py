@@ -150,7 +150,16 @@ def remove_stop_words(q):
     except:
         return q
 
+rp = {"大一匹": "1.3p", "大1匹":"1.3p"}
+def supersede(query):
+    for key, value in rp.items():
+        query = query.replace(key, value)
+    return query
+
 def rule_base_num_retreive(query):
+
+    query = supersede(query)
+
     inch_dual = r"(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸)"
     meter_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米"
     ac_power_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[p|P|匹]"
@@ -239,6 +248,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s'))
+    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
     # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))
