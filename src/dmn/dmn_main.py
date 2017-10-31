@@ -35,7 +35,7 @@ def prepare_data(args, config):
             config, split_sentences=True)
 
     metadata = dict()
-    data=dict()
+    data = dict()
     data['train'] = train
     data['valid'] = valid
     metadata['word_embedding'] = word_embedding
@@ -58,7 +58,7 @@ def prepare_data(args, config):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description='DMN-PLUS')
-    parser.add_argument("-r", "--restore",action='store_true',
+    parser.add_argument("-r", "--restore", action='store_true',
                         help="restore previously trained weights")
     parser.add_argument("-s", "--strong_supervision",
                         help="use labelled supporting facts (default=false)")
@@ -88,7 +88,6 @@ def main(args):
         prepare_data(args, config)
         sys.exit()
 
-
     if args['train']:
         model = DMN_PLUS(config)
         print('Training DMN-PLUS start')
@@ -115,7 +114,7 @@ def main(args):
 
             if args['restore']:
                 print('==> restoring weights')
-                saver.restore(session, config.ckpt_path+'dmn.weights')
+                saver.restore(session, config.ckpt_path + 'dmn.weights')
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -127,7 +126,7 @@ def main(args):
                     train_op=model.train_step, train=True)
                 valid_loss, valid_accuracy, valid_error = model.run_epoch(
                     session, model.valid)
-                print('Training error:')
+                # print('Training error:')
                 for e in train_error:
                     print(e)
                 # print('Validation error:')
@@ -143,7 +142,7 @@ def main(args):
                         print('Saving weights')
                         best_overall_val_loss = best_val_loss
                         best_val_accuracy = valid_accuracy
-                        saver.save(session, config.ckpt_path+'dmn.weights')
+                        saver.save(session, config.ckpt_path + 'dmn.weights')
 
                 # anneal
                 if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -159,7 +158,7 @@ def main(args):
             print('Best validation accuracy:', best_val_accuracy)
 
     else:  # inference
-        config.train_mode=False
+        config.train_mode = False
         model = DMN_PLUS(config)
         print('Predict start')
         print('==> initializing variables')

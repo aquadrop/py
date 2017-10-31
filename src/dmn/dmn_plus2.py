@@ -14,7 +14,6 @@ from dmn.attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
 
-
 class Config(object):
     """Holds model hyperparams and data information."""
 
@@ -25,7 +24,7 @@ class Config(object):
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.7
+    dropout = 0.9
     lr = 0.001
     l2 = 0.001
 
@@ -33,7 +32,7 @@ class Config(object):
     max_grad_val = 10
     noisy_grads = True
 
-    word2vec_init = False
+    word2vec_init = True
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -44,7 +43,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1.5
 
-    num_hops = 2
+    num_hops = 3
     num_attention_features = 4
 
     max_allowed_inputs = 130
@@ -53,15 +52,25 @@ class Config(object):
     floatX = np.float32
 
     multi_label = False
-    top_k=5
+    top_k = 5
     max_memory_size = 20
     fix_vocab = True
 
     train_mode = True
 
-    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
-    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
-    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/ckpt/'
+    # paths
+    DATA_DIR = '/home/ecovacs/work/memory_py/data/memn2n/train/tree/origin/'
+    CANDID_PATH = '/home/ecovacs/work/memory_py/data/memn2n/train/tree/origin/candidates.txt'
+
+    MULTI_DATA_DIR = '/home/ecovacs/work/memory_py/data/memn2n/train/multi_tree'
+    MULTI_CANDID_PATH = '/home/ecovacs/work/memory_py/data/memn2n/train/multi_tree/candidates.txt'
+
+    data_dir = MULTI_DATA_DIR if multi_label else DATA_DIR
+    candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
+
+    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/one_metadata.pkl'
+    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/one_data.pkl'
+    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/one_ckpt/'
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -97,7 +106,8 @@ class DMN_PLUS(object):
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
 
-        self.word_embedding = metadata['word_embedding']
+        self.word_embedding = np.asarray(metadata['word_embedding'])
+        print(type(self.word_embedding))
         self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
         self.max_sen_len = metadata['max_sen_len']
@@ -121,7 +131,7 @@ class DMN_PLUS(object):
             print('Load metadata (infer mode)')
 
         self.encoding = _position_encoding(
-                self.max_sen_len, self.config.embed_size)
+            self.max_sen_len, self.config.embed_size)
 
         # print(self.idx2w)
         # print(self.idx2candid)
@@ -129,21 +139,21 @@ class DMN_PLUS(object):
     def add_placeholders(self):
         """add data placeholder to graph"""
         self.question_placeholder = tf.placeholder(
-                tf.int32, shape=(None, self.max_q_len), name='question')
+            tf.int32, shape=(None, self.max_q_len), name='question')
         self.question_len_placeholder = tf.placeholder(
-                tf.int32, shape=(None,), name='question_len')
+            tf.int32, shape=(None,), name='question_len')
 
         self.input_placeholder = tf.placeholder(tf.int32, shape=(
             None, self.max_input_len, self.max_sen_len), name='input')
         self.input_len_placeholder = tf.placeholder(
-                tf.int32, shape=(None,), name='input_len')
+            tf.int32, shape=(None,), name='input_len')
 
         if self.config.multi_label:
             self.answer_placeholder = tf.placeholder(
-                    tf.float32, shape=(None, self.candidate_size), name='answer')
+                tf.float32, shape=(None, self.candidate_size), name='answer')
         else:
             self.answer_placeholder = tf.placeholder(
-                    tf.int32, shape=(None,), name='answer')
+                tf.int32, shape=(None,), name='answer')
 
         # self.answer_len_placeholder = tf.placeholder(
         #     tf.int32, shape=(self.config.batch_size,))
@@ -156,9 +166,11 @@ class DMN_PLUS(object):
     def get_predictions(self, output):
         if self.config.multi_label:
             # multi targets
-            predict_by_value = tf.nn.top_k(output, k=self.config.top_k, name="predict_op")
+            predict_by_value = tf.nn.top_k(
+                output, k=self.config.top_k, name="predict_op")
             predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
-            pred = tf.nn.top_k(predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
+            pred = tf.nn.top_k(
+                predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
             preds = tf.nn.softmax(output)
             pred = tf.argmax(preds, 1)
@@ -173,14 +185,14 @@ class DMN_PLUS(object):
             for i, att in enumerate(self.attentions):
                 labels = tf.gather(tf.transpose(self.rel_label_placeholder), 0)
                 gate_loss += tf.reduce_sum(
-                        tf.nn.sparse_softmax_cross_entropy_with_logits(logits=att, labels=labels))
+                    tf.nn.sparse_softmax_cross_entropy_with_logits(logits=att, labels=labels))
 
         # loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
         #     logits=output, labels=self.answer_placeholder)) + gate_loss
         if self.config.multi_label:
             # multi targets
             loss = self.config.beta * tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=output, labels=self.answer_placeholder)) + gate_loss
+                logits=output, labels=self.answer_placeholder)) + gate_loss
         else:
             loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=output, labels=self.answer_placeholder)) + gate_loss
@@ -217,7 +229,7 @@ class DMN_PLUS(object):
     def get_question_representation(self, embeddings):
         """Get question vectors via embedding and GRU"""
         questions = tf.nn.embedding_lookup(
-                embeddings, self.question_placeholder)
+            embeddings, self.question_placeholder)
 
         gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         _, q_vec = tf.nn.dynamic_rnn(gru_cell,
@@ -239,11 +251,11 @@ class DMN_PLUS(object):
         forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         outputs, _ = tf.nn.bidirectional_dynamic_rnn(
-                forward_gru_cell,
-                backward_gru_cell,
-                inputs,
-                dtype=np.float32,
-                sequence_length=self.input_len_placeholder
+            forward_gru_cell,
+            backward_gru_cell,
+            inputs,
+            dtype=np.float32,
+            sequence_length=self.input_len_placeholder
         )
 
         # f<-> = f-> + f<-
@@ -280,7 +292,7 @@ class DMN_PLUS(object):
         """Generate episode by applying attention to current fact vectors through a modified GRU"""
 
         attentions = [tf.squeeze(
-                self.get_attention(q_vec, memory, fv, bool(hop_index) or bool(i)), axis=1)
+            self.get_attention(q_vec, memory, fv, bool(hop_index) or bool(i)), axis=1)
             for i, fv in enumerate(tf.unstack(fact_vecs, axis=1))]
 
         attentions = tf.transpose(tf.stack(attentions))
@@ -318,7 +330,7 @@ class DMN_PLUS(object):
 
         # set up embedding
         embeddings = tf.Variable(
-                self.word_embedding.astype(np.float32), name="Embedding")
+            self.word_embedding.astype(np.float32), name="Embedding")
 
         # input fusion module
         with tf.variable_scope("question", initializer=tf.contrib.layers.xavier_initializer()):
@@ -343,7 +355,7 @@ class DMN_PLUS(object):
                 # get a new episode
                 print('==> generating episode', i)
                 episode = self.generate_episode(
-                        prev_memory, q_vec, fact_vecs, i)
+                    prev_memory, q_vec, fact_vecs, i)
 
                 # untied weights for memory update
                 with tf.variable_scope("hop_%d" % i):
@@ -379,25 +391,24 @@ class DMN_PLUS(object):
         for step in range(total_steps):
             index = range(step * config.batch_size,
                           (step + 1) * config.batch_size)
-            feed = {self.question_placeholder    : qp[index],
-                    self.input_placeholder       : ip[index],
+            feed = {self.question_placeholder: qp[index],
+                    self.input_placeholder: ip[index],
                     self.question_len_placeholder: ql[index],
-                    self.input_len_placeholder   : il[index],
-                    self.answer_placeholder      : a[index],
-                    self.rel_label_placeholder   : r[index],
-                    self.dropout_placeholder     : dp}
+                    self.input_len_placeholder: il[index],
+                    self.answer_placeholder: a[index],
+                    self.rel_label_placeholder: r[index],
+                    self.dropout_placeholder: dp}
             loss, pred, summary, output, _ = session.run(
-                    [self.calculate_loss, self.pred, self.merged, self.output, train_op], feed_dict=feed)
+                [self.calculate_loss, self.pred, self.merged, self.output, train_op], feed_dict=feed)
 
             if train_writer is not None:
                 train_writer.add_summary(
-                        summary, num_epoch * total_steps + step)
+                    summary, num_epoch * total_steps + step)
 
             answers = a[step *
                         config.batch_size:(step + 1) * config.batch_size]
             questions = qp[step *
                            config.batch_size:(step + 1) * config.batch_size]
-
 
             if self.config.multi_label:
                 # multi target
@@ -406,7 +417,8 @@ class DMN_PLUS(object):
                 for i in range(config.batch_size):
                     predicts = pred[i]
                     labels = answers[i]
-                    labels = [idx for idx, i in enumerate(labels) if int(i) == 1]
+                    labels = [idx for idx, i in enumerate(
+                        labels) if int(i) == 1]
                     while len(predicts) > len(labels):
                         predicts.pop()
                     if set(predicts) == set(labels):
@@ -414,13 +426,13 @@ class DMN_PLUS(object):
                     else:
                         Q = ''.join([self.idx2w.get(idx, '')
                                      for idx in questions[i].astype(np.int32).tolist()])
+                        Q = Q.replace('unk', '')
                         labels.sort()
                         predicts.sort()
                         A = ','.join([self.idx2candid[a] for a in labels])
                         P = ','.join([self.idx2candid[p] for p in predicts])
                         error.append((Q, A, P))
                 accuracy += correct / float(len(answers))
-
 
             else:
                 accuracy += np.sum(pred == answers) / float(len(answers))
@@ -433,11 +445,10 @@ class DMN_PLUS(object):
                         P = self.idx2candid[P]
                         error.append((Q, A, P))
 
-
             total_loss.append(loss)
             if verbose and step % verbose == 0:
                 sys.stdout.write('\r{} / {} : loss = {}'.format(
-                        step, total_steps, np.mean(total_loss)))
+                    step, total_steps, np.mean(total_loss)))
                 sys.stdout.flush()
 
         if verbose:
@@ -447,11 +458,11 @@ class DMN_PLUS(object):
 
     def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
         feed = {
-            self.question_placeholder    : questions,
-            self.input_placeholder       : inputs,
+            self.question_placeholder: questions,
+            self.input_placeholder: inputs,
             self.question_len_placeholder: q_lens,
-            self.input_len_placeholder   : input_lens,
-            self.dropout_placeholder     : self.config.dropout
+            self.input_len_placeholder: input_lens,
+            self.dropout_placeholder: self.config.dropout
         }
         pred = session.run([self.pred], feed_dict=feed)
 

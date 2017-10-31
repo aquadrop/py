@@ -58,8 +58,8 @@ class DmnSession():
             questions = []
 
             q = tokenize(line)
-            q_vector = [self.w2idx[w] for w in q]
-            inp_vector = [[self.w2idx[w] for w in s] for s in self.context]
+            q_vector = [self.w2idx.get(w,0) for w in q]
+            inp_vector = [[self.w2idx.get(w,0) for w in s] for s in self.context]
 
             inputs.append(inp_vector)
             questions.append(np.vstack(q_vector).astype(np.float32))

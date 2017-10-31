@@ -18,7 +18,7 @@ from dmn.dmn_plus2 import Config
 config = Config()
 
 grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
 CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
 
@@ -53,14 +53,14 @@ def build_vocab_beforehand(vocab_base, vocab_path):
     for i in range(100):
         vocab.append('placeholder' + str(i + 1))
     vocab = sorted(vocab)
-    print(vocab)
+    # print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     with open(vocab_path, 'w', encoding='utf-8') as f:
         json.dump(vocab, f, ensure_ascii=False)
 
 
-def load_candidates(candidates_f=CANDID_PATH):
+def load_candidates(candidates_f):
     candidates, candid2idx, idx2candid = [], {}, {}
 
     with open(candidates_f) as f:
@@ -72,26 +72,26 @@ def load_candidates(candidates_f=CANDID_PATH):
     return candidates, candid2idx, idx2candid
 
 
-def load_dialog(data_dir, candid_dic, dmn=False):
+def load_dialog(data_dir, candid_dic, char=1):
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
 
-    train_data = get_dialogs(train_file, candid_dic, dmn)
-    test_data = get_dialogs(test_file, candid_dic, dmn)
-    val_data = get_dialogs(val_file, candid_dic, dmn)
+    train_data = get_dialogs(train_file, candid_dic, char)
+    test_data = get_dialogs(test_file, candid_dic, char)
+    val_data = get_dialogs(val_file, candid_dic, char)
     return train_data, test_data, val_data
 
 
-def get_dialogs(f, candid_dic, dmn=False):
+def get_dialogs(f, candid_dic, char=1):
     '''Given a file name, read the file, retrieve the dialogs, and then convert the sentences into a single dialog.
     If max_length is supplied, any stories longer than max_length tokens will be discarded.
     '''
     with open(f) as f:
-        return parse_dialogs_per_response(f.readlines(), candid_dic, dmn)
+        return parse_dialogs_per_response(f.readlines(), candid_dic, char)
 
 
-def parse_dialogs_per_response(lines, candid_dic, dmn=False):
+def parse_dialogs_per_response(lines, candid_dic, char=1):
     '''
         Parse dialogs provided in the babi tasks format
     '''
@@ -104,37 +104,28 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
         line = line.strip()
         if line:
             if '\t' in line:
-                print(line)
+                # print(line)
                 u, r, salt = line.split('\t')
-                if config.multi_label >= 1:
+                if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
                     a = candid_dic[r]
-                u = tokenize(u)
+                u = tokenize(u, char=char)
                 if config.fix_vocab:
                     r = translator.en2cn(r)
-                r = tokenize(r)
+                r = tokenize(r, char=char)
                 placeholder = salt == 'placeholder'
                 if config.fix_vocab:
                     salt = translator.en2cn(salt)
-                salt = tokenize(salt)
+                salt = tokenize(salt, char=char)
 
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
                 data.append((context[:], u[:], a))
-                if dmn:
-                    context.append(u)
-                    r = r if placeholder else r + salt
-                    context.append(r)
-                else:
-                    u.append('$u')
-                    r.append('$r')
-                    salt.append('$r')
-                    context.append(u)
-                    context.append(r)
-                    if not placeholder:
-                        context.append(salt)
+                context.append(u)
+                r = r if placeholder else r + salt
+                context.append(r)
         else:
             # clear context
             context = []
@@ -148,7 +139,7 @@ def build_vocab(data, candidates, memory_size=config.max_memory_size):
             vocab = json.load(f)
     else:
         vocab = reduce(lambda x, y: x | y, (set(
-                list(chain.from_iterable(s)) + q) for s, q, a in data))
+            list(chain.from_iterable(s)) + q) for s, q, a in data))
         # vocab2 = reduce(lambda x, y: x | y, (set(candidate)
         #                                      for candidate in candidates))
         vocab2 = reduce(lambda x, y: x | y, (set(tokenize(candidate))
@@ -171,13 +162,13 @@ def build_vocab(data, candidates, memory_size=config.max_memory_size):
     sentence_size = max(query_size, sentence_size)  # for the position
 
     return {
-        'w2idx'                  : w2idx,
-        'idx2w'                  : vocab,
-        'sentence_size'          : sentence_size,
+        'w2idx': w2idx,
+        'idx2w': vocab,
+        'sentence_size': sentence_size,
         'candidate_sentence_size': candidate_sentence_size,
-        'memory_size'            : memory_size,
-        'vocab_size'             : vocab_size,
-        'n_cand'                 : len(candidates)
+        'memory_size': memory_size,
+        'vocab_size': vocab_size,
+        'n_cand': len(candidates)
     }  # metadata
 
 
@@ -189,7 +180,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
         tokens = tokenize(candidate)
         lc = max(0, sentence_size - len(tokens))
         C.append(
-                [word_idx[w] if w in word_idx else 0 for w in tokens] + [0] * lc)
+            [word_idx[w] if w in word_idx else 0 for w in tokens] + [0] * lc)
     # print(C)
     return tf.constant(C, shape=shape)
 
@@ -214,7 +205,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         for i, sentence in enumerate(story, 1):
             ls = max(0, sentence_size - len(sentence))
             ss.append(
-                    [word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
+                [word_idx[w] if w in word_idx else 0 for w in sentence] + [0] * ls)
         # print(np.asarray(ss).shape)
         # take only the most recent sentences that fit in memory
         ss = ss[::-1][:memory_size][::-1]
@@ -248,14 +239,14 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
     n_cand = metadata['n_cand']
 
     trainS, trainQ, trainA = vectorize_data(
-            train_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+        train_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     # print(trainS[0])
     # print(trainQ[0])
     # print(trainA[0])
     valS, valQ, valA = vectorize_data(
-            val_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+        val_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     testS, testQ, testA = vectorize_data(
-            test_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
+        test_data, w2idx, sentence_size, batch_size, n_cand, memory_size)
     n_train = len(trainS)
     n_val = len(valS)
     n_test = len(testS)
