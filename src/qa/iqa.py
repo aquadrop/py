@@ -84,7 +84,7 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer, best_score = qa.get_responses('好的知道了')
+    best_query, best_answer, best_score = qa.get_responses('你叫什么名字')
     print(best_query, best_answer, best_score)
 
 
