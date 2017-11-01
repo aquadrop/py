@@ -13,9 +13,9 @@ import sys
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 parentdir = os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))
+    os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -42,11 +42,14 @@ class DmnSession():
         if not m:
             return
         m = translator.en2cn(m)
-        m = tokenize(m)
+        m = tokenize(m, char=2)
         self.context.append(m)
 
-    def clear_memory(self):
-        self.context = [['此', '乃', '空', '文']]
+    def clear_memory(self,history=0):
+        if history == 0:
+            self.context = [['此', '乃', '空', '文']]
+        else:
+            self.context = self.context[-history:]
 
     def reply(self, msg):
         line = msg.strip().lower()
@@ -57,15 +60,16 @@ class DmnSession():
             inputs = []
             questions = []
 
-            q = tokenize(line)
-            q_vector = [self.w2idx.get(w,0) for w in q]
-            inp_vector = [[self.w2idx.get(w,0) for w in s] for s in self.context]
+            q = tokenize(line, char=2)
+            q_vector = [self.w2idx.get(w, 0) for w in q]
+            inp_vector = [[self.w2idx.get(w, 0) for w in s]
+                          for s in self.context]
 
             inputs.append(inp_vector)
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                    inputs)
+                inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
             # max_q_len = np.max(q_lens)
@@ -84,7 +88,7 @@ class DmnSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                    questions, q_lens, max_q_len)
+                questions, q_lens, max_q_len)
             # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
 
@@ -95,7 +99,7 @@ class DmnSession():
             r = self.idx2candid[preds[0]]
             reply_msg = r
             r = translator.en2cn(r)
-            r = tokenize(r)
+            r = tokenize(r, char=2)
             self.context.append(r)
 
         return reply_msg, "..."

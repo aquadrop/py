@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
+import os
 import time
 import pickle
 
@@ -47,7 +48,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    total_num = 30000
+    total_num = 3000000
 
     floatX = np.float32
 
@@ -61,22 +62,29 @@ class Config(object):
     reserved_word_num = 5000
 
     # paths
-    DATA_DIR = '/home/ecovacs/work/memory_py/data/memn2n/train/tree/origin/'
-    CANDID_PATH = '/home/ecovacs/work/memory_py/data/memn2n/train/tree/origin/candidates.txt'
+    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
+    DATA_DIR = os.path.join(prefix, 'data/memn2n/train/tree/origin/')
+    CANDID_PATH = os.path.join(
+        prefix, 'data/memn2n/train/tree/origin/candidates.txt')
 
-    MULTI_DATA_DIR = '/home/ecovacs/work/memory_py/data/memn2n/train/multi_tree'
-    MULTI_CANDID_PATH = '/home/ecovacs/work/memory_py/data/memn2n/train/multi_tree/candidates.txt'
+    MULTI_DATA_DIR = os.path.join(prefix, 'data/memn2n/train/multi_tree')
+    MULTI_CANDID_PATH = os.path.join(
+        prefix, 'data/memn2n/train/multi_tree/candidates.txt')
 
     data_dir = MULTI_DATA_DIR if multi_label else DATA_DIR
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
-    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
-    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
-    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/ckpt/'
+    metadata_path = os.path.join(
+        prefix, 'data/memn2n/dmn_processed/metadata.pkl')
+    data_path = os.path.join(prefix, 'data/memn2n/dmn_processed/data.pkl')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
 
-    multi_metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/multi_metadata.pkl'
-    multi_data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/multi_data.pkl'
-    multi_ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/multi_ckpt/'
+    multi_metadata_path = os.path.join(
+        prefix, 'data/memn2n/dmn_processed/multi_metadata.pkl')
+    multi_data_path = os.path.join(
+        prefix, 'data/memn2n/dmn_processed/multi_data.pkl')
+    multi_ckpt_path = os.path.join(prefix, 'model/dmn/multi_ckpt/')
 
     metadata_path = multi_metadata_path if multi_label else metadata_path
     data_path = multi_data_path if multi_label else data_path
@@ -495,3 +503,6 @@ class DMN_PLUS(object):
 if __name__ == '__main__':
     config = Config()
     dmn = DMN_PLUS(config)
+    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
+    print(prefix)
