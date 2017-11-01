@@ -246,7 +246,7 @@ if __name__ == '__main__':
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
               "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
-              "clf": 'memory'  # or memory ,dmn ,gbdt
+              "clf": 'dmn'  # or memory ,dmn ,gbdt
               }
     kernel = MainKernel(config)
     while True:

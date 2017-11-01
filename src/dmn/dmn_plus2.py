@@ -43,20 +43,22 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1.5
 
-    num_hops = 3
+    num_hops = 2
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    total_num = 20000
+    total_num = 30000
 
     floatX = np.float32
 
-    multi_label = True
+    multi_label = False
     top_k = 5
     max_memory_size = 20
     fix_vocab = True
 
     train_mode = True
+
+    reserved_word_num = 5000
 
     # paths
     DATA_DIR = '/home/ecovacs/work/memory_py/data/memn2n/train/tree/origin/'
@@ -114,6 +116,7 @@ class DMN_PLUS(object):
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
 
+        self.word2vec = metadata['word2vec']
         self.word_embedding = np.asarray(metadata['word_embedding'])
         # print(type(self.word_embedding))
         self.max_q_len = metadata['max_q_len']

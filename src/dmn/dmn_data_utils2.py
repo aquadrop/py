@@ -2,6 +2,7 @@ import sys
 
 import os as os
 import json
+import pickle
 import numpy as np
 from functools import reduce
 
@@ -151,24 +152,48 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
     return np.vstack(padded)
 
 
-def process_word_core(word, w2idx, idx2w, word_embedding, word2vec):
+def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
+    def get_next_index(w2idx):
+        words = list(w2idx.keys())
+        # words.sort()
+        for w in words:
+            if w.startswith('reserved_'):
+                next_index = w2idx[w]
+                del w2idx[w]
+                return next_index, w
+        return 0, 'unk'
+    # print(init)
     if not word in w2idx:
-        next_index = len(w2idx)
-        w2idx[word] = next_index
-        idx2w[next_index] = word
-        embedding = getVector(word)
-        word2vec[word] = embedding
-        word_embedding.append(embedding)
+        if init:
+            next_index = len(w2idx)
+            w2idx[word] = next_index
+            idx2w[next_index] = word
+            embedding = getVector(word)
+            word2vec[word] = embedding
+            word_embedding.append(embedding)
+        else:
+            next_index, w = get_next_index(w2idx)
+            if next_index == 0 and w == 'unk':
+                print('****VOCAB SIZE OVERFLOW****')
+                w2idx[word] = next_index
+            else:
+                w2idx[word] = next_index
+                idx2w[next_index] = word
+                embedding = word2vec[w]
+                del word2vec[w]
+                word2vec[word] = embedding
 
 
-def process_word(data, w2idx, idx2w, word_embedding, word2vec):
+def process_word(data, w2idx, idx2w, word_embedding, word2vec, init=False):
     for d in data:
         inp, question, _ = d
         for i in inp:
             for w in i:
-                process_word_core(w, w2idx, idx2w, word_embedding, word2vec)
+                process_word_core(
+                    w, w2idx, idx2w, word_embedding, word2vec, init)
         for w in question:
-            process_word_core(w, w2idx, idx2w, word_embedding, word2vec)
+            process_word_core(w, w2idx, idx2w, word_embedding,
+                              word2vec, init)
 
 
 def load_data(config, split_sentences=True):
@@ -186,13 +211,35 @@ def load_data(config, split_sentences=True):
 
     if config.word2vec_init:
         print('Process word vector.')
-        process_word_core('unk', w2idx, idx2w, word_embedding, word2vec)
-        process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
-                     word_embedding=word_embedding, word2vec=word2vec)
-        process_word(data=val_data, w2idx=w2idx, idx2w=idx2w,
-                     word_embedding=word_embedding, word2vec=word2vec)
-        process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
-                     word_embedding=word_embedding, word2vec=word2vec)
+
+        if os.path.exists(config.metadata_path):
+            print('updata.....')
+            with open(config.metadata_path, 'rb') as f:
+                metadata = pickle.load(f)
+            w2idx = metadata['w2idx']
+            idx2w = metadata['idx2w']
+            word_embedding = metadata['word_embedding']
+            word2vec = metadata['word2vec']
+
+            process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec)
+            process_word(data=val_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec)
+            process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec)
+        else:
+            print('init.....')
+            process_word_core('unk', w2idx, idx2w,
+                              word_embedding, word2vec, init=True)
+            process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+            process_word(data=val_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+            process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
+                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+            for i in range(config.reserved_word_num):
+                process_word_core('reserved_' + str(i), w2idx,
+                                  idx2w, word_embedding, word2vec, init=True)
         vocab_size = len(w2idx)
         # word_embedding = np.asarray(word_embedding)
     else:
@@ -259,6 +306,8 @@ def load_data(config, split_sentences=True):
 
     candidate_size = len(candidates)
 
+    # print(word2vec.keys())
+
     if config.train_mode:
         total_num = min(len(questions), config.total_num)
         num_train = int(total_num * 0.8)
@@ -273,7 +322,7 @@ def load_data(config, split_sentences=True):
             q_lens[num_train:total_num], input_lens[num_train:total_num], \
             input_masks[num_train:total_num], \
             answers[num_train:total_num], rel_labels[num_train:total_num]
-        return train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
+        return train, valid, word_embedding, word2vec, max_q_len, max_input_len, max_mask_len, \
             rel_labels.shape[1], vocab_size, candidate_size, candid2idx, idx2candid, w2idx, idx2w
 
     else:

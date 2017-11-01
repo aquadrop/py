@@ -29,7 +29,7 @@ translator = Translator()
 
 
 def prepare_data(args, config):
-    train, valid, word_embedding, max_q_len, max_input_len, max_sen_len, \
+    train, valid, word_embedding, word2vec, max_q_len, max_input_len, max_sen_len, \
         num_supporting_facts, vocab_size, candidate_size, candid2idx, \
         idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
@@ -39,6 +39,7 @@ def prepare_data(args, config):
     data['train'] = train
     data['valid'] = valid
     metadata['word_embedding'] = word_embedding
+    metadata['word2vec'] = word2vec
     metadata['max_q_len'] = max_q_len
     metadata['max_input_len'] = max_input_len
     metadata['max_sen_len'] = max_sen_len
@@ -203,7 +204,7 @@ class InteractiveSession():
             inputs = []
             questions = []
 
-            q = tokenize(line)
+            q = tokenize(line, char=2)
             q_vector = [self.w2idx[w] for w in q]
             inp_vector = [[self.w2idx[w] for w in s] for s in self.context]
 
@@ -241,7 +242,7 @@ class InteractiveSession():
             r = self.idx2candid[preds[0]]
             reply_msg = r
             r = translator.en2cn(r)
-            r = tokenize(r)
+            r = tokenize(r, char=2)
             self.context.append(r)
 
         return reply_msg
