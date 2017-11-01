@@ -46,8 +46,8 @@ class Qa:
                 best_score = score
                 best_query = _g
                 best_answer = b
-            if score >= REACH:
-                break
+            # if score >= REACH:
+            #     break
             # print(score)
 
         if best_score < THRESHOLD:
