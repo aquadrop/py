@@ -86,6 +86,14 @@ class BeliefTracker:
             query=query)
         return response
 
+    def api_call_slot_json_render(self, api):
+        api = api.replace('api_call_slot_', '').split(",")
+        api_json = dict()
+        for item in api:
+            key, value = item.split(":")
+            api_json[key] = value
+        return api_json
+
     def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
@@ -103,6 +111,18 @@ class BeliefTracker:
         print(self.requested_slots)
         api, avails = self.issue_api()
         return api, avails, should_clear_memory
+
+    def defauting_call(self, query, wild_card=None):
+        self.exploit_once = True
+        if len(self.requested_slots) > 0:
+            query_mapper = {self.requested_slots[0], '*:*'}
+        self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
+        # self.use_wild_card(wild_card)
+        if wild_card and self.exploit_once:
+            self.exploit_wild_card(wild_card=wild_card)
+        print(self.requested_slots)
+        api, avails = self.issue_api()
+        return api, avails
 
     def deny_call(self, slot=None):
         """

@@ -48,12 +48,14 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 
 class Render:
 
-    prefix = ['这样啊..', 'OK..', '好吧']
+    prefix = ['这样啊.', '没问题.', '好吧']
     ANY = 'any'
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
-        self._load_major_render(config['renderer_file'])
-        self._load_location_render(config['renderer_location_file'])
+        self._load_major_render(config['render_api_file'])
+        self._load_location_render(config['render_location_file'])
+        self._load_ambiguity_render(config['render_ambiguity_file'])
+        self._load_recommend_render(config['render_recommend_file'])
         # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
         self.faq = QA('faq')
@@ -87,6 +89,26 @@ class Render:
                 self.location_precludes[index] = preclude.split(',')
                 index += 1
 
+    def _load_recommend_render(self, file):
+        self.recommend_templates = []
+        with open(file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.recommend_templates.append(line)
+
+    def _load_ambiguity_render(self, file):
+        self.dual_removal = []
+        self.mlt_removal = []
+        index = 0
+        with open(file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip('\n')
+                if index == 0:
+                    self.dual_removal = line.split('/')
+                if index > 0:
+                    self.mlt_removal = line.split('/')
+                index += 1
+
     def render_location(self, category, location):
         template = '<category> <location>'
         for i in range(20):
@@ -102,6 +124,24 @@ class Render:
                     template = self.location_templates[index]
                     break
         rendered = template.replace('<category>', category).replace('<location>', location)
+        return rendered
+
+    def render_ambiguity(self, ambiguity_slots):
+        if len(ambiguity_slots) == 2:
+            a = ambiguity_slots[0]
+            b = ambiguity_slots[1]
+            template = np.random.choice(self.dual_removal)
+            rendered = template.replace('<0>', a).replace('<1>', b)
+        if len(ambiguity_slots) > 2:
+            a = ','.join(ambiguity_slots[0:-1])
+            b = ambiguity_slots[-1]
+            template = np.random.choice(self.mlt_removal)
+            rendered = template.replace('<pre>', a).replace('<post>', b)
+        return rendered
+
+    def render_recommend(self, title):
+        template = np.random.choice(self.recommend_templates)
+        rendered = template.replace('<title>', title)
         return rendered
 
     def render_mapper(self, mapper):
@@ -171,7 +211,7 @@ class Render:
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]
-                    return '为您推荐' + doc['title'][0]
+                    return self.render_recommend(doc['title'][0])
                 else:
                     # use loose search, brand and category is mandatory
                     and_mapper.clear()
@@ -185,10 +225,7 @@ class Render:
                     docs = solr_util.query(and_mapper, or_mapper)
                     if len(docs) > 0:
                         doc = docs[0]
-                        if 'discount' in doc and doc['discount']:
-                            return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
-                        else:
-                            return '没有找到完全符合您要求的商品,为您推荐' + doc['title'][0]
+                        return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
                     return response
 
             if response.startswith('api_call_query_price_'):
@@ -249,9 +286,12 @@ if __name__ == "__main__":
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "clf": 'memory'  # or memory
               }
     render = Render(config)
-    print(render.render_location('空调', '三楼'))
+    print(render.render_recommend('空调'))
+    print(render.render_ambiguity(['空调','洗衣机','电视']))

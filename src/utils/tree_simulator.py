@@ -330,6 +330,7 @@ def gen_sessions(belief_tracker, output_files):
     mlt_candidates = []
     with_qa = True
     with_deny = True
+    with_whatever = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -488,10 +489,21 @@ def gen_sessions(belief_tracker, output_files):
     with_base = True
     with_gbdt = False
     base_count = 0
+    base = []
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
                 line = line.strip('\n')
+                base.append(line)
+                if not line:
+                    base_count += 1
+
+    # whatever = []
+    if with_whatever:
+        with open(grandfatherdir + '/data/memn2n/train/base/whatever.txt', encoding='utf-8') as cf:
+            for line in cf:
+                line = line.strip('\n')
+                base.append(line)
                 if not line:
                     base_count += 1
 
@@ -499,39 +511,20 @@ def gen_sessions(belief_tracker, output_files):
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    # if not line:
-                    #     train_count += 1
-                    #     if train_count > 0.7 * base_count:
-                    #         break
-                    f.writelines(line + '\n')
+        for b in base:
+            f.writelines(b + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
         for line in mapper['val']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    if not line:
-                        # train_count += 1
-                        # if train_count > 0.8 * base_count:
-                        f.writelines(line + '\n')
-                        # if train_count > 0.9 * base_count:
-                        #     break
+        for b in base:
+            f.writelines(b + '\n')
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
         for line in mapper['test']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    # if train_count > 0.9 * base_count:
-                    f.writelines(line + '\n')
+        for b in base:
+            f.writelines(b + '\n')
 
     with_faq = True
     if with_faq:
