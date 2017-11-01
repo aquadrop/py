@@ -470,7 +470,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 60000:
+            if i >= 120000:
                 break
 
     # lower everything
@@ -503,10 +503,10 @@ def gen_sessions(belief_tracker, output_files):
             with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
-                    if not line:
-                        train_count += 1
-                        if train_count > 0.7 * base_count:
-                            break
+                    # if not line:
+                    #     train_count += 1
+                    #     if train_count > 0.7 * base_count:
+                    #         break
                     f.writelines(line + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
@@ -517,11 +517,11 @@ def gen_sessions(belief_tracker, output_files):
                 for line in cf:
                     line = line.strip('\n')
                     if not line:
-                        train_count += 1
-                        if train_count > 0.8 * base_count:
-                            f.writelines(line + '\n')
-                        if train_count > 0.9 * base_count:
-                            break
+                        # train_count += 1
+                        # if train_count > 0.8 * base_count:
+                        f.writelines(line + '\n')
+                        # if train_count > 0.9 * base_count:
+                        #     break
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
         for line in mapper['test']:
@@ -530,8 +530,8 @@ def gen_sessions(belief_tracker, output_files):
             with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
-                    if train_count > 0.9 * base_count:
-                        f.writelines(line + '\n')
+                    # if train_count > 0.9 * base_count:
+                    f.writelines(line + '\n')
 
     with_faq = True
     if with_faq:
