@@ -9,11 +9,11 @@ sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.solr_util import solr_qa
-from utils.embedding_util import ff_embedding
+from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
 THRESHOLD = 0.95
-REACH = 0.9999
+REACH = 1
 
 class Qa:
     def __init__(self, core):
@@ -33,14 +33,21 @@ class Qa:
                 continue
             b = doc['b']
             g = doc['g']
-            for _g in g:
-                score = self.similarity(query, _g)
-                if score > best_score:
-                    best_score = score
-                    best_query = _g
-                    best_answer = b
-                    if score >= REACH:
-                        break
+            # for _g in g:
+            #     score = self.similarity(query, _g)
+            #     if score > best_score:
+            #         best_score = score
+            #         best_query = _g
+            #         best_answer = b
+            #         if score >= REACH:
+            #             break
+            score, _g = self.m_similarity(query, g)
+            if score > best_score:
+                best_score = score
+                best_query = _g
+                best_answer = b
+            if score >= REACH:
+                break
             # print(score)
 
         if best_score < THRESHOLD:
@@ -73,6 +80,13 @@ class Qa:
         embed2 = self.embed(tokens2)
 
         return cos(embed1, embed2)
+
+    def m_similarity(self, query1, m_query2):
+        tokens1 = ','.join(tokenize(query1, 3))
+        tokens2 = '@@'.join([','.join(tokenize(t, 3)) for t in m_query2])
+        score, _g = mlt_ff_embedding(tokens1, tokens2)
+
+        return score, _g
 
 
 def test():
