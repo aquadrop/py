@@ -14,7 +14,6 @@ from qa.base import BaseKernel
 
 THRESHOLD = 0.95
 
-
 class Qa:
     def __init__(self, core):
         self.core = core

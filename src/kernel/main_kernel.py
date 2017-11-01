@@ -38,6 +38,8 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 import traceback
+
+
 # for pickle
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
@@ -174,9 +176,11 @@ class MainKernel:
                 #     memory = api
                 #     avails = []
             self.sess.append_memory(memory)
+            #print('rsp：'+response)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
+            #print("render："+render)
             return render
 
     def gbdt_reply(self, q, requested=None):

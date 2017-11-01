@@ -80,7 +80,6 @@ def batch_predict(model, S, Q, n, batch_size):
 
 '''
 
-
 def prepare_data(args):
     if config.MAINTAIN_CANDIDATES >= 1 and config.FIX_VOCAB >=1:
         # ELSE
