@@ -51,7 +51,7 @@ class Config(object):
 
     floatX = np.float32
 
-    multi_label = False
+    multi_label = True
     top_k = 5
     max_memory_size = 20
     fix_vocab = True
@@ -68,9 +68,17 @@ class Config(object):
     data_dir = MULTI_DATA_DIR if multi_label else DATA_DIR
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
-    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/one_metadata.pkl'
-    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/one_data.pkl'
-    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/one_ckpt/'
+    metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/metadata.pkl'
+    data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/data.pkl'
+    ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/ckpt/'
+
+    multi_metadata_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/multi_metadata.pkl'
+    multi_data_path = '/home/ecovacs/work/memory_py/data/memn2n/dmn_processed/multi_data.pkl'
+    multi_ckpt_path = '/home/ecovacs/work/memory_py/model/dmn/multi_ckpt/'
+
+    metadata_path = multi_metadata_path if multi_label else metadata_path
+    data_path = multi_data_path if multi_label else data_path
+    ckpt_path = multi_ckpt_path if multi_label else ckpt_path
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -107,7 +115,7 @@ class DMN_PLUS(object):
             metadata = pickle.load(f)
 
         self.word_embedding = np.asarray(metadata['word_embedding'])
-        print(type(self.word_embedding))
+        # print(type(self.word_embedding))
         self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
         self.max_sen_len = metadata['max_sen_len']
@@ -441,6 +449,7 @@ class DMN_PLUS(object):
                     if A != P:
                         Q = ''.join([self.idx2w.get(idx, '')
                                      for idx in Q.astype(np.int32).tolist()])
+                        Q = Q.replace('unk', '')
                         A = self.idx2candid[A]
                         P = self.idx2candid[P]
                         error.append((Q, A, P))

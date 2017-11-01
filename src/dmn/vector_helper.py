@@ -86,7 +86,7 @@ def getVector(word, embedding_dim=300):
     # print(vector)
     if vector:
         return vector
-    return [0.0] * embedding_dim
+    return np.random.uniform(0.0, 1.0, (embedding_dim,))
 
 
 def embedding_lookup(sequence_num, sequence_length, embedding_dim, input_x, maintain=0):
