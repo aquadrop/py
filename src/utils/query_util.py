@@ -130,7 +130,7 @@ def tokenize(sent, char=config.TOKENIZE_CHAR):
                 tokens.remove(s)
     else:
         tokens = [w for w in list(jieba.cut(sent.strip()))
-                  if w not in STOP_WORDS]
+                  if w not in STOP_WORDS_0]
     return tokens
 
 
