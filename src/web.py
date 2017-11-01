@@ -59,14 +59,14 @@ logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + 
 
 app = Flask(__name__)
 
-config = {"belief_graph": "../../model/graph/belief_graph.pkl",
+config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'on',
-              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
-              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "metadata_dir": os.path.join(parentdir, 'data/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(parentdir, 'data/memn2n/processed/data.pkl'),
+              "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt'),
+              "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
+              "renderer_file": os.path.join(parentdir, 'model/render/render.txt'),
+              "renderer_location_file": os.path.join(parentdir, 'model/render/render_location.txt'),
               "clf": 'memory'  # or memory
               }
 
