@@ -13,7 +13,7 @@ from utils.embedding_util import ff_embedding
 from qa.base import BaseKernel
 
 THRESHOLD = 0.95
-REACH = 0.999
+REACH = 0.9999
 
 class Qa:
     def __init__(self, core):

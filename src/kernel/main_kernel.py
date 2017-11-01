@@ -230,7 +230,8 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
+              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
