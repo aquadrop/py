@@ -178,11 +178,11 @@ class Render:
                 return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
-                    # params = response.replace(
-                    #     'api_call_request_ambiguity_removal_', '')
+                    params = response.replace(
+                        'api_call_request_ambiguity_removal_', '').split(',')
                     # rendered = '你要哪一个呢,' + params
                     # return rendered + "@@" + response
-                    return self.render_api(response)
+                    return self.render_ambiguity(params)
                 # params = response.replace('api_call_request_', '')
                 # params = self.belief_tracker.belief_graph.slots_trans[params]
                 # rendered = '什么' + params
@@ -294,4 +294,4 @@ if __name__ == "__main__":
               }
     render = Render(config)
     print(render.render_recommend('空调'))
-    print(render.render_ambiguity(['空调','洗衣机','电视']))
+    print(render.render('你好', 'api_call_request_ambiguity_removal_手机,苹果'))
