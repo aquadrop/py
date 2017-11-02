@@ -34,7 +34,7 @@ def compose_fq(mapper, option_fields=['price']):
     fq = '*:*'
     if len(must_mapper) > 0:
         must = " AND ".join(["{}:{}".format(key, value) for key, value in must_mapper.items()])
-        fq = must
+        fq = "*:* AND " + must
     if len(option_mapper) > 0:
         fq = fq + ' OR ' + " OR ".join(["{}:{}".format(key, value) for key, value in option_mapper.items()])
 
@@ -59,12 +59,36 @@ def query(must_mappers, option_mapper=None):
     return docs
 
 
-def solr_qa(core, query):
-    params = {'q': query, 'q.op': 'or'}
+def solr_qa(core, query, field=None):
+    if not field:
+        params = {'q': query, 'q.op': 'or', 'rows':20}
+    else:
+        params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
     responses = solr.query(core, params)
     docs = responses.docs
     return docs
 
+def solr_max_value(params, target_field):
+    params['sort'] = target_field + ' desc'
+    params['rows'] = 1
+
+    res = solr.query('category', params)
+    docs = res.docs
+    max_val = 0
+    if len(docs) > 0:
+        max_val = docs[0][target_field]
+    return max_val
+
+def solr_min_value(params, target_field):
+    params['sort'] = target_field + ' asc'
+    params['rows'] = 1
+
+    res = solr.query('category', params)
+    docs = res.docs
+    min_val = 0
+    if len(docs) > 0:
+        min_val = docs[0][target_field]
+    return min_val
 
 def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
 
@@ -110,25 +134,20 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
             "facet.mincount": 1
         }
         params['fq'] = compose_fq(mappers)
-        try:
-            res = solr.query('category', params)
-        except:
-            return solr_facet(mappers, facet_field, is_range, prefix='')
+        res = solr.query('category', params)
         facets = res.get_facet_keys_as_list(prefix + facet_field)
         return facets, len(facets)
     else:
-        start = 1
-        gap = 1
-        end = 100
-        # use facet.range
-        if facet_field == "price":
-            start = 100
-            gap = 3000
-            end = 30000
-        if facet_field == 'ac.power_float':
-            start = 1
-            gap = 0.5
-            end = 10
+        fq = compose_fq(mappers)
+        minmax_params = {
+            'q': '*:*',
+            'fq': fq
+        }
+        max_value = solr_max_value(minmax_params, facet_field)
+        min_value = solr_min_value(minmax_params, facet_field)
+        start = min_value
+        gap = max((max_value - min_value) / 5 * 0.5, 0.5)
+        end = max_value + 10
         params = {
             'q': '*:*',
             'facet': True,
@@ -136,9 +155,18 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
             "facet.mincount": 1,
             'facet.range.start': start,
             'facet.range.end': end,
-            'facet.range.gap': gap
+            'facet.range.gap': gap,
+            'fq': fq
         }
-        params['fq'] = compose_fq(mappers)
+        # use facet.range
+        # if facet_field == "price":
+        #     start = 100
+        #     gap = 3000
+        #     end = 30000
+        # if facet_field == 'ac.power_float':
+        #     start = 1
+        #     gap = 0.5
+        #     end = 10
         res = solr.query('category', params)
         ranges = res.get_facets_ranges()[facet_field].keys()
         ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
@@ -152,6 +180,6 @@ if __name__ == "__main__":
     options = ["price"]
     print(compose_fq(mapper, options))
 
-    mappers = {'brand':"苹果","category":"手机"}
-    facet_field = 'location'
-    print(solr_facet(mappers=mappers, facet_field=facet_field, is_range=False))
+    mappers = {'brand':"美的","category":"空调"}
+    facet_field = 'ac.power_float'
+    print(solr_facet(mappers=mappers, facet_field=facet_field, is_range=True))
