@@ -29,7 +29,7 @@ translator = Translator()
 
 
 class DmnSession():
-    def __init__(self, session, model):
+    def __init__(self, session, model, char=2):
         self.context = [['此', '乃', '空', '文']]
         self.u = None
         self.r = None
@@ -37,15 +37,16 @@ class DmnSession():
         self.session = session
         self.idx2candid = self.model.idx2candid
         self.w2idx = self.model.w2idx
+        self.char = char
 
     def append_memory(self, m):
         if not m:
             return
         m = translator.en2cn(m)
-        m = tokenize(m, char=2)
+        m = tokenize(m, self.char)
         self.context.append(m)
 
-    def clear_memory(self,history=0):
+    def clear_memory(self, history=0):
         if history == 0:
             self.context = [['此', '乃', '空', '文']]
         else:
@@ -60,7 +61,7 @@ class DmnSession():
             inputs = []
             questions = []
 
-            q = tokenize(line, char=2)
+            q = tokenize(line, self.char)
             q_vector = [self.w2idx.get(w, 0) for w in q]
             inp_vector = [[self.w2idx.get(w, 0) for w in s]
                           for s in self.context]
@@ -99,7 +100,7 @@ class DmnSession():
             r = self.idx2candid[preds[0]]
             reply_msg = r
             r = translator.en2cn(r)
-            r = tokenize(r, char=2)
+            r = tokenize(r, self.char)
             self.context.append(r)
 
         return reply_msg, "..."
@@ -129,7 +130,8 @@ class DmnInfer:
                   ckpt.model_checkpoint_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
-        isess = DmnSession(self.session, self.model)
+        char = 2 if self.config.word2vec_init else 1
+        isess = DmnSession(self.session, self.model, char)
         return isess
 
 

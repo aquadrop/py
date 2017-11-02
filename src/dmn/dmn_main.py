@@ -93,7 +93,7 @@ def main(args):
         model = DMN_PLUS(config)
         print('Training DMN-PLUS start')
 
-        best_overall_val_loss = float('inf')
+        best_overall_train_loss = float('inf')
 
         print('==> initializing variables')
         init = tf.global_variables_initializer()
@@ -113,6 +113,10 @@ def main(args):
             best_val_loss = float('inf')
             best_val_accuracy = 0.0
 
+            best_train_epoch = 0
+            best_train_loss = float('inf')
+            best_train_accuracy = 0.0
+
             if args['restore']:
                 print('==> restoring weights')
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
@@ -120,43 +124,44 @@ def main(args):
             print('==> starting training')
             for epoch in range(config.max_epochs):
                 print('Epoch {}'.format(epoch))
-                start = time.time()
+                if epoch % 5 == 0 and epoch > 1:
+                    start = time.time()
+                    train_loss, train_accuracy, train_error = model.run_epoch(
+                        session, model.train, epoch, train_writer,
+                        train_op=model.train_step, train=True)
+                    valid_loss, valid_accuracy, valid_error = model.run_epoch(
+                        session, model.valid)
+                    # print('Training error:')
+                    for e in train_error:
+                        print(e)
+                    # print('Validation error:')
+                    print('Training loss: {}'.format(train_loss))
+                    print('Validation loss: {}'.format(valid_loss))
+                    print('Training accuracy: {}'.format(train_accuracy))
+                    print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                train_loss, train_accuracy, train_error = model.run_epoch(
-                    session, model.train, epoch, train_writer,
-                    train_op=model.train_step, train=True)
-                valid_loss, valid_accuracy, valid_error = model.run_epoch(
-                    session, model.valid)
-                # print('Training error:')
-                for e in train_error:
-                    print(e)
-                # print('Validation error:')
-                print('Training loss: {}'.format(train_loss))
-                print('Validation loss: {}'.format(valid_loss))
-                print('Training accuracy: {}'.format(train_accuracy))
-                print('Vaildation accuracy: {}'.format(valid_accuracy))
+                    if train_loss < best_train_loss:
+                        best_train_loss = train_loss
+                        best_train_epoch = epoch
+                        if best_train_loss < best_overall_train_loss:
+                            print('Saving weights')
+                            best_overall_train_loss = best_train_loss
+                            best_train_accuracy = train_accuracy
+                            saver.save(
+                                session, config.ckpt_path + 'dmn.weights')
 
-                if valid_loss < best_val_loss:
-                    best_val_loss = valid_loss
-                    best_val_epoch = epoch
-                    if best_val_loss < best_overall_val_loss:
-                        print('Saving weights')
-                        best_overall_val_loss = best_val_loss
-                        best_val_accuracy = valid_accuracy
-                        saver.save(session, config.ckpt_path + 'dmn.weights')
+                    # anneal
+                    if train_loss > prev_epoch_loss * model.config.anneal_threshold:
+                        model.config.lr /= model.config.anneal_by
+                        print('annealed lr to %f' % model.config.lr)
 
-                # anneal
-                if train_loss > prev_epoch_loss * model.config.anneal_threshold:
-                    model.config.lr /= model.config.anneal_by
-                    print('annealed lr to %f' % model.config.lr)
+                    prev_epoch_loss = train_loss
 
-                prev_epoch_loss = train_loss
+                    # if epoch - best_val_epoch > config.early_stopping:
+                    #     break
+                    print('Total time: {}'.format(time.time() - start))
 
-                # if epoch - best_val_epoch > config.early_stopping:
-                #     break
-                print('Total time: {}'.format(time.time() - start))
-
-            print('Best validation accuracy:', best_val_accuracy)
+            print('Best train accuracy:', best_train_accuracy)
 
     else:  # inference
         config.train_mode = False

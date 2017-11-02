@@ -27,7 +27,7 @@ class Config(object):
 
     dropout = 0.9
     lr = 0.001
-    l2 = 0.001
+    l2 = 0.005
 
     cap_grads = True
     max_grad_val = 10
