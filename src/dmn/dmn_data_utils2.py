@@ -173,7 +173,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
             word_embedding.append(embedding)
         else:
             next_index, w = get_next_index(w2idx)
-            # print('next_index:{0},word:{1}'.format(next_index, w))
+            print('next_index:{0},word:{1}'.format(next_index, w))
             if next_index == 0 and w == 'unk':
                 print('****VOCAB SIZE OVERFLOW****')
                 w2idx[word] = next_index
@@ -182,8 +182,8 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
                 idx2w[next_index] = word
                 embedding = word2vec[w]
                 new_embedding = getVector(word)
-                index = word_embedding.index(embedding)
-                word_embedding[index] = new_embedding
+                # index = word_embedding.index(embedding)
+                word_embedding[next_index] = new_embedding
                 del word2vec[w]
                 word2vec[word] = new_embedding
 

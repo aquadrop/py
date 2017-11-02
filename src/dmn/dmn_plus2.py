@@ -76,14 +76,14 @@ class Config(object):
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
     metadata_path = os.path.join(
-        prefix, 'data/memn2n/dmn_processed/metadata.pkl')
-    data_path = os.path.join(prefix, 'data/memn2n/dmn_processed/data.pkl')
+        prefix, 'model/dmn/dmn_processed/metadata.pkl')
+    data_path = os.path.join(prefix, 'model/dmn//dmn_processed/data.pkl')
     ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
 
     multi_metadata_path = os.path.join(
-        prefix, 'data/memn2n/dmn_processed/multi_metadata.pkl')
+        prefix, 'model/dmn//dmn_processed/multi_metadata.pkl')
     multi_data_path = os.path.join(
-        prefix, 'data/memn2n/dmn_processed/multi_data.pkl')
+        prefix, 'model/dmn//dmn_processed/multi_data.pkl')
     multi_ckpt_path = os.path.join(prefix, 'model/dmn/multi_ckpt/')
 
     metadata_path = multi_metadata_path if multi_label else metadata_path
