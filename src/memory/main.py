@@ -34,10 +34,10 @@ if config.MULTILABEL >= 1:
 else:
     DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 if config.MULTILABEL >= 1:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/multiple/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/multiple/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
 else:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 HOPS = config.HOPS
@@ -405,8 +405,11 @@ def main(args):
                             np.array(train_preds), train['a'])
                         val_acc = metrics.accuracy_score(val_preds, val['a'])
                         end = time.clock()
-                        print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                              format(i, train_acc, val_acc))
+                        print('Epoch[{}] : <ACCURACY>\n\t,\
+                              training : {} \n\t,\
+                              validation : {}\n\t,\
+                              current_best_accuracy: {}'.
+                              format(i, train_acc, val_acc, lowest_val_acc))
                         print('time:{}'.format(end - begin))
                         # log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
                         #                                         cost_total / (eval_interval * len(batches))))
