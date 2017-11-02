@@ -290,7 +290,7 @@ def gen_sessions(belief_tracker, output_files):
         return api[0]
 
     def render_deny():
-        prefix = np.random.choice(['我不要', '不要', '不要这个', '不想要'])
+        prefix = np.random.choice(['我不要', '不要', '不要这个', '不想要','不喜欢','不喜欢这个'])
         lang = prefix
         cls = 'api_call_deny_all'
         if 'brand' in belief_tracker.filling_slots:
