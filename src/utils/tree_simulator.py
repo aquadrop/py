@@ -388,8 +388,7 @@ def gen_sessions(belief_tracker, output_files):
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
                     qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
-                        + np.random.choice(['在哪里', '在什么地方',
-                                            '在几楼', '在哪里卖', '在哪里买', '在什么地方买'])
+                        + np.random.choice(['在哪里', '在什么地方', '在几楼', '几楼有卖', '在哪里卖', '在哪里买', '在什么地方买'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                         + filling_slots['category'] + '\t' + 'placeholder'
                     flow = 'api_call_query_location_' + 'category:'\
