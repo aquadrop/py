@@ -302,14 +302,14 @@ if __name__ == "__main__":
     # load_belief_graph(
     #     "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
     #     "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
-    table_files = ['../../data/gen_product/bingxiang.txt',
-                   '../../data/gen_product/dianshi.txt',
+    table_files = ['../../data/gen_product/冰箱.txt',
+                   '../../data/gen_product/电视.txt',
                    '../../data/gen_product/digitals.txt',
                    '../../data/gen_product/homewares.txt',
-                   '../../data/gen_product/kongtiao.txt',
+                   '../../data/gen_product/空调.txt',
                    '../../data/gen_product/root.txt',
-                   '../../data/gen_product/shouji.txt',
-                   '../../data/gen_product/pc.txt',
+                   '../../data/gen_product/手机.txt',
+                   '../../data/gen_product/电脑.txt',
                    '../../data/gen_product/grocery.txt',
                    '../../data/gen_product/fruits.txt']
     additional = "净水器.txt,household.txt,kitchenwares.txt,\

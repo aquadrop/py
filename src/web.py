@@ -65,8 +65,10 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "data_dir": os.path.join(parentdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
-              "renderer_file": os.path.join(parentdir, 'model/render/render.txt'),
-              "renderer_location_file": os.path.join(parentdir, 'model/render/render_location.txt'),
+              "render_api_file": os.path.join(parentdir, 'model/render/render_api.txt'),
+              "render_location_file": os.path.join(parentdir, 'model/render/render_location.txt'),
+              "render_recommend_file": os.path.join(parentdir, 'model/render/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(parentdir, 'model/render/render_ambiguity_removal.txt'),
               "clf": 'memory'  # or memory
               }
 

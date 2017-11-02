@@ -157,6 +157,10 @@ class MainKernel:
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
                         avails = []
+                    elif api == 'api_call_slot_whatever':
+                        response, avails = self.memory.defaulting_call(
+                            q, wild_card)
+                        prefix = self.render.random_prefix()
                     else:
                         api_json = self.api_call_slot_json_render(api)
                         response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
@@ -245,8 +249,10 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "clf": 'dmn'  # or memory
               }
     kernel = MainKernel(config)
