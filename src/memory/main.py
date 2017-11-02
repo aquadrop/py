@@ -34,10 +34,10 @@ if config.MULTILABEL >= 1:
 else:
     DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 if config.MULTILABEL >= 1:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/multiple/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/multiple/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
 else:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 HOPS = config.HOPS
