@@ -253,7 +253,7 @@ if __name__ == '__main__':
               "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "clf": 'dmn'  # or memory
+              "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
     while True:
