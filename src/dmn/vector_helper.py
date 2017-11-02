@@ -7,7 +7,7 @@ loop_word = 0
 dim_shrink = 1
 sentence_vector_dict = {}
 
-path = '/home/ecovacs/work/word2vec/benebot_vector/word2vec.bin'
+path = '/opt/word2vec/benebot_vector/word2vec.bin'
 
 
 class Singleton(type):

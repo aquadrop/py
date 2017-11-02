@@ -781,8 +781,8 @@ class BeliefTracker:
                 mapper[node.slot] = node.value
                 node = node.parent_node
             return solr_util.solr_facet(mappers=mapper,
-                                        facet_field=facet_field, 
-                                        is_range=False, prefix='facet_')
+                                        facet_field=facet_field,
+                                        is_range=True, prefix='facet_')
 
     def issue_class(self):
         if self.machine_state == self.TRAVEL_STATE:
