@@ -111,7 +111,7 @@ def ac_product_gen(product_file, data_file):
                 tt.append(ac[t])
 
             ac['title'] = " ".join(tt)
-
+            ac['ac.power_float'] = power
             output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
 
@@ -511,15 +511,15 @@ if __name__ == "__main__":
     #     household_product_gen(product_file, data_file)
 
     # phone_product_gen("../../data/raw/product_phone.txt", '../../data/gen_product/手机.txt')
-    # ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/空调.txt')
+    ac_product_gen("../../data/raw/product_ac.txt", '../../data/gen_product/空调.txt')
     # tv_product_gen("../../data/raw/product_tv.txt", '../../data/gen_product/电视.txt')
     # pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/电脑.txt')
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/冰箱.txt')
 
     update_solr("../../data/raw/product_ac.txt")
-    update_solr("../../data/raw/pc.txt")
-    update_solr("../../data/raw/product_tv.txt")
-
-    update_solr("../../data/raw/product_phone.txt")
-    update_solr("../../data/raw/product_fr.txt")
-    update_solr("../../data/raw/household.txt")
+    # update_solr("../../data/raw/pc.txt")
+    # update_solr("../../data/raw/product_tv.txt")
+    #
+    # update_solr("../../data/raw/product_phone.txt")
+    # update_solr("../../data/raw/product_fr.txt")
+    # update_solr("../../data/raw/household.txt")
