@@ -405,8 +405,11 @@ def main(args):
                             np.array(train_preds), train['a'])
                         val_acc = metrics.accuracy_score(val_preds, val['a'])
                         end = time.clock()
-                        print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                              format(i, train_acc, val_acc))
+                        print('Epoch[{}] : <ACCURACY>\n\t,\
+                              training : {} \n\t,\
+                              validation : {}\n\t,\
+                              current_best_accuracy: {}'.
+                              format(i, train_acc, val_acc, lowest_val_acc))
                         print('time:{}'.format(end - begin))
                         # log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
                         #                                         cost_total / (eval_interval * len(batches))))
