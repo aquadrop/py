@@ -586,7 +586,7 @@ def gen_sessions(belief_tracker, output_files):
             af.writelines(line + '\n')
 
     print('writing', len(train_set), len(
-        val_set), len(test_set), len_origin, len(candidates), 'base_count:', train_count)
+        val_set), len(test_set), len_origin, len(candidates), 'base_count:', len(base))
 
     if not with_gbdt:
         return
