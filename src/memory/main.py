@@ -11,7 +11,7 @@ sys.path.insert(0, parentdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-translator=Translator()
+translator = Translator()
 
 import numpy as np
 import tensorflow as tf
@@ -34,10 +34,10 @@ if config.MULTILABEL >= 1:
 else:
     DATA_DIR = grandfatherdir + '/data/memn2n/train/tree'
 if config.MULTILABEL >= 1:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/multiple/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/multiple/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt_mlt'
 else:
-    P_DATA_DIR = grandfatherdir + '/data/memn2n/processed/'
+    P_DATA_DIR = grandfatherdir + '/model/memn2n/processed/'
     CKPT_DIR = grandfatherdir + '/model/memn2n/ckpt'
 W2V_DIR = grandfatherdir + '/model/w2v/'
 HOPS = config.HOPS
@@ -82,9 +82,22 @@ def batch_predict(model, S, Q, n, batch_size):
 
 
 def prepare_data(args):
-    # get candidates (restaurants)
-    candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
+    if config.MAINTAIN_CANDIDATES >= 1 and config.FIX_VOCAB >=1:
+        # ELSE
+        # read data and metadata from pickled files
+        with open(P_DATA_DIR + 'metadata.pkl', 'rb') as f:
+            metadata = pkl.load(f)
+        with open(P_DATA_DIR + 'data.pkl', 'rb') as f:
+            data_ = pkl.load(f)
+            # read content of data and metadata
+        candidates = data_['candidates']
+        candid2idx, idx2candid = metadata['candid2idx'], metadata['idx2candid']
+    else:
+        # get candidates (restaurants)
+        candidates, candid2idx, idx2candid = data_utils.load_candidates(
+            candidates_f=os.path.join(DATA_DIR, 'candidates.txt'))
+
+
     # get data
     train, test, val = data_utils.load_dialog(
         data_dir=DATA_DIR,
@@ -162,6 +175,7 @@ def parse_args(args):
     args = vars(parser.parse_args(args))
     return args
 
+
 def _check_restore_parameters(sess, saver, model_path):
     """ Restore the previously trained parameters if there are any. """
     print("--checking directory:", model_path)
@@ -171,6 +185,7 @@ def _check_restore_parameters(sess, saver, model_path):
         saver.restore(sess, ckpt.model_checkpoint_path)
     else:
         print("Initializing fresh parameters for the model")
+
 
 class InteractiveSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -183,7 +198,6 @@ class InteractiveSession():
         self.w2idx = w2idx
         self.n_cand = model.get_sentence_size()
         self.memory_size = memory_size
-        self.model = model
 
     def reply(self, msg):
         line = msg.strip().lower()
@@ -379,9 +393,9 @@ def main(args):
                             train['s']), batch_size=BATCH_SIZE)
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
-                                print_out = recover(error, train['s'], train['q'],\
-                                                                      train_preds[error], train['a'][error],\
-                                                                      idx2w, idx2candid)
+                                print_out = recover(error, train['s'], train['q'],
+                                                    train_preds[error], train['a'][error],
+                                                    idx2w, idx2candid)
                                 print(print_out)
                                 # print(recover_sentence(train['q'][i], idx2w),
                                 #       recover_cls(train_preds[i], idx2candid),
@@ -392,11 +406,14 @@ def main(args):
                             np.array(train_preds), train['a'])
                         val_acc = metrics.accuracy_score(val_preds, val['a'])
                         end = time.clock()
-                        print('Epoch[{}] : <ACCURACY>\n\ttraining : {} \n\tvalidation : {}'.
-                              format(i, train_acc, val_acc))
+                        print('Epoch[{}] : <ACCURACY>\n\t,\
+                              training : {} \n\t,\
+                              validation : {}\n\t,\
+                              current_best_accuracy: {}'.
+                              format(i, train_acc, val_acc, lowest_val_acc))
                         print('time:{}'.format(end - begin))
-                        log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
-                                                                cost_total / (eval_interval * len(batches))))
+                        # log_handle.write('{} {} {} {}\n'.format(i, train_acc, val_acc,
+                        #                                         cost_total / (eval_interval * len(batches))))
                         cost_total = 0.  # empty cost
                         begin = end
                         #
@@ -434,6 +451,7 @@ def main(args):
         elif args['ui']:
             return isess
 
+
 def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
     predicted = idx2candid[predicted]
     ground = idx2candid[ground.tolist()]
@@ -444,6 +462,7 @@ def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
     except:
         pass
     return last_sentence, sentence, predicted, ground
+
 
 def recover_sentence(sentence_idx, idx2w):
     sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]

@@ -3,6 +3,7 @@ from __future__ import division
 
 import sys
 import time
+import pickle
 
 import numpy as np
 from copy import deepcopy
@@ -13,17 +14,17 @@ from attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
 # import babi_input
-import dmn_data_utils
+import dmn_data_utils2 as dmn_data_utils
 
 
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 100
-    embed_size = 200
-    hidden_size = 125
+    batch_size = 128
+    embed_size = 300
+    hidden_size = 128
 
-    max_epochs = 256
+    max_epochs = 345
     early_stopping = 20
 
     dropout = 0.9
@@ -49,7 +50,7 @@ class Config(object):
     num_attention_features = 4
 
     max_allowed_inputs = 130
-    num_train = 9000
+    num_train = 30000
 
     floatX = np.float32
 
@@ -58,13 +59,16 @@ class Config(object):
 
     train_mode = True
 
+    metadata_path = 'processed/metadata.pkl'
+
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
     """Adds gradient noise as described in http://arxiv.org/abs/1511.06807
     The input Tensor `t` should be a gradient.
     The output will be `t` + gaussian noise.
     0.001 was said to be a good fixed value for memory networks."""
-    with tf.op_scope([t, stddev], name, "add_gradient_noise") as name:
+    # with tf.op_scope([t, stddev], name, "add_gradient_noise") as name:
+    with tf.name_scope(name, "add_gradient_noise", [t, stddev]) as name:
         t = tf.convert_to_tensor(t, name="t")
         gn = tf.random_normal(tf.shape(t), stddev=stddev)
         return tf.add(t, gn, name=name)
@@ -87,40 +91,58 @@ def _position_encoding(sentence_size, embedding_size):
 class DMN_PLUS(object):
 
     def load_data(self, debug=False):
-        """Loads train/valid/test data and sentence encoding"""
-        if self.config.train_mode:
-            self.train, self.valid, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-                self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-                    self.config, split_sentences=True)
+        """Loads data from metadata"""
+        print('Load metadata')
 
-        else:
-            self.test, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-                self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-                    self.config, split_sentences=True)
+        with open(self.config.metadata_path, 'rb') as f:
+            metadata = pickle.load(f)
+        self.train = metadata['train']
+        self.valid = metadata['valid']
+        self.word_embedding = metadata['word_embedding']
+        self.max_q_len = metadata['max_q_len']
+        self.max_input_len = metadata['max_input_len']
+        self.max_sen_len = metadata['max_sen_len']
+        self.num_supporting_facts = metadata['num_supporting_facts']
+        self.vocab_size = metadata['vocab_size']
+        self.candidate_size = metadata['candidate_size']
+        self.candid2idx = metadata['candid2idx']
+        self.idx2candid = metadata['idx2candid']
+        self.w2idx = metadata['w2idx']
+        self.idx2w = metadata['idx2w']
+
+        # if self.config.train_mode:
+        #     self.train, self.valid, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
+        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
+        #             self.config, split_sentences=True)
+
+        # else:
+        #     self.test, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
+        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
+        #             self.config, split_sentences=True)
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
 
     def add_placeholders(self):
         """add data placeholder to graph"""
         self.question_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size, self.max_q_len))
+            tf.int32, shape=(self.config.batch_size, self.max_q_len), name='question')
         self.question_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,))
+            tf.int32, shape=(self.config.batch_size,), name='question_len')
 
         self.input_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.max_input_len, self.max_sen_len))
+            self.config.batch_size, self.max_input_len, self.max_sen_len), name='input')
         self.input_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,))
+            tf.int32, shape=(self.config.batch_size,), name='input_len')
 
         self.answer_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,))
+            tf.int32, shape=(self.config.batch_size,), name='answer')
         # self.answer_len_placeholder = tf.placeholder(
         #     tf.int32, shape=(self.config.batch_size,))
 
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.num_supporting_facts))
+            self.config.batch_size, self.num_supporting_facts), name='rel_label')
 
-        self.dropout_placeholder = tf.placeholder(tf.float32)
+        self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
     def get_predictions(self, output):
         preds = tf.nn.softmax(output)
@@ -325,6 +347,7 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
+
         total_loss = []
         accuracy = 0
 
@@ -362,8 +385,28 @@ class DMN_PLUS(object):
 
         if verbose:
             sys.stdout.write('\r')
-
+        # print('total_steps:', total_steps)
+        # print('float_total_steps:', float(total_steps))
         return np.mean(total_loss), accuracy / float(total_steps)
+
+    def predict(self, session, inputs, max_input_len, max_sen_len, questions, max_q_len):
+        dropout = 0.9
+        # answer = np.zeros((self.config.batch_size,))
+        # rel_label = np.zeros(
+        #     (self.config.batch_size, self.num_supporting_facts))
+
+        feed = {
+            self.question_placeholder: questions,
+            self.input_placeholder: inputs,
+            self.question_len_placeholder: max_q_len,
+            self.input_len_placeholder: max_input_len,
+            # self.answer_placeholder: answer,
+            # self.rel_label_placeholder: rel_label,
+            self.dropout_placeholder: dropout
+        }
+        pred = session.run([self.pred], feed_dict=feed)
+
+        return pred
 
     def __init__(self, config):
         self.config = config

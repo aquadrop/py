@@ -37,8 +37,11 @@ class Memn2nSession():
         self.memory_size = memory_size
         self.model = model
 
-    def clear_memory(self):
-        self.context = []
+    def clear_memory(self, history=0):
+        if history == 0:
+            self.context = []
+        else:
+            self.context = self.context[-history:]
         self.nid = 1
 
     def append_memory(self, m):
@@ -97,6 +100,11 @@ class Memn2nSession():
                                                     self.n_cand,
                                                     self.memory_size)
                 preds, top_probs = self.model.predict(s, q)
+                prob = 1
+                try:
+                    prob = top_probs.values[0][0]
+                except:
+                    pass
                 r = self.idx2candid[preds[0]]
                 reply_msg = r
                 if config.FIX_VOCAB:
@@ -112,7 +120,7 @@ class Memn2nSession():
                 self.context.append(r)
                 self.nid += 1
 
-        return reply_msg
+        return reply_msg, prob
 
 
 class MemInfer:

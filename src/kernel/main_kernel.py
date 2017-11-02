@@ -42,26 +42,29 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
+from dmn.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
-from qa.qa import Qa as QA
+from qa.iqa import Qa as QA
 import memory.config as config
 from kernel.render import Render
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
-                    'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
+                                                               'logs/log_corpus_' + current_date + '.log'), 'w',
+                                                  'utf-8')],
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
+
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
 
 class MainKernel:
-
     static_memory = None
+    static_dmn = None
     static_render = None
 
     def __init__(self, config):
@@ -72,6 +75,9 @@ class MainKernel:
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
+        elif config['clf'] == 'dmn':
+            self._load_dmn(config)
+            self.sess = self.dmn.get_session()
         else:
             self.sess = Multilabel_Clf.load(
                 model_path=config['gbdt_model_path'])
@@ -82,6 +88,13 @@ class MainKernel:
             MainKernel.static_memory = self.memory
         else:
             self.memory = MainKernel.static_memory
+
+    def _load_dmn(self, config):
+        if not MainKernel.static_dmn:
+            self.dmn = DmnInfer()
+            MainKernel.static_dmn = self.dmn
+        else:
+            self.dmn = MainKernel.static_dmn
 
     def _load_render(self, config):
         if not MainKernel.static_render:
@@ -95,13 +108,14 @@ class MainKernel:
             return 'api_call_error'
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
+        prob = -1
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
             api = self.gbdt_reply(range_rendered, requested)
             print(api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(
+                response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                     q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
@@ -134,8 +148,8 @@ class MainKernel:
                     #     self.belief_tracker.clear_memory()
                     #     memory = ''
             if not exploited:
-                api = self.sess.reply(range_rendered)
-                print(range_rendered, api)
+                api, prob = self.sess.reply(range_rendered)
+                print(range_rendered, api, prob)
                 response = api
                 memory = api
                 avails = []
@@ -143,10 +157,17 @@ class MainKernel:
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
                         avails = []
+                    elif api == 'api_call_slot_whatever':
+                        response, avails = self.memory.defaulting_call(
+                            q, wild_card)
+                        prefix = self.render.random_prefix()
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(
+                        response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
+                        if should_clear_memory:
+                            print('restart suning session..')
+                            self.sess.clear_memory(history=2)
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -160,22 +181,24 @@ class MainKernel:
                     prefix = self.render.random_prefix()
                     print('tree rendered after deny..', response)
                 if api == 'api_call_deny_brand':
-                    response, avails = self.belief_tracker.deny_call(slot='brand')
+                    response, avails = self.belief_tracker.deny_call(
+                        slot='brand')
                     memory = response
                     prefix = self.render.random_prefix()
                     print('tree rendered after deny brand..', response)
                     # print(response, type(response))
-                # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
-                #     # self.sess.clear_memory()
-                #     matched, answer, score = self.interactive.get_responses(
-                #         query=q)
-                #     response = answer
-                #     memory = api
-                #     avails = []
+                    # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
+                    #     # self.sess.clear_memory()
+                    #     matched, answer, score = self.interactive.get_responses(
+                    #         query=q)
+                    #     response = answer
+                    #     memory = api
+                    #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
-            logging.info("C@user:{}##model:{}##query:{}##class:{}##render:{}".format(
-                user, 'memory', q, api, render))
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
+                avails)
+            logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
+                user, 'memory', q, api, prob, render))
             return render
 
     def gbdt_reply(self, q, requested=None):
@@ -216,7 +239,7 @@ if __name__ == '__main__':
     #           "solr.facet": 'on',
     #           "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/metadata.pkl'),
     #           "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/archive/data.pkl'),
-    #           "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt2'),
+    #           "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
     #           "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
     #           "clf": 'memory'  # or memory
     #           }
@@ -226,7 +249,10 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
+              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
