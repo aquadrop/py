@@ -11,6 +11,8 @@ import os
 import sys
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 parentdir = os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))
@@ -123,14 +125,20 @@ def main(args):
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                print('Epoch {}'.format(epoch))
-                if epoch % 5 == 0 and epoch > 1:
+                if not (epoch % 5 == 0 and epoch > 1):
+                    print('Epoch {}'.format(epoch))
+                    _ = model.run_epoch(session, model.train, epoch, train_writer,
+                                        train_op=model.train_step, train=True)
+                    _ = model.run_epoch(session, model.valid, epoch, train_writer,
+                                        train_op=model.train_step, train=True)
+                else:
+                    print('Epoch {}'.format(epoch))
                     start = time.time()
                     train_loss, train_accuracy, train_error = model.run_epoch(
                         session, model.train, epoch, train_writer,
-                        train_op=model.train_step, train=True)
+                        train_op=model.train_step, train=True, display=True)
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
-                        session, model.valid)
+                        session, model.valid, display=True)
                     # print('Training error:')
                     for e in train_error:
                         print(e)

@@ -390,7 +390,7 @@ class DMN_PLUS(object):
 
         return output
 
-    def run_epoch(self, session, data, num_epoch=0, train_writer=None, train_op=None, verbose=2, train=False):
+    def run_epoch(self, session, data, num_epoch=0, train_writer=None, train_op=None, verbose=2, train=False, display=False):
         config = self.config
         dp = config.dropout
         if train_op is None:
@@ -407,6 +407,21 @@ class DMN_PLUS(object):
         qp, ip, ql, il, im, a, r = data
         qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
 
+        if not display:
+            for step in range(total_steps):
+                index = range(step * config.batch_size,
+                              (step + 1) * config.batch_size)
+                feed = {self.question_placeholder: qp[index],
+                        self.input_placeholder: ip[index],
+                        self.question_len_placeholder: ql[index],
+                        self.input_len_placeholder: il[index],
+                        self.answer_placeholder: a[index],
+                        self.rel_label_placeholder: r[index],
+                        self.dropout_placeholder: dp}
+
+                _ = session.run([train_op], feed_dict=feed)
+            return display
+
         for step in range(total_steps):
             index = range(step * config.batch_size,
                           (step + 1) * config.batch_size)
@@ -417,6 +432,7 @@ class DMN_PLUS(object):
                     self.answer_placeholder: a[index],
                     self.rel_label_placeholder: r[index],
                     self.dropout_placeholder: dp}
+
             loss, pred, summary, output, _ = session.run(
                 [self.calculate_loss, self.pred, self.merged, self.output, train_op], feed_dict=feed)
 

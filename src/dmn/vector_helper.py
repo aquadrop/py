@@ -7,7 +7,7 @@ loop_word = 0
 dim_shrink = 1
 sentence_vector_dict = {}
 
-path = '/home/ecovacs/work/word2vec/benebot_vector/word2vec.bin'
+path = '/opt/word2vec/benebot_vector/word2vec.bin'
 
 
 class Singleton(type):
@@ -42,11 +42,11 @@ class BenebotVector(metaclass=Singleton):
         return result
 
     def getSimilarWords(self, word):
-        result = model.most_similar(word.strip())
+        result = self.model.most_similar(word.strip())
         return result
 
     def calWordSimilarity(self, word1, word2):
-        result = model.similarity(word1.strip(), word2.strip())
+        result = self.model.similarity(word1.strip(), word2.strip())
         return result
 
     def getVectorBySentence(self, sentence):
@@ -132,7 +132,7 @@ def embedding_lookup(sequence_num, sequence_length, embedding_dim, input_x, main
 def main():
     while True:
         ipt = input("input:")
-        vec = getVector(ipt)
+        vec = bv.getSimilarWords(ipt)
         print(len(vec), vec)
 
 
