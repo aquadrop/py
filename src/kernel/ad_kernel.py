@@ -49,6 +49,7 @@ class AdKernel:
     AD_THRES = 1
     def __init__(self, config):
         self._load_faq_ad_anchor(config['faq_ad'])
+        self._load_category_ad_anchor(config['location_ad'])
 
     def _load_faq_ad_anchor(self, file):
         self.faq_ads = {}
@@ -59,10 +60,29 @@ class AdKernel:
                 ads = ad.split('/')
                 self.faq_ads[answer] = ads
 
+    def _load_category_ad_anchor(self, file):
+        self.category_ads = {}
+        self.bridge = []
+        with open(file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                category, ad = line.split('#')
+                if category == 'bridge':
+                    self.bridge = ad.split('/')
+                    continue
+                ads = ad.split('/')
+                self.category_ads[category] = ads
+
     def anchor_faq_ad(self, _id):
         if np.random.random() < self.AD_THRES:
             if _id in self.faq_ads:
                 return np.random.choice(self.faq_ads[_id])
+        return ''
+
+    def anchor_category_ad(self, category):
+        if np.random.random() < self.AD_THRES:
+            if category in self.category_ads:
+                return np.random.choice(self.bridge) + np.random.choice(self.category_ads[category])
         return ''
 
     def render_ad(self):

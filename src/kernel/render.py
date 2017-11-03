@@ -300,6 +300,9 @@ class Render:
 
                 facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
                 response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
+                if 'category' in mapper:
+                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
+                    response = response + ' ' + ad
                 return response
 
             if response.startswith('api_call_query_location_'):
@@ -315,6 +318,9 @@ class Render:
                 location = ','.join(facet[0])
                 category = mapper['category']
                 response = self.render_location(category, location)
+                if 'category' in mapper:
+                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
+                    response = response + ' ' + ad
                 return response
 
             return response
@@ -338,6 +344,7 @@ if __name__ == "__main__":
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
               "clf": 'memory'  # or memory
               }
     render = Render(config)
