@@ -15,9 +15,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -31,9 +31,9 @@ translator = Translator()
 
 
 def prepare_data(args, config):
-    train, valid, word_embedding, word2vec, max_q_len, max_input_len, max_sen_len, \
-        num_supporting_facts, vocab_size, candidate_size, candid2idx, \
-        idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
+    train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
+    num_supporting_facts, vocab_size, candidate_size, candid2idx, \
+    idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
 
     metadata = dict()
@@ -41,6 +41,7 @@ def prepare_data(args, config):
     data['train'] = train
     data['valid'] = valid
     metadata['word_embedding'] = word_embedding
+    metadata['updated_embedding'] = word_embedding
     metadata['word2vec'] = word2vec
     metadata['max_q_len'] = max_q_len
     metadata['max_input_len'] = max_input_len
@@ -52,6 +53,9 @@ def prepare_data(args, config):
     metadata['idx2candid'] = idx2candid
     metadata['w2idx'] = w2idx
     metadata['idx2w'] = idx2w
+
+    print('after.')
+    print('updated_embedding:', updated_embedding.keys())
 
     with open(config.metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
@@ -122,6 +126,12 @@ def main(args):
             if args['restore']:
                 print('==> restoring weights')
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
+                if len(model.updated_embedding):
+                    print('==> update embedding')
+                    session.run(model.embedding_init, feed_dict={model.embedding_placeholder: model.word_embedding})
+
+            else:
+                session.run(model.embedding_init, feed_dict={model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -135,10 +145,10 @@ def main(args):
                     print('Epoch {}'.format(epoch))
                     start = time.time()
                     train_loss, train_accuracy, train_error = model.run_epoch(
-                        session, model.train, epoch, train_writer,
-                        train_op=model.train_step, train=True, display=True)
+                            session, model.train, epoch, train_writer,
+                            train_op=model.train_step, train=True, display=True)
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
-                        session, model.valid, display=True)
+                            session, model.valid, display=True)
                     # print('Training error:')
                     for e in train_error:
                         print(e)
@@ -156,7 +166,7 @@ def main(args):
                             best_overall_train_loss = best_train_loss
                             best_train_accuracy = train_accuracy
                             saver.save(
-                                session, config.ckpt_path + 'dmn.weights')
+                                    session, config.ckpt_path + 'dmn.weights')
 
                     # anneal
                     if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -225,7 +235,7 @@ class InteractiveSession():
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                inputs)
+                    inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
             # max_q_len = np.max(q_lens)
@@ -244,7 +254,7 @@ class InteractiveSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                questions, q_lens, max_q_len)
+                    questions, q_lens, max_q_len)
             # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
 

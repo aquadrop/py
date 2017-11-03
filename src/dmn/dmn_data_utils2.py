@@ -7,11 +7,11 @@ import numpy as np
 from functools import reduce
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 
 import dmn.data_utils as data_utils
 from dmn.vector_helper import getVector
@@ -38,7 +38,7 @@ def get_candidates_word_dict():
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
 
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
+            candidates_f=os.path.join(grandfatherdir, CANDID_PATH))
 
     return idx2candid, w2idx
 
@@ -46,12 +46,12 @@ def get_candidates_word_dict():
 def load_raw_data(data_path, candid_path, word2vec_init=False):
     print('Load raw data.')
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
-        candidates_f=candid_path)
+            candidates_f=candid_path)
 
     char = 2 if word2vec_init else 1
     train_data, test_data, val_data = data_utils.load_dialog(
-        data_dir=data_path,
-        candid_dic=candid2idx, char=char)
+            data_dir=data_path,
+            candid_dic=candid2idx, char=char)
     # print(len(train_data))
     # print(os.path.join(grandfatherdir, DATA_DIR))
     return train_data, test_data, val_data, candidates, candid2idx, idx2candid
@@ -90,10 +90,10 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         if not split_sentences:
             if input_mask_mode == 'word':
                 input_masks.append(
-                    np.array([index for index, w in enumerate(inp)], dtype=np.int32))
+                        np.array([index for index, w in enumerate(inp)], dtype=np.int32))
             elif input_mask_mode == 'sentence':
                 input_masks.append(
-                    np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
+                        np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
             else:
                 raise Exception("invalid input_mask_mode")
 
@@ -142,8 +142,8 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
                 lens[i] = max_len
             padded_sentences = np.vstack(padded_sentences)
             padded_sentences = np.pad(padded_sentences, ((
-                0, max_len - lens[i]), (0, 0)), 'constant',
-                constant_values=0)
+                                                             0, max_len - lens[i]), (0, 0)), 'constant',
+                                      constant_values=0)
             padded[i] = padded_sentences
         return padded
 
@@ -152,7 +152,7 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
     return np.vstack(padded)
 
 
-def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
+def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embedding, init=False):
     def get_next_index(w2idx):
         words = list(w2idx.keys())
         # words.sort()
@@ -162,6 +162,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
                 del w2idx[w]
                 return next_index, w
         return 0, 'unk'
+
     # print(init)
     if not word in w2idx:
         if init:
@@ -172,6 +173,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
             word2vec[word] = embedding
             word_embedding.append(embedding)
         else:
+            print(word)
             next_index, w = get_next_index(w2idx)
             print('next_index:{0},word:{1}'.format(next_index, w))
             if next_index == 0 and w == 'unk':
@@ -180,24 +182,25 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, init=False):
             else:
                 w2idx[word] = next_index
                 idx2w[next_index] = word
-                embedding = word2vec[w]
+                # embedding = word2vec[w]
                 new_embedding = getVector(word)
                 # index = word_embedding.index(embedding)
                 word_embedding[next_index] = new_embedding
+                updated_embedding[next_index] = new_embedding
                 del word2vec[w]
                 word2vec[word] = new_embedding
 
 
-def process_word(data, w2idx, idx2w, word_embedding, word2vec, init=False):
+def process_word(data, w2idx, idx2w, word_embedding, word2vec, updated_embedding, init=False):
     for d in data:
         inp, question, _ = d
         for i in inp:
             for w in i:
                 process_word_core(
-                    w, w2idx, idx2w, word_embedding, word2vec, init)
+                        w, w2idx, idx2w, word_embedding, word2vec, updated_embedding, init)
         for w in question:
             process_word_core(w, w2idx, idx2w, word_embedding,
-                              word2vec, init)
+                              word2vec, updated_embedding, init)
 
 
 def load_data(config, split_sentences=True):
@@ -205,6 +208,8 @@ def load_data(config, split_sentences=True):
     idx2w = {}
     word_embedding = []
     word2vec = {}
+
+    updated_embedding = {}
 
     data_dir = config.data_dir
     candid_path = config.candid_path
@@ -225,25 +230,34 @@ def load_data(config, split_sentences=True):
             word_embedding = metadata['word_embedding']
             word2vec = metadata['word2vec']
 
+            # print('before.')
+            # print('电视机:', w2idx['电视机'])
+            # print('电冰箱:', w2idx['电冰箱'])
+            # print('vocab_size:', metadata['vocab_size'])
+            # print('word_embedding:', len(word_embedding))
+
             process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding)
             process_word(data=val_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding)
             process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding)
         else:
             print('init.....')
             process_word_core('unk', w2idx, idx2w,
-                              word_embedding, word2vec, init=True)
+                              word_embedding, word2vec, updated_embedding, init=True)
             process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding,
+                         init=True)
             process_word(data=val_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding,
+                         init=True)
             process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
-                         word_embedding=word_embedding, word2vec=word2vec, init=True)
+                         word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding,
+                         init=True)
             for i in range(config.reserved_word_num):
                 process_word_core('reserved_' + str(i), w2idx,
-                                  idx2w, word_embedding, word2vec, init=True)
+                                  idx2w, word_embedding, word2vec, updated_embedding, init=True)
         vocab_size = len(w2idx)
         # word_embedding = np.asarray(word_embedding)
     else:
@@ -253,9 +267,9 @@ def load_data(config, split_sentences=True):
         idx2w = dict((i + 1, c) for i, c in enumerate(vocab))
         vocab_size = len(vocab)
         word_embedding = np.random.uniform(
-            -config.embedding_init,
-            config.embedding_init,
-            (vocab_size, config.embed_size))
+                -config.embedding_init,
+                config.embedding_init,
+                (vocab_size, config.embed_size))
 
     train_data = process_data(train_data, config.floatX, w2idx)
     val_data = process_data(val_data, config.floatX, w2idx)
@@ -318,28 +332,28 @@ def load_data(config, split_sentences=True):
         print(total_num)
         print(num_train)
         train = questions[:num_train], inputs[:num_train], \
-            q_lens[:num_train], \
-            input_lens[:num_train], input_masks[:num_train], \
-            answers[:num_train], rel_labels[:num_train]
+                q_lens[:num_train], \
+                input_lens[:num_train], input_masks[:num_train], \
+                answers[:num_train], rel_labels[:num_train]
 
         valid = questions[num_train:total_num], inputs[num_train:total_num], \
-            q_lens[num_train:total_num], input_lens[num_train:total_num], \
-            input_masks[num_train:total_num], \
-            answers[num_train:total_num], rel_labels[num_train:total_num]
-        return train, valid, word_embedding, word2vec, max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], vocab_size, candidate_size, candid2idx, idx2candid, w2idx, idx2w
+                q_lens[num_train:total_num], input_lens[num_train:total_num], \
+                input_masks[num_train:total_num], \
+                answers[num_train:total_num], rel_labels[num_train:total_num]
+        return train, valid, word_embedding, word2vec,updated_embedding, max_q_len, max_input_len, max_mask_len, \
+               rel_labels.shape[1], vocab_size, candidate_size, candid2idx, idx2candid, w2idx, idx2w
 
     else:
         test = questions, inputs, q_lens, input_lens, input_masks, answers, rel_labels
         return test, np.asarray(word_embedding), max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], len(vocab), candidate_size
+               rel_labels.shape[1], len(vocab), candidate_size
 
 
 def main():
     from dmn_plus2 import Config
     config = Config()
     train, valid, word_embedding, max_q_len, max_input_len, max_mask_len, \
-        rel_labels, vocab, candidate_size = load_data(config)
+    rel_labels, vocab, candidate_size = load_data(config)
     print(len(train[0]))
     print(len(valid[0]))
 

@@ -131,6 +131,9 @@ def tokenize(sent, char=config.TOKENIZE_CHAR):
     else:
         tokens = [w for w in list(jieba.cut(sent.strip()))
                   if w not in STOP_WORDS_0]
+        # tokens = [w for w in list(jieba.cut_for_search(sent.strip()))
+        #           if w not in STOP_WORDS_0]
+
     return tokens
 
 
@@ -248,6 +251,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
-    # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
-    print(rule_base_num_retreive(''))
+    # print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
+    print(tokenize('电视机', char=2))
+    # print(rule_base_num_retreive(''))

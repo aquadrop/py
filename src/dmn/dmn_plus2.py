@@ -126,6 +126,7 @@ class DMN_PLUS(object):
 
         self.word2vec = metadata['word2vec']
         self.word_embedding = np.asarray(metadata['word_embedding'])
+        self.updated_embedding=metadata['updated_embedding']
         # print(type(self.word_embedding))
         self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
@@ -180,6 +181,12 @@ class DMN_PLUS(object):
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
             None, self.num_supporting_facts), name='rel_label')
 
+        with tf.variable_scope('embedding') as scope:
+            self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
+                                          trainable=True, name="embeddings")
+            self.embedding_placeholder = tf.placeholder(tf.float32, [self.vocab_size, self.config.embed_size])
+            self.embedding_init = self.embeddings.assign(self.embedding_placeholder)
+
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
     def get_predictions(self, output):
@@ -192,9 +199,11 @@ class DMN_PLUS(object):
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
             preds = tf.nn.softmax(output)
+            probs=tf.nn.top_k(preds,k=self.config.top_k)
             pred = tf.argmax(preds, 1)
 
-        return pred
+        return pred,probs
+        # return pred
 
     def add_loss_op(self, output):
         """Calculate loss"""
@@ -348,17 +357,17 @@ class DMN_PLUS(object):
         """Performs inference on the DMN model"""
 
         # set up embedding
-        embeddings = tf.Variable(
-            self.word_embedding.astype(np.float32), name="Embedding")
+        # embeddings = tf.Variable(
+        #     self.word_embedding.astype(np.float32), trainable=False,name="Embedding")
 
         # input fusion module
         with tf.variable_scope("question", initializer=tf.contrib.layers.xavier_initializer()):
             print('==> get question representation')
-            q_vec = self.get_question_representation(embeddings)
+            q_vec = self.get_question_representation(self.embeddings)
 
         with tf.variable_scope("input", initializer=tf.contrib.layers.xavier_initializer()):
             print('==> get input representation')
-            fact_vecs = self.get_input_representation(embeddings)
+            fact_vecs = self.get_input_representation(self.embeddings)
 
         # keep track of attentions for possible strong supervision
         self.attentions = []
@@ -500,9 +509,10 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        pred = session.run([self.pred], feed_dict=feed)
-
-        return pred
+        pred,prob = session.run([self.pred,self.prob], feed_dict=feed)
+        return pred,prob
+        # pred = session.run([self.pred], feed_dict=feed)
+        # return pred
 
     def __init__(self, config):
         self.config = config
@@ -510,7 +520,8 @@ class DMN_PLUS(object):
         self.load_data(debug=False)
         self.add_placeholders()
         self.output = self.inference()
-        self.pred = self.get_predictions(self.output)
+        self.pred,self.prob = self.get_predictions(self.output)
+        # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self.add_loss_op(self.output)
         self.train_step = self.add_training_op(self.calculate_loss)
         self.merged = tf.summary.merge_all()

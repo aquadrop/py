@@ -49,6 +49,7 @@ class DmnSession():
     def clear_memory(self, history=0):
         if history == 0:
             self.context = [['此', '乃', '空', '文']]
+            # self.context = [[]]
         else:
             self.context = self.context[-history:]
 
@@ -56,13 +57,15 @@ class DmnSession():
         line = msg.strip().lower()
         if line == 'clear':
             self.context = []
-            reply_msg = 'memory cleared!'
+            reply_msg = ['memory cleared!']
+            values=[0]
         else:
             inputs = []
             questions = []
 
             q = tokenize(line, self.char)
             q_vector = [self.w2idx.get(w, 0) for w in q]
+            print(q_vector)
             inp_vector = [[self.w2idx.get(w, 0) for w in s]
                           for s in self.context]
 
@@ -73,10 +76,6 @@ class DmnSession():
                 inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
-            # max_q_len = np.max(q_lens)
-
-            # max_input_len = min(np.max(input_lens),
-            #                     self.config.max_allowed_inputs)
 
             max_input_len = self.model.max_input_len
             max_sen_len = self.model.max_sen_len
@@ -85,25 +84,32 @@ class DmnSession():
             inputs = dmn_data_utils.pad_inputs(inputs, input_lens, max_input_len,
                                                "split_sentences", sen_lens, max_sen_len)
 
-            # inputs = [inputs[0] for _ in range(self.config.batch_size)]
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
                 questions, q_lens, max_q_len)
-            # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
 
-            preds = self.model.predict(self.session,
+            preds,probs = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)
-            preds = preds[0].tolist()
-            print(preds)
-            r = self.idx2candid[preds[0]]
-            reply_msg = r
+            print('preds:{0},probs:{1}'.format(preds,probs))
+            # preds = self.model.predict(self.session,
+            #                                   inputs, input_lens, max_sen_len, questions, q_lens)
+            # print('preds:{0}'.format(preds))
+            preds = preds[0]
+            # print(preds)
+            indices=probs.indices.tolist()[0]
+            values = probs.values.tolist()[0]
+
+            reply_msg=[self.idx2candid[ind] for ind in indices]
+            print(reply_msg)
+            r = self.idx2candid[preds]
+            # reply_msg = r
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
             self.context.append(r)
 
-        return reply_msg, "..."
+        return reply_msg[0],values[0]
 
 
 class DmnInfer:
@@ -142,7 +148,7 @@ def main():
     query = ''
     while query != 'exit':
         query = input('>> ')
-        print('>> ' + sess.reply(query))
+        print(sess.reply(query))
 
 
 if __name__ == '__main__':
