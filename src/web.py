@@ -66,6 +66,7 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
               "renderer_file": os.path.join(parentdir, 'model/render/render.txt'),
+              "renderer_location_file": os.path.join(parentdir, 'model/render/render_location.txt'),
               "clf": 'memory'  # or memory
               }
 

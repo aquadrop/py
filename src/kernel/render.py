@@ -40,7 +40,7 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
-from qa.qa import Qa as QA
+from qa.iqa import Qa as QA
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -49,10 +49,11 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 class Render:
 
     prefix = ['这样啊..', 'OK..', '好吧']
-
+    ANY = 'any'
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['renderer_file'])
+        self._load_location_render(config['renderer_location_file'])
         # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
         self.faq = QA('faq')
@@ -71,6 +72,37 @@ class Render:
                     if r:
                         filtered.append(r)
                 self.major_render_mapper[key] = filtered
+
+    def _load_location_render(self, file):
+        self.location_templates = []
+        self.location_applicables = dict()
+        self.location_precludes = dict()
+        index = 0
+        with open(file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip('\n')
+                template, applicable, preclude = line.split('#')
+                self.location_templates.append(template)
+                self.location_applicables[index] = applicable.split(',')
+                self.location_precludes[index] = preclude.split(',')
+                index += 1
+
+    def render_location(self, category, location):
+        template = '<category> <location>'
+        for i in range(20):
+            index = np.random.randint(len(self.location_templates))
+            applicables = self.location_applicables[index]
+            precludes = self.location_precludes[index]
+            if self.ANY in applicables:
+                if category not in precludes:
+                    template = self.location_templates[index]
+                    break
+            else:
+                if category in applicables:
+                    template = self.location_templates[index]
+                    break
+        rendered = template.replace('<category>', category).replace('<location>', location)
+        return rendered
 
     def render_mapper(self, mapper):
         mapper_render = []
@@ -96,10 +128,12 @@ class Render:
                 matched, answer, score = self.interactive.get_responses(
                     query=q)
                 return answer
-            if response.startswith('api_call_faq') or response.startswith('api_call_query_discount'):
+            if response.startswith('api_call_faq'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
                 return answer
+            if response.startswith('api_call_query_discount'):
+                return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
                 return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
             if response.startswith('api_call_request_'):
@@ -137,10 +171,7 @@ class Render:
                 docs = solr_util.query(and_mapper, or_mapper)
                 if len(docs) > 0:
                     doc = docs[0]
-                    if 'discount' in doc and doc['discount']:
-                        return '为您推荐' + doc['title'][0] + ',目前' + doc['discount'][0]
-                    else:
-                        return '为您推荐' + doc['title'][0]
+                    return '为您推荐' + doc['title'][0]
                 else:
                     # use loose search, brand and category is mandatory
                     and_mapper.clear()
@@ -190,15 +221,17 @@ class Render:
 
             if response.startswith('api_call_query_location_'):
                 params = response.replace('api_call_query_location_', '')
-                if not params:
-                    return '无法查阅'
+                if not params or 'category' not in params:
+                    return '我们这里按照商品种类分布,您可以咨询我商品的方位信息'
                 else:
                     mapper = dict()
                     for kv in params.split(','):
                         key, value = kv.split(':')
                         mapper[key] = value
                 facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
-                response = '您要找的' + self.render_mapper(mapper) + '在' + ','.join(facet[0])
+                location = ','.join(facet[0])
+                category = mapper['category']
+                response = self.render_location(category, location)
                 return response
 
             return response
@@ -208,3 +241,17 @@ class Render:
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
             return answer
+
+if __name__ == "__main__":
+    config = {"belief_graph": "../../model/graph/belief_graph.pkl",
+              "solr.facet": 'on',
+              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
+              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
+              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
+              "clf": 'memory'  # or memory
+              }
+    render = Render(config)
+    print(render.render_location('空调', '三楼'))

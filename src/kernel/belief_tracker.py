@@ -8,6 +8,7 @@ import json
 
 import os
 import sys
+import random
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -88,6 +89,11 @@ class BeliefTracker:
     def memory_kernel(self, query, query_mapper, wild_card=None):
         if isinstance(query_mapper, str):
             query_mapper = json.loads(query_mapper, encoding='utf-8')
+        should_clear_memory = False
+        if self.API in query_mapper:
+            if len(query_mapper) == 1 or self.API not in self.filling_slots \
+                    or query_mapper[self.API] != self.filling_slots[self.API]:
+                should_clear_memory = True
         self.rule_base_filter(query, query_mapper)
         self.exploit_once = True
         self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
@@ -96,7 +102,7 @@ class BeliefTracker:
             self.exploit_wild_card(wild_card=wild_card)
         print(self.requested_slots)
         api, avails = self.issue_api()
-        return api, avails
+        return api, avails, should_clear_memory
 
     def deny_call(self, slot=None):
         """
@@ -211,6 +217,7 @@ class BeliefTracker:
         # self.clear_memory()
         self.filling_slots.clear()
         self.requested_slots = self.search_node.gen_required_slot_fields()
+        random.shuffle(self.requested_slots)
         self.fill_slot(node.slot, node.value)
 
     def fill_slot(self, slot, value):
@@ -779,6 +786,8 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
+            fq = solr_util.compose_fq(mapper)
+            print(fq)
             params['fq'] = solr_util.compose_fq(mapper)
             # try:
             res = self.solr.query('category', params)

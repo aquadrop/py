@@ -34,7 +34,7 @@ def compose_fq(mapper, option_fields=['price']):
     fq = '*:*'
     if len(must_mapper) > 0:
         must = " AND ".join(["{}:{}".format(key, value) for key, value in must_mapper.items()])
-        fq = must
+        fq = "*:* AND " + must
     if len(option_mapper) > 0:
         fq = fq + ' OR ' + " OR ".join(["{}:{}".format(key, value) for key, value in option_mapper.items()])
 
@@ -59,8 +59,11 @@ def query(must_mappers, option_mapper=None):
     return docs
 
 
-def solr_qa(core, query):
-    params = {'q': query, 'q.op': 'or'}
+def solr_qa(core, query, field=None):
+    if not field:
+        params = {'q': query, 'q.op': 'or', 'rows':20}
+    else:
+        params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
     responses = solr.query(core, params)
     docs = responses.docs
     return docs

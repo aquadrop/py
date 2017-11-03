@@ -130,7 +130,7 @@ def tokenize(sent, char=config.TOKENIZE_CHAR):
                 tokens.remove(s)
     else:
         tokens = [w for w in list(jieba.cut(sent.strip()))
-                  if w not in STOP_WORDS]
+                  if w not in STOP_WORDS_0]
     return tokens
 
 
@@ -150,7 +150,16 @@ def remove_stop_words(q):
     except:
         return q
 
+rp = {"大一匹": "1.3p", "大1匹":"1.3p"}
+def supersede(query):
+    for key, value in rp.items():
+        query = query.replace(key, value)
+    return query
+
 def rule_base_num_retreive(query):
+
+    query = supersede(query)
+
     inch_dual = r"(([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)寸)"
     meter_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)米"
     ac_power_dual = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)[p|P|匹]"
@@ -164,13 +173,15 @@ def rule_base_num_retreive(query):
     people_single = r"([-+]?\d*\.\d+|\d+)人"
     height = r"高([-+]?\d*\.\d+|\d+)米"
     width = r"宽([-+]?\d*\.\d+|\d+)米"
+    memory = r"([-+]?\d*\.\d+|\d+)[g|G]"
 
     dual = {"__inch__": inch_dual, "__meter__": meter_dual,
             "ac.power": ac_power_dual,
             "price": price_dual}
     single = {"__inch__": inch_single, "__meter__": meter_single,
               "ac.power": ac_power_single,
-              "price": price_single, "people": people_single, "height": height, "width":width}
+              "price": price_single, "people": people_single, "height": height, "width":width,
+              "memory": memory}
 
     wild_card = dict()
     query = str(new_cn2arab(query))
@@ -189,8 +200,8 @@ def rule_base_num_retreive(query):
 
     if flag:
         return render, wild_card
-    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K|人)"
-    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K|人)"
+    price_dual_default = r"([-+]?\d*\.\d+|\d+)[到|至]([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K|人|g|G)"
+    price_single_default = r"([-+]?\d*\.\d+|\d+)(?!P|匹|米|寸|p|T|t|级|k|K|人|g|G)"
     remove_regex = r"\d+[个|只|条|部|本|台]"
     query = re.sub(remove_regex, '', query)
     render, numbers = range_extract(price_dual_default, query, False, True)
@@ -237,6 +248,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s'))
+    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
     # print(tokenize('plugin:api_call_slot,phone.mmem:1.5g do you speak', char=1))
     print(rule_base_num_retreive(''))

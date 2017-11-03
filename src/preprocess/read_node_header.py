@@ -10,14 +10,13 @@ sys.path.append(grandfatherdir)
 
 from graph.belief_graph import *
 
-
 def read_node_header(output_file):
     with open(output_file, 'rb') as f:
         info = pickle.load(f)
     product = info.node_header.keys()
     ofile = open("../../data/dict/ext2.dic", 'w')
     for key in product:
-        print(key)
+        #print(key)
         ofile.write(key + "\n")
     ofile.close()
 

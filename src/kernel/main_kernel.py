@@ -49,7 +49,7 @@ from utils.cn2arab import *
 import utils.query_util as query_util
 from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
-from qa.qa import Qa as QA
+from qa.iqa import Qa as QA
 import memory.config as config
 from kernel.render import Render
 
@@ -101,10 +101,10 @@ class MainKernel:
         if self.config['clf'] == 'gbdt':
             requested = self.belief_tracker.get_requested_field()
             api = self.gbdt_reply(range_rendered, requested)
-            print(api)
+            print("api:",api)
             if 'api_call_slot' == api['plugin']:
                 del api['plugin']
-                response, avails = self.belief_tracker.memory_kernel(
+                response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                     q, api, wild_card)
             elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
                 # self.sess.clear_memory()
@@ -139,6 +139,7 @@ class MainKernel:
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
                 print(range_rendered, api, prob)
+                print("api",api)
                 response = api
                 memory = api
                 avails = []
@@ -148,8 +149,11 @@ class MainKernel:
                         avails = []
                     else:
                         api_json = self.api_call_slot_json_render(api)
-                        response, avails = self.belief_tracker.memory_kernel(
+                        response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
+                        if should_clear_memory:
+                            print('restart suning session..')
+                            self.sess.clear_memory(history=2)
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -182,6 +186,101 @@ class MainKernel:
                 user, 'memory', q, api, prob, render))
             #print("render："+render)
             return render
+
+    def kernel1(self, q, user='solr'):
+        if not q:
+            return 'api_call_error'
+        range_rendered, wild_card = self.range_render(q)
+        print(range_rendered)
+        #print(range_rendered, wild_card)
+        prob = -1
+        if self.config['clf'] == 'gbdt':
+            requested = self.belief_tracker.get_requested_field()
+            api = self.gbdt_reply(range_rendered, requested)
+            #print(api)
+            if 'api_call_slot' == api['plugin']:
+                del api['plugin']
+                response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
+                    q, api, wild_card)
+            elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
+                # self.sess.clear_memory()
+                matched, answer, score = self.interactive.get_responses(
+                    query=q)
+                response = answer
+                avails = []
+            else:
+                response = api['plugin']
+                avails = []
+            if len(avails) == 0:
+                return self.render_response(response)
+            return self.render_response(response) + '#avail_vals:' + str(avails)
+        else:
+            if q.lower() == 'clear':
+                self.belief_tracker.clear_memory()
+                self.sess.clear_memory()
+                return 'memory cleared@@[]'
+            exploited = False
+            prefix = ''
+            if self.belief_tracker.shall_exploit_range():
+                exploited = self.belief_tracker.exploit_wild_card(wild_card)
+                if exploited:
+                    response, avails = self.belief_tracker.issue_api()
+                    memory = ''
+                    api = 'api_call_slot_range_exploit'
+                    # if response.startswith('api_call_search'):
+                    #     print('clear memory')
+                    #     self.sess.clear_memory()
+                    #     self.belief_tracker.clear_memory()
+                    #     memory = ''
+            if not exploited:
+                api, prob = self.sess.reply(range_rendered)
+                #print(range_rendered, api, prob)
+                response = api
+                memory = api
+                avails = []
+                if api.startswith('api_call_slot'):
+                    if api.startswith('api_call_slot_virtual_category'):
+                        response = api
+                        avails = []
+                    else:
+                        api_json = self.api_call_slot_json_render(api)
+                        response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
+                            q, api_json, wild_card)
+                        if should_clear_memory:
+                            #print('restart suning session..')
+                            self.sess.clear_memory(history=2)
+                    memory = response
+                    #print('tree rendered..', response)
+                    if response.startswith('api_call_search'):
+                        # print('clear memory')
+                        # self.sess.clear_memory()
+                        # self.belief_tracker.clear_memory()
+                        memory = ''
+                if api == 'api_call_deny_all':
+                    response, avails = self.belief_tracker.deny_call(slot=None)
+                    memory = response
+                    prefix = self.render.random_prefix()
+                    #print('tree rendered after deny..', response)
+                if api == 'api_call_deny_brand':
+                    response, avails = self.belief_tracker.deny_call(slot='brand')
+                    memory = response
+                    prefix = self.render.random_prefix()
+                    #print('tree rendered after deny brand..', response)
+                    # print(response, type(response))
+                # elif api.startswith('api_call_base') or api.startswith('api_call_greet'):
+                #     # self.sess.clear_memory()
+                #     matched, answer, score = self.interactive.get_responses(
+                #         query=q)
+                #     response = answer
+                #     memory = api
+                #     avails = []
+            self.sess.append_memory(memory)
+            #print('rsp：'+response)
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(avails)
+            logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
+                user, 'memory', q, api, prob, render))
+            #print("render："+render)
+            return  response, api , self.render.render(q, response, self.belief_tracker.avails , prefix),avails
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -231,7 +330,8 @@ if __name__ == '__main__':
               "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "renderer_file": os.path.join(grandfatherdir, 'model/render/render.txt'),
+              "renderer_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
+              "renderer_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
