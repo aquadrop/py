@@ -219,7 +219,7 @@ class Render:
             if response.startswith('api_call_query_general'):
                 return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return self.render_api('api_call_slot_virtual_category', {})
+                return self.render_api(response, {})
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     params = response.replace(
