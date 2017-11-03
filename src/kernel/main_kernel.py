@@ -254,6 +254,7 @@ if __name__ == '__main__':
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
               "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)

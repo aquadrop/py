@@ -41,6 +41,7 @@ sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
+from kernel.ad_kernel import AdKernel
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -57,6 +58,7 @@ class Render:
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
+        self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
         self.faq = QA('faq')
@@ -210,13 +212,14 @@ class Render:
             if response.startswith('api_call_faq'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
-                return answer
+                ad = self.ad_kernel.anchor_faq_ad(answer)
+                return answer + ' ' + ad
             if response.startswith('api_call_query_discount'):
                 return self.render_api(response)
             if response.startswith('api_call_query_general'):
                 return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
+                return self.render_api('api_call_slot_virtual_category', {})
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     params = response.replace(
@@ -334,6 +337,7 @@ if __name__ == "__main__":
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
               "clf": 'memory'  # or memory
               }
     render = Render(config)

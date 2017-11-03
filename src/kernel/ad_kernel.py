@@ -45,11 +45,29 @@ current_date = time.strftime("%Y.%m.%d")
 
 
 class AdKernel:
-    def __init__(self):
-        print()
 
-    def anchor_ad(self):
+    AD_THRES = 1
+    def __init__(self, config):
+        self._load_faq_ad_anchor(config['faq_ad'])
+
+    def _load_faq_ad_anchor(self, file):
+        self.faq_ads = {}
+        with open(file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                _, _id, answer, ad = line.split('\t')
+                ads = ad.split('/')
+                self.faq_ads[answer] = ads
+
+    def anchor_faq_ad(self, _id):
+        if np.random.random() < self.AD_THRES:
+            if _id in self.faq_ads:
+                return np.random.choice(self.faq_ads[_id])
         return ''
 
     def render_ad(self):
         return ''
+
+if __name__ == '__main__':
+    ad_kernel = AdKernel({'faq_ad': os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),})
+    print(ad_kernel.anchor_faq_ad('d8335d24-11e4-4f1c-b6b5-4ed94d6d44ae'))

@@ -70,6 +70,7 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "render_recommend_file": os.path.join(parentdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(parentdir, 'model/render/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(parentdir, 'model/render/render_price.txt'),
+              "faq_ad": os.path.join(parentdir, 'model/ad/faq_ad.txt'),
               "clf": 'memory'  # or memory
               }
 
