@@ -61,14 +61,15 @@ app = Flask(__name__)
 
 config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'on',
-              "metadata_dir": os.path.join(parentdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(parentdir, 'data/memn2n/processed/data.pkl'),
+              "metadata_dir": os.path.join(parentdir, 'model/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(parentdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(parentdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": parentdir + '/model/ml/belief_clk.pkl',
               "render_api_file": os.path.join(parentdir, 'model/render/render_api.txt'),
               "render_location_file": os.path.join(parentdir, 'model/render/render_location.txt'),
               "render_recommend_file": os.path.join(parentdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(parentdir, 'model/render/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(parentdir, 'model/render/render_price.txt'),
               "clf": 'memory'  # or memory
               }
 

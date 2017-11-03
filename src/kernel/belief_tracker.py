@@ -112,11 +112,13 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails, should_clear_memory
 
-    def defauting_call(self, query, wild_card=None):
+    def defaulting_call(self, query, wild_card=None):
         self.exploit_once = True
         if len(self.requested_slots) > 0:
-            query_mapper = {self.requested_slots[0], '*:*'}
-        self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
+            self.requested_slots.remove(self.requested_slots[0])
+            if len(self.requested_slots) == 0:
+                self.machine_state = self.API_CALL_STATE
+        # self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
         if wild_card and self.exploit_once:
             self.exploit_wild_card(wild_card=wild_card)
@@ -368,6 +370,8 @@ class BeliefTracker:
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
                 if range_render:
+                    if slot_values_mapper[key] == '*:*':
+                        continue
                     self.rule_base_fill(query, key)
                 else:
                     self.fill_slot(key, value)

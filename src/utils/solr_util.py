@@ -40,20 +40,20 @@ def compose_fq(mapper, option_fields=['price']):
 
     return fq
 
-def query(must_mappers, option_mapper=None):
+def query(must_mappers, option_mapper={}):
     params = {
         'q': '*:*',
         'q.op': "OR"
     }
-    fill = []
-    for key, value in must_mappers.items():
-        fill.append(key + ":" + str(value))
-    params['fq'] = " AND ".join(fill)
-    options = []
-    if option_mapper:
-        for key, value in option_mapper.items():
-            options.append(key + ":" + str(value))
-        params['fq'] += ' OR ' + " OR ".join(options)
+    mappers = {}
+    option_fields = []
+    for k, v in must_mappers.items():
+        mappers[k] = v
+    for k, v in option_mapper.items():
+        mappers[k] = v
+        option_fields.append(k)
+
+    params['fq'] = compose_fq(mappers, option_fields)
     res = solr.query('category', params)
     docs = res.docs
     return docs

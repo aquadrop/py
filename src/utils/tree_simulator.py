@@ -401,7 +401,8 @@ def gen_sessions(belief_tracker, output_files):
                     brands = get_avail_brands(filling_slots['category'])
                     if 'brand' in filling_slots and 'category' in filling_slots:
                         brand = filling_slots['brand']
-                        qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', '']) \
+                        qa = np.random.choice([brand, '这个', '这款', ''])\
+                             + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '']) \
                             + np.random.choice(['多少钱', '什么价格', '什么价格', '这款什么价格', '这个要多少钱'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:' \
                             + brand + ',' + 'category:' + \
