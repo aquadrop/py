@@ -370,3 +370,16 @@ if __name__ == "__main__":
     table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
+    with open(output_file,'rb') as f:
+        graph=pickle.load(f)
+    words=list(graph.node_header.keys())
+    s=set()
+    with open('../../data/dict/ext1.dic','r') as f:
+        for line in f:
+            line=line.strip()
+            s.add(line)
+    for w in words:
+        s.add(w)
+    with open('../../data/dict/ext1.dic','w') as f:
+        for w in s:
+            f.write(w+'\n')

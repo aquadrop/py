@@ -111,7 +111,7 @@ def ac_product_gen(product_file, data_file):
                 tt.append(ac[t])
 
             ac['title'] = " ".join(tt)
-
+            ac['ac.power_float'] = power
             output.write(json.dumps(ac, ensure_ascii=False) + '\n')
 
 
@@ -293,6 +293,31 @@ Galaxy S7 (G9300)\
 
                 index = np.random.randint(len(series))
                 #print(len(prices), len(series))
+                ac["phone.series"] = series[index]
+                ac['price'] = np.random.randint(low=prices[index] * 0.96, high=prices[index] * 1.04)
+            if ac["brand"] == "魅族":
+                series = "魅蓝note5,\
+魅族MX6,\
+魅蓝E,\
+魅蓝E2,\
+魅蓝note6,\
+魅蓝Max,\
+魅族PRO6S,\
+魅族PRO6 Plus,\
+魅蓝X".split(",")
+                prices = [1000,
+                            1500,
+                            1000,
+                            1200,
+                            1500,
+                            1500,
+                            2000,
+                            2200,
+                            1000
+                          ]
+
+                index = np.random.randint(len(series))
+                # print(len(prices), len(series))
                 ac["phone.series"] = series[index]
                 ac['price'] = np.random.randint(low=prices[index] * 0.96, high=prices[index] * 1.04)
             if ac["brand"] == "OPPO":
@@ -478,7 +503,7 @@ def update_solr(solr_file):
             # line = str.encode(line)
             print(line)
             line = str.encode(line)
-            req = urllib.request.Request(url='http://localhost:11403/solr/category/update?commit=true',
+            req = urllib.request.Request(url='http://10.89.100.12:11403/solr/category/update?commit=true',
                                          data=line)
             headers = {"content-type": "text/json"}
             req.add_header('Content-type', 'application/json')
@@ -516,10 +541,10 @@ if __name__ == "__main__":
     # pc_product_gen("../../data/raw/pc.txt", '../../data/gen_product/电脑.txt')
     # fr_product_gen("../../data/raw/product_fr.txt", '../../data/gen_product/冰箱.txt')
 
-    update_solr("../../data/raw/product_ac.txt")
-    update_solr("../../data/raw/pc.txt")
-    update_solr("../../data/raw/product_tv.txt")
-
+    # update_solr("../../data/raw/product_ac.txt")
+    # update_solr("../../data/raw/pc.txt")
+    # update_solr("../../data/raw/product_tv.txt")
+    #
     update_solr("../../data/raw/product_phone.txt")
-    update_solr("../../data/raw/product_fr.txt")
-    update_solr("../../data/raw/household.txt")
+    # update_solr("../../data/raw/product_fr.txt")
+    # update_solr("../../data/raw/household.txt")

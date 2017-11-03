@@ -11,7 +11,7 @@ sys.path.insert(0, parentdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-translator=Translator()
+translator = Translator()
 
 import numpy as np
 import tensorflow as tf
@@ -176,6 +176,7 @@ def parse_args(args):
     args = vars(parser.parse_args(args))
     return args
 
+
 def _check_restore_parameters(sess, saver, model_path):
     """ Restore the previously trained parameters if there are any. """
     print("--checking directory:", model_path)
@@ -185,6 +186,7 @@ def _check_restore_parameters(sess, saver, model_path):
         saver.restore(sess, ckpt.model_checkpoint_path)
     else:
         print("Initializing fresh parameters for the model")
+
 
 class InteractiveSession():
     def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
@@ -197,7 +199,6 @@ class InteractiveSession():
         self.w2idx = w2idx
         self.n_cand = model.get_sentence_size()
         self.memory_size = memory_size
-        self.model = model
 
     def reply(self, msg):
         line = msg.strip().lower()
@@ -393,9 +394,9 @@ def main(args):
                             train['s']), batch_size=BATCH_SIZE)
                         for error in range(len(train['q'])):
                             if train_preds[error] != train['a'][error]:
-                                print_out = recover(error, train['s'], train['q'],\
-                                                                      train_preds[error], train['a'][error],\
-                                                                      idx2w, idx2candid)
+                                print_out = recover(error, train['s'], train['q'],
+                                                    train_preds[error], train['a'][error],
+                                                    idx2w, idx2candid)
                                 print(print_out)
                                 # print(recover_sentence(train['q'][i], idx2w),
                                 #       recover_cls(train_preds[i], idx2candid),
@@ -451,6 +452,7 @@ def main(args):
         elif args['ui']:
             return isess
 
+
 def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
     predicted = idx2candid[predicted]
     ground = idx2candid[ground.tolist()]
@@ -461,6 +463,7 @@ def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
     except:
         pass
     return last_sentence, sentence, predicted, ground
+
 
 def recover_sentence(sentence_idx, idx2w):
     sentence = [idx2w[idx - 1] for idx in sentence_idx if idx != 0]
