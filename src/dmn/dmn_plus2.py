@@ -59,8 +59,10 @@ class Config(object):
 
     train_mode = True
 
-    reserved_word_num = 5000
+    # reserved_word_num = 5000
     vocab_size=10000
+
+    embedding_type='fasttext'
 
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(
@@ -77,9 +79,9 @@ class Config(object):
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
     metadata_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/metadata2.pkl')
-    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data2.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt2/')
+        prefix, 'model/dmn/dmn_processed/metadata.pkl')
+    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
 
     multi_metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
@@ -408,7 +410,7 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
-        print(len(data[0]))
+        # print(len(data[0]))
 
         total_loss = []
         accuracy = 0

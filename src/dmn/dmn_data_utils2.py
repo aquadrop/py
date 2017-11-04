@@ -13,8 +13,11 @@ sys.path.insert(0, parentdir)
 grandfatherdir = os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
 
+sys.path.insert(0, grandfatherdir)
+
 import dmn.data_utils as data_utils
-from dmn.vector_helper import getVector
+# from dmn.vector_helper import getVector
+from utils.embedding_util import ff_embedding
 
 # temporary paths
 # DATA_DIR = 'data/memn2n/train/tree/origin'
@@ -169,7 +172,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
             next_index = len(w2idx)
             w2idx[word] = next_index
             idx2w[next_index] = word
-            embedding = getVector(word)
+            embedding = ff_embedding(word)
             word2vec[word] = embedding
             word_embedding.append(embedding)
         else:
@@ -183,7 +186,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
                 w2idx[word] = next_index
                 idx2w[next_index] = word
                 # embedding = word2vec[w]
-                new_embedding = getVector(word)
+                new_embedding = ff_embedding(word)
                 # index = word_embedding.index(embedding)
                 word_embedding[next_index] = new_embedding
                 updated_embedding[next_index]=new_embedding
