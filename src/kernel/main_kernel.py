@@ -42,7 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
-from dmn.dmn_session import DmnInfer
+# from dmn.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
@@ -158,7 +158,7 @@ class MainKernel:
                         response = api
                         avails = []
                     elif api == 'api_call_slot_whatever':
-                        response, avails = self.memory.defaulting_call(
+                        response, avails = self.belief_tracker.defaulting_call(
                             q, wild_card)
                         prefix = self.render.random_prefix()
                     else:
@@ -245,15 +245,18 @@ if __name__ == '__main__':
     #           }
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
               "solr.facet": 'on',
-              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
               "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
               "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "clf": 'dmn'  # or memory
+              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad_anchor.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
+              "clf": 'memory'  # or memory
               }
     kernel = MainKernel(config)
     while True:

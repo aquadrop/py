@@ -186,7 +186,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
                 new_embedding = getVector(word)
                 # index = word_embedding.index(embedding)
                 word_embedding[next_index] = new_embedding
-                updated_embedding[next_index] = new_embedding
+                updated_embedding[next_index]=new_embedding
                 del word2vec[w]
                 word2vec[word] = new_embedding
 
@@ -197,7 +197,7 @@ def process_word(data, w2idx, idx2w, word_embedding, word2vec, updated_embedding
         for i in inp:
             for w in i:
                 process_word_core(
-                        w, w2idx, idx2w, word_embedding, word2vec, updated_embedding, init)
+                        w, w2idx, idx2w, word_embedding, word2vec, updated_embedding,init)
         for w in question:
             process_word_core(w, w2idx, idx2w, word_embedding,
                               word2vec, updated_embedding, init)
@@ -255,7 +255,8 @@ def load_data(config, split_sentences=True):
             process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
                          word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding,
                          init=True)
-            for i in range(config.reserved_word_num):
+            current_size=len(w2idx)
+            for i in range(config.vocab_size-current_size):
                 process_word_core('reserved_' + str(i), w2idx,
                                   idx2w, word_embedding, word2vec, updated_embedding, init=True)
         vocab_size = len(w2idx)
@@ -340,7 +341,7 @@ def load_data(config, split_sentences=True):
                 q_lens[num_train:total_num], input_lens[num_train:total_num], \
                 input_masks[num_train:total_num], \
                 answers[num_train:total_num], rel_labels[num_train:total_num]
-        return train, valid, word_embedding, word2vec,updated_embedding, max_q_len, max_input_len, max_mask_len, \
+        return train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_mask_len, \
                rel_labels.shape[1], vocab_size, candidate_size, candid2idx, idx2candid, w2idx, idx2w
 
     else:

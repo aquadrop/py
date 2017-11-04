@@ -41,6 +41,7 @@ sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
+from kernel.ad_kernel import AdKernel
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -56,6 +57,8 @@ class Render:
         self._load_location_render(config['render_location_file'])
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
+        self._load_price_render(config['render_price_file'])
+        self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('interactive')
         self.faq = QA('faq')
@@ -95,6 +98,21 @@ class Render:
             for line in f:
                 line = line.strip('\n')
                 self.recommend_templates.append(line)
+
+    def _load_price_render(self, file):
+        self.price_templates = []
+        with open(file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.price_templates.append(line)
+
+    def render_price(self, mapper, price):
+        rendered = self.render_mapper(mapper) + '目前价位在' + price
+        if 'brand' in mapper and 'category' in mapper:
+            template = np.random.choice(self.price_templates)
+            rendered = template.replace('[brand]', mapper['brand']).\
+                replace('[category]', mapper['category']).replace('[price]', price)
+        return rendered
 
     def _load_ambiguity_render(self, file):
         self.dual_removal = []
@@ -155,10 +173,33 @@ class Render:
     def random_prefix(self):
         return np.random.choice(self.prefix)
 
-    def render_api(self, api):
+    def render_api(self, api, replacements={}):
         if api not in self.major_render_mapper:
             return api
+        if api == 'api_call_request_brand':
+            return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
+
+    def render_brand(self, templates, replacements={}):
+        brands = []
+        if 'brand' in replacements:
+            brands = replacements['brand']
+        template = ','.join(brands) + '品牌您要哪一个' # default
+        for i in range(10):
+            _template = np.random.choice(templates)
+            if len(brands) < 2\
+                and ('[' in _template or ']' in _template):
+                continue
+            else:
+                template = _template
+                break
+
+        rendered = template
+        if len(brands) >= 2:
+            pre = brands[0:-1]
+            post = brands[-1]
+            rendered = template.replace('[pre]', ','.join(pre)).replace('[post]', post)
+        return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
         try:
@@ -171,11 +212,14 @@ class Render:
             if response.startswith('api_call_faq'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
-                return answer
+                ad = self.ad_kernel.anchor_faq_ad(answer)
+                return answer + ' ' + ad
             if response.startswith('api_call_query_discount'):
                 return self.render_api(response)
+            if response.startswith('api_call_query_general'):
+                return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return np.random.choice(['您要买什么?我们有手机,冰箱,电视,电脑和空调.', '你可以看看我们的手机,冰箱,电视空调电脑'])
+                return self.render_api(response, {})
             if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     params = response.replace(
@@ -187,9 +231,10 @@ class Render:
                 # params = self.belief_tracker.belief_graph.slots_trans[params]
                 # rendered = '什么' + params
                 # return rendered + "@@" + response
+
                 if prefix:
-                    return prefix + self.render_api(response)
-                return self.render_api(response)
+                    return prefix + self.render_api(response, avails)
+                return self.render_api(response, avails)
             if response.startswith('api_call_rhetorical_'):
                 entity = response.replace('api_call_rhetorical_', '')
                 if entity in avails and len(avails[entity]) > 0:
@@ -239,7 +284,8 @@ class Render:
                         mapper[key] = value
 
                 facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
-                response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
+                response = self.render_price(mapper=mapper, price=','.join(facet[0]))
+                # response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
                 return response
 
             if response.startswith('api_call_query_brand_'):
@@ -254,6 +300,9 @@ class Render:
 
                 facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
                 response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
+                if 'category' in mapper:
+                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
+                    response = response + ' ' + ad
                 return response
 
             if response.startswith('api_call_query_location_'):
@@ -269,6 +318,9 @@ class Render:
                 location = ','.join(facet[0])
                 category = mapper['category']
                 response = self.render_location(category, location)
+                if 'category' in mapper:
+                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
+                    response = response + ' ' + ad
                 return response
 
             return response
@@ -290,8 +342,12 @@ if __name__ == "__main__":
               "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
               "clf": 'memory'  # or memory
               }
     render = Render(config)
     print(render.render_recommend('空调'))
     print(render.render('你好', 'api_call_request_ambiguity_removal_手机,苹果'))
+    print(render.render_price({'brand':'西门子', 'category':'空调'}, '2000-3000'))

@@ -57,7 +57,8 @@ model = {
     run prediction on dataset
 
 '''
-
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def batch_predict(model, S, Q, n, batch_size):
     preds = []

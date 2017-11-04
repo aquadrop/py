@@ -112,11 +112,13 @@ class BeliefTracker:
         api, avails = self.issue_api()
         return api, avails, should_clear_memory
 
-    def defauting_call(self, query, wild_card=None):
+    def defaulting_call(self, query, wild_card=None):
         self.exploit_once = True
         if len(self.requested_slots) > 0:
-            query_mapper = {self.requested_slots[0], '*:*'}
-        self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
+            self.requested_slots.remove(self.requested_slots[0])
+            if len(self.requested_slots) == 0:
+                self.machine_state = self.API_CALL_STATE
+        # self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
         if wild_card and self.exploit_once:
             self.exploit_wild_card(wild_card=wild_card)
@@ -368,6 +370,8 @@ class BeliefTracker:
             if key != 'entity' and self.belief_graph.get_field_type(key) == Node.RANGE:
                 # value is range
                 if range_render:
+                    if slot_values_mapper[key] == '*:*':
+                        continue
                     self.rule_base_fill(query, key)
                 else:
                     self.fill_slot(key, value)
@@ -751,50 +755,9 @@ class BeliefTracker:
         if self.config['solr.facet'] != 'on':
             return ['facet is off'], 0
         node = self.search_node
-        fill = []
         facet_field = self.requested_slots[0]
 
-        def render_range(a, gap):
-            if len(a) == 0:
-                return []
-            components = []
-            p = 0
-            if len(a) == 1:
-                components.append(str(a))
-            elif len(a) == 2:
-                components.append(str(a[0]))
-                components.append(str(a[1]))
-            else:
-                for i in range(1, len(a)):
-                    if a[i] - a[i - 1] > gap:
-                        if i - p == 1:
-                            components.append(str(a[p]))
-                        else:
-                            components.append(str(a[p]) + "-" + str(a[i - 1]))
-                        p = i
-                if len(components) == 0:
-                    components.append(str(a[1]) + "-" + str(a[-1]))
-            render = []
-            if len(components) == 1:
-                render.append(components[0])
-            else:
-                for i in range(0, len(components) - 1):
-                    if '-'  in components[i + 1]:
-                        render.append(components[i])
-                        continue
-                    if '-' in components[i]:
-                        render.append(components[i])
-                        continue
-                    render.append(components[i] + "-" + components[i + 1])
-            return render
-
         if self.is_key_type(facet_field):
-            params = {
-                'q': '*:*',
-                'facet': True,
-                'facet.field': prefix + facet_field,
-                "facet.mincount": 1
-            }
             mapper = dict()
             for key, value in self.filling_slots.items():
                 # fill.append(key + ":" + str(value))
@@ -806,37 +769,10 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            fq = solr_util.compose_fq(mapper)
-            print(fq)
-            params['fq'] = solr_util.compose_fq(mapper)
-            # try:
-            res = self.solr.query('category', params)
-            # except:
-            #     return self.solr_facet(prefix='')
-            facets = res.get_facet_keys_as_list(prefix + facet_field)
-            return facets, len(facets)
+            return solr_util.solr_facet(mappers=mapper,\
+                                        facet_field=facet_field,\
+                                        is_range=False, prefix='facet_')
         else:
-            start = 1
-            gap = 1
-            end = 100
-            # use facet.range
-            if facet_field == "price":
-                start = 100
-                gap = 3000
-                end = 30000
-            if facet_field == 'ac.power_float':
-                start = 1
-                gap = 0.5
-                end = 10
-            params = {
-                'q': '*:*',
-                'facet': True,
-                'facet.range': facet_field,
-                "facet.mincount": 1,
-                'facet.range.start': start,
-                'facet.range.end': end,
-                'facet.range.gap': gap
-            }
             mapper = dict()
             for key, value in self.filling_slots.items():
                 # fill.append(key + ":" + str(value))
@@ -848,13 +784,9 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            params['fq'] = solr_util.compose_fq(mapper)
-            res = self.solr.query('category', params)
-            ranges = res.get_facets_ranges()[facet_field].keys()
-            ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
-            # now render the result
-            facet = render_range(ranges, gap)
-            return facet, len(ranges)
+            return solr_util.solr_facet(mappers=mapper,
+                                        facet_field=facet_field,
+                                        is_range=True, prefix='facet_')
 
     def issue_class(self):
         if self.machine_state == self.TRAVEL_STATE:

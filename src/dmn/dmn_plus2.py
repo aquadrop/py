@@ -60,6 +60,7 @@ class Config(object):
     train_mode = True
 
     reserved_word_num = 5000
+    vocab_size=10000
 
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(
@@ -76,9 +77,9 @@ class Config(object):
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
     metadata_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/metadata.pkl')
-    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
+        prefix, 'model/dmn/dmn_processed/metadata2.pkl')
+    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data2.pkl')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt2/')
 
     multi_metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
@@ -139,6 +140,7 @@ class DMN_PLUS(object):
         self.w2idx = metadata['w2idx']
         self.idx2w = metadata['idx2w']
 
+
         if self.config.train_mode:
             print('Load metadata (training mode)')
 
@@ -153,7 +155,7 @@ class DMN_PLUS(object):
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
 
-        # print(self.idx2w)
+        # print('load:',self.updated_embedding)
         # print(self.idx2candid)
 
     def add_placeholders(self):
@@ -406,6 +408,7 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
+        print(len(data[0]))
 
         total_loss = []
         accuracy = 0

@@ -31,7 +31,7 @@ translator = Translator()
 
 
 def prepare_data(args, config):
-    train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
+    train, valid, word_embedding, word2vec, updated_embedding,max_q_len, max_input_len, max_sen_len, \
     num_supporting_facts, vocab_size, candidate_size, candid2idx, \
     idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
@@ -41,7 +41,7 @@ def prepare_data(args, config):
     data['train'] = train
     data['valid'] = valid
     metadata['word_embedding'] = word_embedding
-    metadata['updated_embedding'] = word_embedding
+    metadata['updated_embedding'] = updated_embedding
     metadata['word2vec'] = word2vec
     metadata['max_q_len'] = max_q_len
     metadata['max_input_len'] = max_input_len
@@ -54,8 +54,8 @@ def prepare_data(args, config):
     metadata['w2idx'] = w2idx
     metadata['idx2w'] = idx2w
 
-    print('after.')
-    print('updated_embedding:', updated_embedding.keys())
+    # print('after.')
+    # print('updated_embedding:', updated_embedding)
 
     with open(config.metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
@@ -82,6 +82,7 @@ def parse_args(args):
 
     args = vars(parser.parse_args(args))
     return args
+
 
 
 def main(args):
@@ -127,15 +128,16 @@ def main(args):
                 print('==> restoring weights')
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
                 if len(model.updated_embedding):
-                    print('==> update embedding')
-                    session.run(model.embedding_init, feed_dict={model.embedding_placeholder: model.word_embedding})
+                    # print('==> update embedding',model.updated_embedding)
+                    embeddings=update_embedding(session,config.ckpt_path + 'dmn.weights.meta',model.updated_embedding)
+                    session.run(model.embedding_init, feed_dict={model.embedding_placeholder: embeddings})
 
             else:
                 session.run(model.embedding_init, feed_dict={model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % 5 == 0 and epoch > 1):
+                if not (epoch % 2 == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, model.train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
@@ -270,6 +272,19 @@ class InteractiveSession():
 
         return reply_msg
 
+def update_embedding(sess,ckpt,up_embedding):
+    saver = tf.train.import_meta_graph(ckpt)
+    # We can now access the default graph where all our metadata has been loaded
+    graph = tf.get_default_graph()
+    embeddings = graph.get_tensor_by_name('embedding/embeddings:0')
+    embeddings=embeddings.eval(session=sess)
+    # print(type(embeddings))
+    for k,v in up_embedding.items():
+        embeddings[k]=v
+
+    return embeddings
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+    # update_embedding('/home/ecovacs/work/memory_py/model/dmn/ckpt2/dmn.weights.meta')
+

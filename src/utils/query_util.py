@@ -48,7 +48,7 @@ STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',
                   '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '='])
 
 STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
-                    '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '=',"%","……",
+                    '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '=', "%", "……",
                     "啊", "呢", "吗", '呀', '哒'])
 
 
@@ -144,6 +144,7 @@ def jieba_cut(query, smart=True):
         result.append(s)
     return result
 
+
 def remove_stop_words(q):
     # q = re.sub(ur"[\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）：；《）《》“”()»〔〕-]+", "", q)
 
@@ -153,11 +154,15 @@ def remove_stop_words(q):
     except:
         return q
 
-rp = {"大一匹": "1.3p", "大1匹":"1.3p"}
+
+rp = {"大一匹": "1.3p", "大1匹": "1.3p"}
+
+
 def supersede(query):
     for key, value in rp.items():
         query = query.replace(key, value)
     return query
+
 
 def rule_base_num_retreive(query):
 
@@ -183,7 +188,7 @@ def rule_base_num_retreive(query):
             "price": price_dual}
     single = {"__inch__": inch_single, "__meter__": meter_single,
               "ac.power": ac_power_single,
-              "price": price_single, "people": people_single, "height": height, "width":width,
+              "price": price_single, "people": people_single, "height": height, "width": width,
               "memory": memory}
 
     wild_card = dict()
@@ -251,6 +256,6 @@ def range_extract(pattern, query, single, range_render=False):
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    # print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
-    print(tokenize('电视机', char=2))
-    # print(rule_base_num_retreive(''))
+    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
+    print(tokenize('电冰箱', char=2))
+    print(rule_base_num_retreive(''))
