@@ -128,7 +128,7 @@ def main(args):
                 print('==> restoring weights')
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
                 if len(model.updated_embedding):
-                    # print('==> update embedding',model.updated_embedding)
+                    print('==> update embedding')
                     embeddings=update_embedding(session,config.ckpt_path + 'dmn.weights.meta',model.updated_embedding)
                     session.run(model.embedding_init, feed_dict={model.embedding_placeholder: embeddings})
 
