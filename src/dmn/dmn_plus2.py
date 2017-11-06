@@ -52,7 +52,7 @@ class Config(object):
 
     floatX = np.float32
 
-    multi_label = False
+    multi_label = True
     top_k = 5
     max_memory_size = 20
     fix_vocab = True
@@ -60,9 +60,9 @@ class Config(object):
     train_mode = True
 
     # reserved_word_num = 5000
-    vocab_size=10000
+    vocab_size = 10000
 
-    embedding_type='fasttext'
+    embedding_type = 'fasttext'
 
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(
@@ -129,7 +129,7 @@ class DMN_PLUS(object):
 
         self.word2vec = metadata['word2vec']
         self.word_embedding = np.asarray(metadata['word_embedding'])
-        self.updated_embedding=metadata['updated_embedding']
+        self.updated_embedding = metadata['updated_embedding']
         # print(type(self.word_embedding))
         self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
@@ -141,7 +141,6 @@ class DMN_PLUS(object):
         self.idx2candid = metadata['idx2candid']
         self.w2idx = metadata['w2idx']
         self.idx2w = metadata['idx2w']
-
 
         if self.config.train_mode:
             print('Load metadata (training mode)')
@@ -187,9 +186,11 @@ class DMN_PLUS(object):
 
         with tf.variable_scope('embedding') as scope:
             self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
-                                          trainable=True, name="embeddings")
-            self.embedding_placeholder = tf.placeholder(tf.float32, [self.vocab_size, self.config.embed_size])
-            self.embedding_init = self.embeddings.assign(self.embedding_placeholder)
+                                          trainable=False, name="embeddings")
+            self.embedding_placeholder = tf.placeholder(
+                tf.float32, [self.vocab_size, self.config.embed_size])
+            self.embedding_init = self.embeddings.assign(
+                self.embedding_placeholder)
 
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
@@ -199,15 +200,15 @@ class DMN_PLUS(object):
             predict_by_value = tf.nn.top_k(
                 output, k=self.config.top_k, name="predict_op")
             predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
-            pred = tf.nn.top_k(
+            preds = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
             preds = tf.nn.softmax(output)
-            probs=tf.nn.top_k(preds,k=self.config.top_k)
-            pred = tf.argmax(preds, 1)
+            preds = tf.nn.top_k(preds, k=self.config.top_k)
+            # pred = tf.argmax(preds, 1)
 
-        return pred,probs
-        # return pred
+        # return pred, probs
+        return preds
 
     def add_loss_op(self, output):
         """Calculate loss"""
@@ -462,7 +463,8 @@ class DMN_PLUS(object):
             if self.config.multi_label:
                 # multi target
                 correct = 0
-                pred = pred.indices.tolist()
+                pred = pred[1].tolist()
+                # print('----',pred,'----')
                 for i in range(config.batch_size):
                     predicts = pred[i]
                     labels = answers[i]
@@ -514,8 +516,8 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        pred,prob = session.run([self.pred,self.prob], feed_dict=feed)
-        return pred,prob
+        preds = session.run([self.pred], feed_dict=feed)
+        return preds
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
 
@@ -525,7 +527,7 @@ class DMN_PLUS(object):
         self.load_data(debug=False)
         self.add_placeholders()
         self.output = self.inference()
-        self.pred,self.prob = self.get_predictions(self.output)
+        self.pred = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self.add_loss_op(self.output)
         self.train_step = self.add_training_op(self.calculate_loss)

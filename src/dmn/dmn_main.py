@@ -15,9 +15,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 parentdir = os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))
+    os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -31,9 +31,9 @@ translator = Translator()
 
 
 def prepare_data(args, config):
-    train, valid, word_embedding, word2vec, updated_embedding,max_q_len, max_input_len, max_sen_len, \
-    num_supporting_facts, vocab_size, candidate_size, candid2idx, \
-    idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
+    train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
+        num_supporting_facts, vocab_size, candidate_size, candid2idx, \
+        idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
             config, split_sentences=True)
 
     metadata = dict()
@@ -84,7 +84,6 @@ def parse_args(args):
     return args
 
 
-
 def main(args):
     args = parse_args(args)
     # print(args)
@@ -93,7 +92,10 @@ def main(args):
 
     if args['prep_data']:
         print('\n>> Preparing Data\n')
+        begin = time.clock()
         prepare_data(args, config)
+        end = time.clock()
+        print('>> Preparing Data Time:{}'.format(end - begin))
         sys.exit()
 
     if args['train']:
@@ -129,11 +131,14 @@ def main(args):
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
                 if len(model.updated_embedding):
                     print('==> update embedding')
-                    embeddings=update_embedding(session,config.ckpt_path + 'dmn.weights.meta',model.updated_embedding)
-                    session.run(model.embedding_init, feed_dict={model.embedding_placeholder: embeddings})
+                    embeddings = update_embedding(
+                        session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
+                    session.run(model.embedding_init, feed_dict={
+                                model.embedding_placeholder: embeddings})
 
             else:
-                session.run(model.embedding_init, feed_dict={model.embedding_placeholder: model.word_embedding})
+                session.run(model.embedding_init, feed_dict={
+                            model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
@@ -141,16 +146,16 @@ def main(args):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, model.train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
-                    _ = model.run_epoch(session, model.valid, epoch, train_writer,
-                                        train_op=model.train_step, train=True)
+                    # _ = model.run_epoch(session, model.valid, epoch, train_writer,
+                    #                     train_op=model.train_step, train=True)
                 else:
                     print('Epoch {}'.format(epoch))
                     start = time.time()
                     train_loss, train_accuracy, train_error = model.run_epoch(
-                            session, model.train, epoch, train_writer,
-                            train_op=model.train_step, train=True, display=True)
+                        session, model.train, epoch, train_writer,
+                        train_op=model.train_step, train=True, display=True)
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
-                            session, model.valid, display=True)
+                        session, model.valid, display=True)
                     # print('Training error:')
                     for e in train_error:
                         print(e)
@@ -168,7 +173,9 @@ def main(args):
                             best_overall_train_loss = best_train_loss
                             best_train_accuracy = train_accuracy
                             saver.save(
-                                    session, config.ckpt_path + 'dmn.weights')
+                                session, config.ckpt_path + 'dmn.weights')
+                    print('best_train_loss: {}'.format(best_train_loss))
+                    print('best_train_epoch: {}'.format(best_train_epoch))
 
                     # anneal
                     if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -237,7 +244,7 @@ class InteractiveSession():
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                    inputs)
+                inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
             # max_q_len = np.max(q_lens)
@@ -256,7 +263,7 @@ class InteractiveSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                    questions, q_lens, max_q_len)
+                questions, q_lens, max_q_len)
             # questions = [questions[0] for _ in range(self.config.batch_size)]
             questions = np.asarray(questions)
 
@@ -272,19 +279,20 @@ class InteractiveSession():
 
         return reply_msg
 
-def update_embedding(sess,ckpt,up_embedding):
+
+def update_embedding(sess, ckpt, up_embedding):
     saver = tf.train.import_meta_graph(ckpt)
     # We can now access the default graph where all our metadata has been loaded
     graph = tf.get_default_graph()
     embeddings = graph.get_tensor_by_name('embedding/embeddings:0')
-    embeddings=embeddings.eval(session=sess)
+    embeddings = embeddings.eval(session=sess)
     # print(type(embeddings))
-    for k,v in up_embedding.items():
-        embeddings[k]=v
+    for k, v in up_embedding.items():
+        embeddings[k] = v
 
     return embeddings
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
     # update_embedding('/home/ecovacs/work/memory_py/model/dmn/ckpt2/dmn.weights.meta')
-

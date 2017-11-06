@@ -13,9 +13,9 @@ import sys
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -29,11 +29,12 @@ translator = Translator()
 
 
 class DmnSession():
-    def __init__(self, session, model, char=2):
+    def __init__(self, session, model, config, char=2):
         self.context = [['此', '乃', '空', '文']]
         self.u = None
         self.r = None
         self.model = model
+        self.config = config
         self.session = session
         self.idx2candid = self.model.idx2candid
         self.w2idx = self.model.w2idx
@@ -58,14 +59,14 @@ class DmnSession():
         if line == 'clear':
             self.context = []
             reply_msg = ['memory cleared!']
-            values=[0]
+            values = [0]
         else:
             inputs = []
             questions = []
 
             q = tokenize(line, self.char)
             q_vector = [self.w2idx.get(w, 0) for w in q]
-            print(q_vector)
+            print('q_vector:', q_vector)
             inp_vector = [[self.w2idx.get(w, 0) for w in s]
                           for s in self.context]
 
@@ -73,7 +74,7 @@ class DmnSession():
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                inputs)
+                    inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
 
@@ -87,29 +88,32 @@ class DmnSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                questions, q_lens, max_q_len)
+                    questions, q_lens, max_q_len)
             questions = np.asarray(questions)
 
-            preds,probs = self.model.predict(self.session,
+            preds = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)
-            print('preds:{0},probs:{1}'.format(preds,probs))
-            # preds = self.model.predict(self.session,
-            #                                   inputs, input_lens, max_sen_len, questions, q_lens)
-            # print('preds:{0}'.format(preds))
-            preds = preds[0]
-            # print(preds)
-            indices=probs.indices.tolist()[0]
-            values = probs.values.tolist()[0]
 
-            reply_msg=[self.idx2candid[ind] for ind in indices]
-            print(reply_msg)
-            r = self.idx2candid[preds]
-            # reply_msg = r
+            # print('preds:', preds)
+            # if self.config.multi_label:
+            indices = preds[0].indices.tolist()[0]
+            values = preds[0].values.tolist()[0]
+            # else:
+            #     indices = preds[1].tolist()[0]
+            #     values = preds[0].tolist()[0]
+            # print('indices:{0},values:{1}'.format(indices, values))
+            reply_msg = [self.idx2candid[ind] for ind in indices]
+            # print(reply_msg)
+            r = reply_msg[0]
+            # print('r:',r)
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
             self.context.append(r)
 
-        return reply_msg[0],values[0]
+        if self.config.multi_label:
+            return reply_msg, values
+        else:
+            return reply_msg[0], values[0]
 
 
 class DmnInfer:
@@ -137,7 +141,7 @@ class DmnInfer:
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
         char = 2 if self.config.word2vec_init else 1
-        isess = DmnSession(self.session, self.model, char)
+        isess = DmnSession(self.session, self.model, self.config, char)
         return isess
 
 
