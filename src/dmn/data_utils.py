@@ -6,16 +6,16 @@ import os
 import sys
 import jieba
 
-
 import json
-
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
-import memory.config as config
+from dmn.dmn_plus2 import Config
+
+config = Config()
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -45,21 +45,22 @@ def build_vocab_beforehand(vocab_base, vocab_path):
                   'sys', 'feature', 'color', 'memsize', 'size', 'distance',
                   'resolution', 'panel', 'dyson', 'root', 'virtual', 'mode',
                   'energy_lvl', 'connect', 'net', 'rmem', 'mmem', 'people', 'vol', 'width', 'height',
-                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto', "1.5", '2.5', 'plugin'
+                  'control', 'olec', 'led', 'vr', 'oled', 'tcl', 'lcd', 'oled', 'oppo', 'vivo', 'moto', "1.5", '2.5',
+                  'plugin'
                   ]
     for w in extra_list:
         vocab.append(w)
     for i in range(100):
         vocab.append('placeholder' + str(i + 1))
     vocab = sorted(vocab)
-    print(vocab)
+    # print(vocab)
     # 0 is reserved
     w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
     with open(vocab_path, 'w', encoding='utf-8') as f:
         json.dump(vocab, f, ensure_ascii=False)
 
 
-def load_candidates(candidates_f=CANDID_PATH):
+def load_candidates(candidates_f):
     candidates, candid2idx, idx2candid = [], {}, {}
 
     with open(candidates_f) as f:
@@ -67,30 +68,30 @@ def load_candidates(candidates_f=CANDID_PATH):
             candid2idx[line.strip()] = i
             idx2candid[i] = line.strip()
             candidates.append(line.strip())
+
     return candidates, candid2idx, idx2candid
 
 
-def load_dialog(data_dir, candid_dic, dmn=False):
-
+def load_dialog(data_dir, candid_dic, char=1):
     train_file = os.path.join(data_dir, 'train.txt')
     test_file = os.path.join(data_dir, 'test.txt')
     val_file = os.path.join(data_dir, 'val.txt')
 
-    train_data = get_dialogs(train_file, candid_dic, dmn)
-    test_data = get_dialogs(test_file, candid_dic, dmn)
-    val_data = get_dialogs(val_file, candid_dic, dmn)
+    train_data = get_dialogs(train_file, candid_dic, char)
+    test_data = get_dialogs(test_file, candid_dic, char)
+    val_data = get_dialogs(val_file, candid_dic, char)
     return train_data, test_data, val_data
 
 
-def get_dialogs(f, candid_dic, dmn=False):
+def get_dialogs(f, candid_dic, char=1):
     '''Given a file name, read the file, retrieve the dialogs, and then convert the sentences into a single dialog.
     If max_length is supplied, any stories longer than max_length tokens will be discarded.
     '''
     with open(f) as f:
-        return parse_dialogs_per_response(f.readlines(), candid_dic, dmn)
+        return parse_dialogs_per_response(f.readlines(), candid_dic, char)
 
 
-def parse_dialogs_per_response(lines, candid_dic, dmn=False):
+def parse_dialogs_per_response(lines, candid_dic, char=1):
     '''
         Parse dialogs provided in the babi tasks format
     '''
@@ -104,39 +105,27 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
         if line:
             if '\t' in line:
                 # print(line)
-                try:
-                    u, r, salt = line.split('\t')
-                except:
-                    print(line)
-                    exit(-1)
-                if config.MULTILABEL >= 1:
+                u, r, salt = line.split('\t')
+                if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
                     a = candid_dic[r]
-                u = tokenize(u)
-                if config.FIX_VOCAB:
+                u = tokenize(u, char=char)
+                if config.fix_vocab:
                     r = translator.en2cn(r)
-                r = tokenize(r)
+                r = tokenize(r, char=char)
                 placeholder = salt == 'placeholder'
-                if config.FIX_VOCAB:
+                if config.fix_vocab:
                     salt = translator.en2cn(salt)
-                salt = tokenize(salt)
+                salt = tokenize(salt, char=char)
 
                 # print(u)
                 # temporal encoding, and utterance/response encoding
                 # data.append((context[:],u[:],candid_dic[' '.join(r)]))
                 data.append((context[:], u[:], a))
-                if dmn:
-                    context.append(u)
-                    context.append(r + salt)
-                else:
-                    u.append('$u')
-                    r.append('$r')
-                    salt.append('$r')
-                    context.append(u)
-                    context.append(r)
-                    if not placeholder:
-                        context.append(salt)
+                context.append(u)
+                r = r if placeholder else r + salt
+                context.append(r)
         else:
             # clear context
             context = []
@@ -144,8 +133,8 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
     return data
 
 
-def build_vocab(data, candidates, memory_size=config.MAX_MEMORY_SIZE):
-    if config.FIX_VOCAB:
+def build_vocab(data, candidates, memory_size=config.max_memory_size):
+    if config.fix_vocab:
         with open(grandfatherdir + '/data/char_table/vocab.txt', 'r') as f:
             vocab = json.load(f)
     else:

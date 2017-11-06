@@ -2,6 +2,7 @@ import numpy as np
 import sys
 import os
 import requests
+import multiprocessing
 
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -9,21 +10,24 @@ sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.solr_util import solr_qa
-from utils.embedding_util import ff_embedding
+from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
 THRESHOLD = 0.95
-
-
-REACH = 0.9999
-
+REACH = 1
 
 class Qa:
     def __init__(self, core):
         self.core = core
         self.base = BaseKernel()
 
-    def get_responses(self, query, ):
+    def worker(usr,query):
+        # 将该句子保存到文件
+        file = open("../../data/qa_result/corpus", "a")
+        file.write(usr + ":" + query + "\n")
+        file.close()
+
+    def get_responses(self, query, usr = "solr"):
         docs = solr_qa(self.core, query, 'g')
         # print(docs)
         best_query = None
@@ -36,18 +40,27 @@ class Qa:
                 continue
             b = doc['b']
             g = doc['g']
-            for _g in g:
-                score = self.similarity(query, _g)
-                if score > best_score:
-                    best_score = score
-                    best_query = _g
-                    best_answer = b
-                    if score >= REACH:
-                        break
+            # for _g in g:
+            #     score = self.similarity(query, _g)
+            #     if score > best_score:
+            #         best_score = score
+            #         best_query = _g
+            #         best_answer = b
+            #         if score >= REACH:
+            #             break
+            score, _g = self.m_similarity(query, g)
+            if score > best_score:
+                best_score = score
+                best_query = _g
+                best_answer = b
+            # if score >= REACH:
+            #     break
             # print(score)
 
         if best_score < THRESHOLD:
             print('redirecting to third party', best_score)
+            p = multiprocessing.Process(target=self.worker, args=(usr,query))
+            p.start()
             return query, self.base.kernel(query), best_score
             # return query, 'api_call_base', best_score
         else:
@@ -77,6 +90,13 @@ class Qa:
 
         return cos(embed1, embed2)
 
+    def m_similarity(self, query1, m_query2):
+        tokens1 = ','.join(tokenize(query1, 3))
+        tokens2 = '@@'.join([','.join(tokenize(t, 3)) for t in m_query2])
+        score, _g = mlt_ff_embedding(tokens1, tokens2)
+
+        return score, _g
+
 
 def test():
     query1 = '我的名字是小明'
@@ -87,9 +107,8 @@ def test():
 
 def main():
     qa = Qa('interactive')
-    best_query, best_answer, best_score = qa.get_responses('好的知道了')
+    best_query, best_answer, best_score = qa.get_responses("你叫什么名字")
     print(best_query, best_answer, best_score)
-
 
 if __name__ == '__main__':
     main()

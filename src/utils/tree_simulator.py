@@ -21,6 +21,7 @@ sys.path.insert(0, parentdir)
 
 translator = Translator()
 
+
 def gen_sessions(belief_tracker, output_files):
     """
     :param belief_tracker:
@@ -132,7 +133,8 @@ def gen_sessions(belief_tracker, output_files):
         :param slot:
         :return:
         """
-        template = ["你们这都有什么<fill>", "<fill>都有哪些", "你们这儿都卖什么<fill>",'你有什么<fill>','你有哪些<fill>']
+        template = ["你们这都有什么<fill>", "<fill>都有哪些",
+                    "你们这儿都卖什么<fill>", '你有什么<fill>', '你有哪些<fill>']
         trans = belief_graph.slots_trans[slot]
         t = np.random.choice(template)
         if np.random.uniform() < 0.5:
@@ -184,7 +186,8 @@ def gen_sessions(belief_tracker, output_files):
         #
         #     return value
         if field == 'ambiguity_removal':
-            value = np.random.choice(list(belief_tracker.ambiguity_slots.keys()))
+            value = np.random.choice(
+                list(belief_tracker.ambiguity_slots.keys()))
             # nodes = belief_graph.get_nodes_by_value(value)
             # if len(nodes) > 0:
             #     slot = nodes[0].slot
@@ -217,7 +220,7 @@ def gen_sessions(belief_tracker, output_files):
 
     def render_lang(slot_values_mapper, fresh, thesaurus):
         search_node = belief_tracker.search_node
-        prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买','有没有']
+        prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买', '有没有']
         postfix = ['吧', '呢', '']
         lang = np.random.choice(prefix)
         if 'brand' in slot_values_mapper:
@@ -256,14 +259,14 @@ def gen_sessions(belief_tracker, output_files):
                     if k in ['ac.power_float']:
                         lang += np.random.choice(['p', '匹', ''])
             else:
-                if v in ['电视', '冰箱', '空调','电脑']:
+                if v in ['电视', '冰箱', '空调', '电脑']:
                     if v == '电视':
-                        v = np.random.choice(['电视','电视机','彩电'])
+                        v = np.random.choice(['电视', '电视机', '彩电'])
                     if v == '冰箱':
-                        v = np.random.choice(['冰箱','电冰箱'])
+                        v = np.random.choice(['冰箱', '电冰箱'])
                     if v == '电脑':
-                        v = np.random.choice(['pc', '电脑','计算机'])
-                    v = np.random.choice(['台','一台','一个','个','']) + v
+                        v = np.random.choice(['pc', '电脑', '计算机'])
+                    v = np.random.choice(['台', '一台', '一个', '个', '']) + v
                 if v in ['手机']:
                     v = np.random.choice(['部', '一部', '一个', '个', '']) + v
                 if v in thesaurus:
@@ -290,7 +293,7 @@ def gen_sessions(belief_tracker, output_files):
         return api[0]
 
     def render_deny():
-        prefix = np.random.choice(['我不要', '不要', '不要这个', '不想要'])
+        prefix = np.random.choice(['我不要', '不要', '不要这个', '不想要', '不喜欢', '不喜欢这个'])
         lang = prefix
         cls = 'api_call_deny_all'
         if 'brand' in belief_tracker.filling_slots:
@@ -302,7 +305,7 @@ def gen_sessions(belief_tracker, output_files):
     requested = get_requested_field()
     i = 0
 
-    thesaurus =  dict()
+    thesaurus = dict()
     with open('../../data/gen_product/thesaurus.txt', 'r') as f:
         for line in f:
             line = line.strip('\n')
@@ -330,6 +333,7 @@ def gen_sessions(belief_tracker, output_files):
     mlt_candidates = []
     with_qa = True
     with_deny = True
+    with_whatever = True
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -384,29 +388,46 @@ def gen_sessions(belief_tracker, output_files):
             if 'category' in filling_slots:
                 if np.random.uniform() < 0.25:
                     qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
-                         + np.random.choice(['在哪里', '在什么地方', '在几楼', '在哪里卖', '在哪里买', '在什么地方买'])
+                        + np.random.choice(['在哪里', '在什么地方', '在几楼', '几楼有卖', '在哪里卖', '在哪里买', '在什么地方买'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
-                           + filling_slots['category'] + '\t' + 'placeholder'
+                        + filling_slots['category'] + '\t' + 'placeholder'
                     flow = 'api_call_query_location_' + 'category:'\
                            + filling_slots['category'] + '\t' + 'placeholder'
                     container.append(line)
                     # flow_container.append(flow.lower())
-                    candidates.add('api_call_query_location_' + 'category:'\
-                           + filling_slots['category'])
+                    candidates.add('api_call_query_location_' + 'category:'
+                                   + filling_slots['category'])
                 if np.random.uniform() < 0.25:
                     brands = get_avail_brands(filling_slots['category'])
+                    if 'brand' in filling_slots and 'category' in filling_slots:
+                        brand = filling_slots['brand']
+                        qa = np.random.choice([brand, '这个', '这款', ''])\
+                             + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '']) \
+                            + np.random.choice(['多少钱', '什么价格', '什么价格', '要多少钱'])
+                        line = qa + '\t' + 'api_call_query_price_' + 'brand:' \
+                            + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
+                        flow = 'api_call_query_price_' + 'brand:' \
+                               + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
+                        # flow_container.append(flow.lower())
+                        container.append(line)
+                        candidates.add('api_call_query_price_' + 'brand:'
+                                       + brand + ',' + 'category:' + filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
                         qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', ''])\
-                             + np.random.choice(['多少钱', '什么价格', '什么价格'])
+                            + np.random.choice(['多少钱', '什么价格', '什么价格', '要多少钱'])
                         line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                            + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                               + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
                         # flow_container.append(flow.lower())
                         container.append(line)
-                        candidates.add('api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'])
+                        candidates.add('api_call_query_price_' + 'brand:'
+                                       + brand + ',' + 'category:' + filling_slots['category'])
 
                 # ask brand of category
                 if np.random.uniform() < 0.25:
@@ -419,10 +440,12 @@ def gen_sessions(belief_tracker, output_files):
                              + np.random.choice(['有哪些品牌', '有哪些牌子', '有什么品牌', '有什么牌子'])
                         line = qa + '\t' + 'api_call_query_brand_category:' + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_price_' + 'brand:'\
-                               + brand + ',' + 'category:' + filling_slots['category'] + '\t' + 'placeholder'
+                               + brand + ',' + 'category:' + \
+                            filling_slots['category'] + '\t' + 'placeholder'
                         # flow_container.append(flow.lower())
                         container.append(line)
-                        candidates.add('api_call_query_brand_category:' + filling_slots['category'])
+                        candidates.add(
+                            'api_call_query_brand_category:' + filling_slots['category'])
 
         if requested and requested != 'ambiguity_removal':
             if np.random.uniform() < 0:
@@ -470,7 +493,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 60000:
+            if i >= 120000:
                 break
 
     # lower everything
@@ -488,10 +511,21 @@ def gen_sessions(belief_tracker, output_files):
     with_base = True
     with_gbdt = False
     base_count = 0
+    base = []
     if with_base:
         with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
             for line in cf:
                 line = line.strip('\n')
+                base.append(line)
+                if not line:
+                    base_count += 1
+
+    # whatever = []
+    if with_whatever:
+        with open(grandfatherdir + '/data/memn2n/train/base/whatever.txt', encoding='utf-8') as cf:
+            for line in cf:
+                line = line.strip('\n')
+                base.append(line)
                 if not line:
                     base_count += 1
 
@@ -499,39 +533,20 @@ def gen_sessions(belief_tracker, output_files):
     with open(output_files[1], 'w', encoding='utf-8') as f:
         for line in mapper['train']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    if not line:
-                        train_count += 1
-                        if train_count > 0.7 * base_count:
-                            break
-                    f.writelines(line + '\n')
+        for b in base:
+            f.writelines(b + '\n')
 
     with open(output_files[2], 'w', encoding='utf-8') as f:
         for line in mapper['val']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    if not line:
-                        train_count += 1
-                        if train_count > 0.8 * base_count:
-                            f.writelines(line + '\n')
-                        if train_count > 0.9 * base_count:
-                            break
+        for b in base:
+            f.writelines(b + '\n')
 
     with open(output_files[3], 'w', encoding='utf-8') as f:
         for line in mapper['test']:
             f.writelines(line + '\n')
-        if with_base:
-            with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
-                for line in cf:
-                    line = line.strip('\n')
-                    if train_count > 0.9 * base_count:
-                        f.writelines(line + '\n')
+        for b in base:
+            f.writelines(b + '\n')
 
     with_faq = True
     if with_faq:
@@ -581,7 +596,7 @@ def gen_sessions(belief_tracker, output_files):
             af.writelines(line + '\n')
 
     print('writing', len(train_set), len(
-        val_set), len(test_set), len_origin, len(candidates), 'base_count:', train_count)
+        val_set), len(test_set), len_origin, len(candidates), 'base_count:', len(base))
 
     if not with_gbdt:
         return
