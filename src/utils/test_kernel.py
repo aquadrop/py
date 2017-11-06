@@ -16,7 +16,7 @@ import traceback
 from kernel.main_kernel import *
 from kernel.main_kernel import MainKernel
 
-# 遍历指定目录，显示目录下的所有文件名
+# 读取所有的产品属性中英文映射到dic中
 def eachFile(filepath,dic):
     pathDir =  os.listdir(filepath)
     for allDir in pathDir:
