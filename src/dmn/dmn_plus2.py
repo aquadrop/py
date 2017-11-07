@@ -18,7 +18,7 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 64
+    batch_size = 1024
     embed_size = 300
     hidden_size = 300
 
@@ -227,7 +227,7 @@ class DMN_PLUS(object):
             loss = self.config.beta * tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=output, labels=self.answer_placeholder)) + gate_loss
         else:
-            loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
+            loss = self.config.beta * tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=output, labels=self.answer_placeholder)) + gate_loss
 
         # stackoverflow :https://stackoverflow.com/questions/33712178/tensorflow-nan-bug

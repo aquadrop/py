@@ -29,7 +29,7 @@ from dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
-EPOCH = 15
+EPOCH = 5
 
 def prepare_data(args, config):
     train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
@@ -126,7 +126,7 @@ def main(args):
 
             best_train_epoch = 0
             best_train_loss = float('inf')
-            best_train_accuracy = 0.0
+            best_train_accuracy = 0.8
 
             if args['restore']:
                 print('==> restoring weights')
@@ -167,15 +167,15 @@ def main(args):
                     print('Training accuracy: {}'.format(train_accuracy))
                     print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                    if train_loss < best_train_loss:
+                    if train_loss < best_train_loss or train_accuracy > best_train_accuracy:
+                        print('Saving weights and updating best_train_loss:{} -> {},\
+                               best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,\
+                                                                    best_train_accuracy, train_loss))
+                        best_train_accuracy = train_accuracy
+                        saver.save(
+                            session, config.ckpt_path + 'dmn.weights')
                         best_train_loss = train_loss
                         best_train_epoch = epoch
-                        if best_train_loss < best_overall_train_loss:
-                            print('Saving weights')
-                            best_overall_train_loss = best_train_loss
-                            best_train_accuracy = train_accuracy
-                            saver.save(
-                                session, config.ckpt_path + 'dmn.weights')
                     print('best_train_loss: {}'.format(best_train_loss))
                     print('best_train_epoch: {}'.format(best_train_epoch))
                     print('best_train_accuracy: {}'.format(best_train_accuracy))
