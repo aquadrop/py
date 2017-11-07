@@ -32,7 +32,7 @@ def _pickle():
     slots_trans['query'] = '查询'
     slots_trans['float'] = ''
     slots_trans['deny'] = '拒绝'
-    slots_trans['all'] = '所有'
+    slots_trans['all'] = ''
     slots_trans['location'] = '地点'
     slots_trans['whatever'] = '随便'
     slots_trans['general'] = '通用'
