@@ -18,22 +18,22 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 64
+    batch_size = 4
     embed_size = 300
-    hidden_size = 300
+    hidden_size = 128
 
     max_epochs = 345
     early_stopping = 20
 
     dropout = 0.5
     lr = 0.001
-    l2 = 0.005
+    l2 = 0.001
 
     cap_grads = True
     max_grad_val = 10
     noisy_grads = True
 
-    word2vec_init = True
+    word_vector = True
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -67,6 +67,9 @@ class Config(object):
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
+
+    vocab_path = os.path.join(prefix, 'data/char_table/dmn_vocab.txt')
+
     DATA_DIR = os.path.join(prefix, 'data/memn2n/train/tree/origin/')
     CANDID_PATH = os.path.join(
         prefix, 'data/memn2n/train/tree/origin/candidates.txt')
@@ -81,13 +84,13 @@ class Config(object):
     metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/metadata.pkl')
     data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-test/')
 
     multi_metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
     multi_data_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_data.pkl')
-    multi_ckpt_path = os.path.join(prefix, 'model/dmn/multi_ckpt/')
+    multi_ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-test/')
 
     metadata_path = multi_metadata_path if multi_label else metadata_path
     data_path = multi_data_path if multi_label else data_path
@@ -240,7 +243,7 @@ class DMN_PLUS(object):
             if not 'bias' in v.name.lower():
                 loss += self.config.l2 * tf.nn.l2_loss(v)
 
-        tf.summary.scalar('loss', loss)
+        # tf.summary.scalar('loss', loss)
 
         return loss
 
@@ -448,22 +451,25 @@ class DMN_PLUS(object):
                     self.rel_label_placeholder: r[index],
                     self.dropout_placeholder: dp}
 
-            loss, pred, summary, output, _ = session.run(
-                [self.calculate_loss, self.pred, self.merged, self.output, train_op], feed_dict=feed)
+            loss, pred, output, _ = session.run(
+                [self.calculate_loss, self.pred, self.output, train_op], feed_dict=feed)
 
-            if train_writer is not None:
-                train_writer.add_summary(
-                    summary, num_epoch * total_steps + step)
+            # if train_writer is not None:
+            #     train_writer.add_summary(
+            #         summary, num_epoch * total_steps + step)
 
             answers = a[step *
                         config.batch_size:(step + 1) * config.batch_size]
             questions = qp[step *
                            config.batch_size:(step + 1) * config.batch_size]
 
+            # print(pred)
+
             if self.config.multi_label:
                 # multi target
                 correct = 0
-                pred = pred[1].tolist()
+                # print('----', pred, '----')
+                pred = pred.indices.tolist()
                 # print('----',pred,'----')
                 for i in range(config.batch_size):
                     predicts = pred[i]
@@ -486,7 +492,10 @@ class DMN_PLUS(object):
                 accuracy += correct / float(len(answers))
 
             else:
-                accuracy += np.sum(pred == answers) / float(len(answers))
+                pred = pred.indices
+                pred = pred.T[0]
+                accuracy += np.sum(pred.tolist() == answers) / \
+                    float(len(answers))
 
                 for Q, A, P in zip(questions, answers, pred):
                     if A != P:
@@ -531,7 +540,7 @@ class DMN_PLUS(object):
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self.add_loss_op(self.output)
         self.train_step = self.add_training_op(self.calculate_loss)
-        self.merged = tf.summary.merge_all()
+        # self.merged = tf.summary.merge_all()
 
 
 if __name__ == '__main__':

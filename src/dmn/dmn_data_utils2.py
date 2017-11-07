@@ -47,7 +47,7 @@ def get_candidates_word_dict():
 
 
 def load_raw_data(data_path, candid_path, word2vec_init=False):
-    print('Load raw data.')
+    print('Load raw data.....')
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
         candidates_f=candid_path)
 
@@ -219,13 +219,13 @@ def load_data(config, split_sentences=True):
 
     train_data, val_data, test_data, candidates, candid2idx, idx2candid = \
         load_raw_data(data_dir, candid_path,
-                      word2vec_init=config.word2vec_init)
+                      word2vec_init=config.word_vector)
 
-    if config.word2vec_init:
+    if config.word_vector:
         print('Process word vector.')
 
         if os.path.exists(config.metadata_path):
-            print('updata.....')
+            print('Updata.....')
             with open(config.metadata_path, 'rb') as f:
                 metadata = pickle.load(f)
             w2idx = metadata['w2idx']
@@ -246,7 +246,7 @@ def load_data(config, split_sentences=True):
             process_word(data=test_data, w2idx=w2idx, idx2w=idx2w,
                          word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding)
         else:
-            print('init.....')
+            print('Init.....')
             process_word_core('unk', w2idx, idx2w,
                               word_embedding, word2vec, updated_embedding, init=True)
             process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
@@ -265,7 +265,9 @@ def load_data(config, split_sentences=True):
         vocab_size = len(w2idx)
         # word_embedding = np.asarray(word_embedding)
     else:
-        with open(os.path.join(grandfatherdir, VOCAB_PATH), 'r') as f:
+        print('Process char level.....')
+
+        with open(os.path.join(grandfatherdir, config.vocab_path), 'r') as f:
             vocab = json.load(f)
         w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
         idx2w = dict((i + 1, c) for i, c in enumerate(vocab))

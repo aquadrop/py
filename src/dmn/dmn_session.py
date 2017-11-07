@@ -49,7 +49,7 @@ class DmnSession():
 
     def clear_memory(self, history=0):
         if history == 0:
-            self.context = [['此', '乃', '空', '文']]
+            self.context = [[' ']]
             # self.context = [[]]
         else:
             self.context = self.context[-history:]
@@ -94,7 +94,7 @@ class DmnSession():
             preds = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)
 
-            # print('preds:', preds)
+            print('preds:', preds)
             # if self.config.multi_label:
             indices = preds[0].indices.tolist()[0]
             values = preds[0].values.tolist()[0]

@@ -110,10 +110,10 @@ def main(args):
 
         with tf.Session() as session:
 
-            sum_dir = 'summaries/train/' + time.strftime("%Y-%m-%d %H %M")
-            if not os.path.exists(sum_dir):
-                os.makedirs(sum_dir)
-            train_writer = tf.summary.FileWriter(sum_dir, session.graph)
+            # sum_dir = 'summaries/train/' + time.strftime("%Y-%m-%d %H %M")
+            # if not os.path.exists(sum_dir):
+            #     os.makedirs(sum_dir)
+            # train_writer = tf.summary.FileWriter(sum_dir, session.graph)
 
             session.run(init)
 
@@ -144,15 +144,15 @@ def main(args):
             for epoch in range(config.max_epochs):
                 if not (epoch % 2 == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
-                    _ = model.run_epoch(session, model.train, epoch, train_writer,
+                    _ = model.run_epoch(session, model.train, epoch,
                                         train_op=model.train_step, train=True)
-                    # _ = model.run_epoch(session, model.valid, epoch, train_writer,
+                    # _ = model.run_epoch(session, model.valid, epoch,
                     #                     train_op=model.train_step, train=True)
                 else:
                     print('Epoch {}'.format(epoch))
                     start = time.time()
                     train_loss, train_accuracy, train_error = model.run_epoch(
-                        session, model.train, epoch, train_writer,
+                        session, model.train, epoch,
                         train_op=model.train_step, train=True, display=True)
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, model.valid, display=True)

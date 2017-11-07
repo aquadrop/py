@@ -327,13 +327,13 @@ def gen_sessions(belief_tracker, output_files):
     flows = list()
     mapper = {'train': train_set, 'val': val_set, 'test': test_set}
     which = np.random.choice(['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
-    fresh = True
+    fresh = False
     with_multiple = False
     mlt_container = []
     mlt_candidates = []
-    with_qa = True
+    with_qa = False
     with_deny = True
-    with_whatever = True
+    with_whatever = False
     while 1:
         if requested == 'property':
             slot_values_mapper = gen_ambiguity_initial()
@@ -502,13 +502,13 @@ def gen_sessions(belief_tracker, output_files):
     #     val_set), len(test_set), len(candidates))
     #
 
-    with_flow = True
+    with_flow = False
     if with_flow:
         with open(grandfatherdir + '/data/memn2n/train/tree/origin/flow.txt', 'w', encoding='utf-8') as f:
             for line in flows:
                 f.writelines(line + '\n')
 
-    with_base = True
+    with_base = False
     with_gbdt = False
     base_count = 0
     base = []
@@ -548,7 +548,7 @@ def gen_sessions(belief_tracker, output_files):
         for b in base:
             f.writelines(b + '\n')
 
-    with_faq = True
+    with_faq = False
     if with_faq:
         faq = set()
         with open(grandfatherdir + '/data/memn2n/train/faq/facility.txt', encoding='utf-8') as cf:
