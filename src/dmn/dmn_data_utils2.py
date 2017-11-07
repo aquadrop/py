@@ -172,7 +172,10 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
             next_index = len(w2idx)
             w2idx[word] = next_index
             idx2w[next_index] = word
-            embedding = ff_embedding(word)
+            if word.startswith('reserved_'):
+                embedding = word2vec['unk']
+            else:
+                embedding = ff_embedding(word)
             word2vec[word] = embedding
             word_embedding.append(embedding)
         else:

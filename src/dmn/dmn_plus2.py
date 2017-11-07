@@ -25,9 +25,9 @@ class Config(object):
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.5
+    dropout = 1
     lr = 0.001
-    l2 = 0.005
+    l2 = 0.001
 
     cap_grads = True
     max_grad_val = 10
@@ -42,7 +42,7 @@ class Config(object):
 
     # NOTE not currently used hence non-sensical anneal_threshold
     anneal_threshold = 1000
-    anneal_by = 1.5
+    anneal_by = 1
 
     num_hops = 2
     num_attention_features = 4
@@ -54,7 +54,7 @@ class Config(object):
 
     multi_label = False
     top_k = 5
-    max_memory_size = 20
+    max_memory_size = 10
     fix_vocab = True
 
     train_mode = True
@@ -122,7 +122,7 @@ def _position_encoding(sentence_size, embedding_size):
 
 
 class DMN_PLUS(object):
-    def load_data(self, debug=False):
+    def _load_data(self, debug=False):
         """Loads data from metadata"""
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
@@ -159,7 +159,7 @@ class DMN_PLUS(object):
         # print('load:',self.updated_embedding)
         # print(self.idx2candid)
 
-    def add_placeholders(self):
+    def _create_placeholders(self):
         """add data placeholder to graph"""
         self.question_placeholder = tf.placeholder(
             tf.int32, shape=(None, self.max_q_len), name='question')
@@ -203,14 +203,14 @@ class DMN_PLUS(object):
             preds = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
-            preds = tf.nn.softmax(output)
-            preds = tf.nn.top_k(preds, k=self.config.top_k)
-            # pred = tf.argmax(preds, 1)
+            predict_proba_op = tf.nn.softmax(output)
+            predict_proba_top_op = tf.nn.top_k(predict_proba_op, k=self.config.top_k)
+            pred = tf.argmax(predict_proba_op, 1)
 
-        # return pred, probs
-        return preds
+        return pred, predict_proba_op
+        # return preds
 
-    def add_loss_op(self, output):
+    def _create_loss(self, output):
         """Calculate loss"""
         # optional strong supervision of attention with supporting facts
         gate_loss = 0
@@ -244,9 +244,9 @@ class DMN_PLUS(object):
 
         return loss
 
-    def add_training_op(self, loss):
+    def _create_training_op(self, loss):
         """Calculate and apply gradients"""
-        opt = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+        opt = tf.train.AdamOptimizer(learning_rate=self.config.lr, epsilon=1e-8)
         gvs = opt.compute_gradients(loss)
 
         # optionally cap and noise gradients to regularize
@@ -358,7 +358,7 @@ class DMN_PLUS(object):
 
         return output
 
-    def inference(self):
+    def _inference(self):
         """Performs inference on the DMN model"""
 
         # set up embedding
@@ -489,6 +489,7 @@ class DMN_PLUS(object):
                 accuracy += np.sum(pred == answers) / float(len(answers))
 
                 for Q, A, P in zip(questions, answers, pred):
+                    # print(A, P)
                     if A != P:
                         Q = ''.join([self.idx2w.get(idx, '')
                                      for idx in Q.astype(np.int32).tolist()])
@@ -524,13 +525,13 @@ class DMN_PLUS(object):
     def __init__(self, config):
         self.config = config
         self.variables_to_save = {}
-        self.load_data(debug=False)
-        self.add_placeholders()
-        self.output = self.inference()
-        self.pred = self.get_predictions(self.output)
+        self._load_data(debug=False)
+        self._create_placeholders()
+        self.output = self._inference()
+        self.pred, _ = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
-        self.calculate_loss = self.add_loss_op(self.output)
-        self.train_step = self.add_training_op(self.calculate_loss)
+        self.calculate_loss = self._create_loss(self.output)
+        self.train_step = self._create_training_op(self.calculate_loss)
         self.merged = tf.summary.merge_all()
 
 

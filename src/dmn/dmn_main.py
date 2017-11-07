@@ -29,6 +29,7 @@ from dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
+EPOCH = 5
 
 def prepare_data(args, config):
     train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
@@ -89,7 +90,7 @@ def main(args):
     # print(args)
 
     config = Config()
-
+    args['train'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
@@ -142,7 +143,7 @@ def main(args):
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % 2 == 0 and epoch > 1):
+                if not (epoch % EPOCH == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, model.train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
@@ -176,6 +177,7 @@ def main(args):
                                 session, config.ckpt_path + 'dmn.weights')
                     print('best_train_loss: {}'.format(best_train_loss))
                     print('best_train_epoch: {}'.format(best_train_epoch))
+                    print('best_train_accuracy: {}'.format(best_train_accuracy))
 
                     # anneal
                     if train_loss > prev_epoch_loss * model.config.anneal_threshold:
