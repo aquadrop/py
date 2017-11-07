@@ -70,8 +70,11 @@ class Graph(Node, object):
         self.range_adapter_mapper['fr.width'] = 'width'
         self.range_adapter_mapper['phone.rmem'] = 'memory'
         self.range_adapter_mapper['pc.mem'] = 'memory'
+        self.range_adapter_mapper['fr.vol'] = '__L__'
 
     def range_adapter(self, key):
+        if key not in self.range_adapter_mapper:
+            return ''
         return self.range_adapter_mapper[key]
 
     def is_entity_value(self, value):

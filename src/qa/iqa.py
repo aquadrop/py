@@ -20,7 +20,7 @@ class Qa:
         self.core = core
         self.base = BaseKernel()
 
-    def get_responses(self, query, ):
+    def get_responses(self, query, user='solr'):
         docs = solr_qa(self.core, query, 'g')
         # print(docs)
         best_query = None
