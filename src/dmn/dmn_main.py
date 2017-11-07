@@ -218,7 +218,7 @@ def main(args):
 
 class InteractiveSession():
     def __init__(self, session, model, config):
-        self.context = [['此', '乃', '空', '文']]
+        self.context = [[' ']]
         self.u = None
         self.r = None
         self.model = model

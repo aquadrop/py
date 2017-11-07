@@ -13,9 +13,9 @@ import sys
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 parentdir = os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))
+    os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -30,7 +30,7 @@ translator = Translator()
 
 class DmnSession():
     def __init__(self, session, model, config, char=2):
-        self.context = [['此', '乃', '空', '文']]
+        self.context = [[' ']]
         self.u = None
         self.r = None
         self.model = model
@@ -74,7 +74,7 @@ class DmnSession():
             questions.append(np.vstack(q_vector).astype(np.float32))
 
             input_lens, sen_lens, max_sen_len = dmn_data_utils.get_sentence_lens(
-                    inputs)
+                inputs)
 
             q_lens = dmn_data_utils.get_lens(questions)
 
@@ -88,7 +88,7 @@ class DmnSession():
             inputs = np.asarray(inputs)
 
             questions = dmn_data_utils.pad_inputs(
-                    questions, q_lens, max_q_len)
+                questions, q_lens, max_q_len)
             questions = np.asarray(questions)
 
             preds = self.model.predict(self.session,

@@ -20,12 +20,12 @@ class Config(object):
 
     batch_size = 64
     embed_size = 300
-    hidden_size = 128
+    hidden_size = 300
 
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.9
+    dropout = 0.5
     lr = 0.001
     l2 = 0.005
 
@@ -52,7 +52,7 @@ class Config(object):
 
     floatX = np.float32
 
-    multi_label = True
+    multi_label = False
     top_k = 5
     max_memory_size = 20
     fix_vocab = True
