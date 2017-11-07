@@ -8,7 +8,7 @@ import pickle
 
 import numpy as np
 from copy import deepcopy
-
+from tqdm import tqdm
 import tensorflow as tf
 from dmn.attention_gru_cell import AttentionGRUCell
 
@@ -423,7 +423,7 @@ class DMN_PLUS(object):
         qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
 
         if not display:
-            for step in range(total_steps):
+            for step in tqdm(range(total_steps)):
                 index = range(step * config.batch_size,
                               (step + 1) * config.batch_size)
                 feed = {self.question_placeholder: qp[index],
