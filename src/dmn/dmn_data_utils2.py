@@ -34,6 +34,13 @@ VOCAB_PATH = 'data/char_table/vocab.txt'
 # can be sentence or word
 input_mask_mode = "sentence"
 
+from gensim.models.wrappers import FastText
+
+print('loading fasttext model..')
+model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+
+def ff_embedding_local(word):
+    return model[word]
 
 def get_candidates_word_dict():
     with open(os.path.join(grandfatherdir, VOCAB_PATH), 'r') as f:
@@ -175,7 +182,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
             if word.startswith('reserved_'):
                 embedding = word2vec['unk']
             else:
-                embedding = ff_embedding(word)
+                embedding = ff_embedding_local(word)
             word2vec[word] = embedding
             word_embedding.append(embedding)
         else:
@@ -189,7 +196,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
                 w2idx[word] = next_index
                 idx2w[next_index] = word
                 # embedding = word2vec[w]
-                new_embedding = ff_embedding(word)
+                new_embedding = ff_embedding_local(word)
                 # index = word_embedding.index(embedding)
                 word_embedding[next_index] = new_embedding
                 updated_embedding[next_index] = new_embedding
