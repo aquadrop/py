@@ -105,7 +105,11 @@ def parse_dialogs_per_response(lines, candid_dic, char=1):
         if line:
             if '\t' in line:
                 # print(line)
-                u, r, salt = line.split('\t')
+                try:
+                    u, r, salt = line.split('\t')
+                except:
+                    print(line)
+                    exit(-1)
                 if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:

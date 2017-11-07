@@ -29,7 +29,7 @@ from dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
-EPOCH = 5
+EPOCH = 15
 
 def prepare_data(args, config):
     train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
@@ -90,7 +90,6 @@ def main(args):
     # print(args)
 
     config = Config()
-    args['train'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
@@ -99,6 +98,7 @@ def main(args):
         print('>> Preparing Data Time:{}'.format(end - begin))
         sys.exit()
 
+    args['train'] = 'yeah'
     if args['train']:
         model = DMN_PLUS(config)
         print('Training DMN-PLUS start')
@@ -111,10 +111,11 @@ def main(args):
 
         with tf.Session() as session:
 
-            sum_dir = 'summaries/train/' + time.strftime("%Y-%m-%d %H %M")
-            if not os.path.exists(sum_dir):
-                os.makedirs(sum_dir)
-            train_writer = tf.summary.FileWriter(sum_dir, session.graph)
+            # sum_dir = 'summaries/train/' + time.strftime("%Y-%m-%d %H %M")
+            # if not os.path.exists(sum_dir):
+            #     os.makedirs(sum_dir)
+            # train_writer = tf.summary.FileWriter(sum_dir, session.graph)
+            train_writer = None
 
             session.run(init)
 

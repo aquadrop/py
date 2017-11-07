@@ -448,12 +448,12 @@ class DMN_PLUS(object):
                     self.rel_label_placeholder: r[index],
                     self.dropout_placeholder: dp}
 
-            loss, pred, summary, output, _ = session.run(
-                [self.calculate_loss, self.pred, self.merged, self.output, train_op], feed_dict=feed)
+            loss, pred, output, _ = session.run(
+                [self.calculate_loss, self.pred, self.output, train_op], feed_dict=feed)
 
-            if train_writer is not None:
-                train_writer.add_summary(
-                    summary, num_epoch * total_steps + step)
+            # if train_writer is not None:
+            #     train_writer.add_summary(
+            #         summary, num_epoch * total_steps + step)
 
             answers = a[step *
                         config.batch_size:(step + 1) * config.batch_size]
@@ -532,7 +532,7 @@ class DMN_PLUS(object):
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self._create_loss(self.output)
         self.train_step = self._create_training_op(self.calculate_loss)
-        self.merged = tf.summary.merge_all()
+        # self.merged = tf.summary.merge_all()
 
 
 if __name__ == '__main__':
