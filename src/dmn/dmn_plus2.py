@@ -50,7 +50,7 @@ class Config(object):
     max_allowed_inputs = 130
     total_num = 3000000
 
-    floatX = np.float32
+    floatX = np.int32
 
     multi_label = False
     top_k = 5
@@ -122,11 +122,8 @@ def _position_encoding(sentence_size, embedding_size):
 
 
 class DMN_PLUS(object):
-    def _load_data(self, debug=False):
+    def _load_data(self, metadata, debug=False):
         """Loads data from metadata"""
-        with open(self.config.metadata_path, 'rb') as f:
-            metadata = pickle.load(f)
-
         self.word2vec = metadata['word2vec']
         self.word_embedding = np.asarray(metadata['word_embedding'])
         self.updated_embedding = metadata['updated_embedding']
@@ -149,16 +146,17 @@ class DMN_PLUS(object):
               .format(self.max_q_len, self.max_input_len, self.max_sen_len, self.vocab_size, self.candidate_size))
 
 
-        if self.config.train_mode:
-            print('Load metadata (training mode)')
-
-            with open(self.config.data_path, 'rb') as f:
-                data = pickle.load(f)
-
-            self.train = data['train']
-            self.valid = data['valid']
-        else:
-            print('Load metadata (infer mode)')
+        # if self.config.train_mode:
+        #     print('Load metadata (training mode)')
+        #
+        #     with open(self.config.data_path, 'rb') as f:
+        #         data = pickle.load(f)
+        #
+        #     train = data['train']
+        #     valid = data['valid']
+        #     self.train =
+        # else:
+        #     print('Load metadata (infer mode)')
 
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
@@ -427,7 +425,7 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
-        # print(len(data[0]))
+        print(len(data[0]), config.batch_size, total_steps)
 
         total_loss = []
         accuracy = 0
@@ -538,10 +536,10 @@ class DMN_PLUS(object):
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
 
-    def __init__(self, config):
+    def __init__(self, config, metadata):
         self.config = config
         self.variables_to_save = {}
-        self._load_data(debug=False)
+        self._load_data(metadata=metadata, debug=False)
         self._create_placeholders()
         self.output = self._inference()
         self.pred, _ = self.get_predictions(self.output)

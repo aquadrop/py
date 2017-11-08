@@ -187,85 +187,6 @@ def _check_restore_parameters(sess, saver, model_path):
     else:
         print("Initializing fresh parameters for the model")
 
-
-class InteractiveSession():
-    def __init__(self, model, idx2candid, w2idx, n_cand, memory_size):
-        self.context = []
-        self.u = None
-        self.r = None
-        self.nid = 1
-        self.model = model
-        self.idx2candid = idx2candid
-        self.w2idx = w2idx
-        self.n_cand = model.get_sentence_size()
-        self.memory_size = memory_size
-
-    def reply(self, msg):
-        line = msg.strip().lower()
-        if line == 'clear':
-            self.context = []
-            self.nid = 1
-            reply_msg = 'memory cleared!'
-        else:
-            if config.MULTILABEL >= 1:
-                u = tokenize(line)
-                print('context:', self.context)
-                data = [(self.context, u, -1)]
-                print('data:', data)
-                s, q, a = data_utils.vectorize_data(data,
-                                                    self.w2idx,
-                                                    self.model.get_sentence_size(),
-                                                    1,
-                                                    self.n_cand,
-                                                    self.memory_size)
-                preds, top_probs = self.model.predict(s, q)
-                # preds = preds.indices[0]
-                preds = preds.indices[0].tolist()
-                top_probs = top_probs.values[0]
-                print(top_probs)
-                r = []
-                for i, pred in enumerate(preds):
-                    r.append(self.idx2candid[pred])
-
-                reply_msg = ','.join(r)
-                if config.TRANSLATE >= 1:
-                    r = translator.en2cn(r)
-                r = tokenize(reply_msg)
-                u.append('$u')
-                # u.append('#' + str(self.nid))
-                r.append('$r')
-
-                # r.append('#' + str(self.nid))
-                self.context.append(u)
-                self.context.append(r)
-                print('context:', self.context)
-                self.nid += 1
-            else:
-                u = data_utils.tokenize(line)
-                data = [(self.context, u, -1)]
-                s, q, a = data_utils.vectorize_data(data,
-                                                    self.w2idx,
-                                                    self.model.get_sentence_size(),
-                                                    1,
-                                                    self.n_cand,
-                                                    self.memory_size)
-                preds, top_probs = self.model.predict(s, q)
-                r = self.idx2candid[preds[0]]
-                reply_msg = r
-                if config.FIX_VOCAB:
-                    r = translator.en2cn(r)
-                r = data_utils.tokenize(r)
-                u.append('$u')
-                # u.append('#' + str(self.nid))
-                r.append('$r')
-                # r.append('#' + str(self.nid))
-                self.context.append(u)
-                self.context.append(r)
-                self.nid += 1
-
-        return reply_msg
-
-
 def main(args):
     # parse args
     args = parse_args(args)
@@ -434,23 +355,24 @@ def main(args):
     else:  # inference
         ###
         # restore checkpoint
-        ckpt = tf.train.get_checkpoint_state(CKPT_DIR)
-        if ckpt and ckpt.model_checkpoint_path:
-            print('\n>> restoring checkpoint from', ckpt.model_checkpoint_path)
-            model.saver.restore(model.get_sess(), ckpt.model_checkpoint_path)
-        # base(model, idx2candid, w2idx, sentence_size, BATCH_SIZE, n_cand, memory_size)
-
-        # create an base session instance
-        isess = InteractiveSession(
-            model, idx2candid, w2idx, n_cand, memory_size)
-
-        if args['infer']:
-            query = ''
-            while query != 'exit':
-                query = input('>> ')
-                print('>> ' + isess.reply(query))
-        elif args['ui']:
-            return isess
+        # ckpt = tf.train.get_checkpoint_state(CKPT_DIR)
+        # if ckpt and ckpt.model_checkpoint_path:
+        #     print('\n>> restoring checkpoint from', ckpt.model_checkpoint_path)
+        #     model.saver.restore(model.get_sess(), ckpt.model_checkpoint_path)
+        # # base(model, idx2candid, w2idx, sentence_size, BATCH_SIZE, n_cand, memory_size)
+        #
+        # # create an base session instance
+        # isess = InteractiveSession(
+        #     model, idx2candid, w2idx, n_cand, memory_size)
+        #
+        # if args['infer']:
+        #     query = ''
+        #     while query != 'exit':
+        #         query = input('>> ')
+        #         print('>> ' + isess.reply(query))
+        # elif args['ui']:
+        #     return isess
+        pass
 
 
 def recover(index, stories, sentence, predicted, ground, idx2w, idx2candid):
