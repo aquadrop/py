@@ -159,10 +159,9 @@ def main(args):
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, model.valid, display=True)
                     # print('Training error:')
-                    if len(train_error) > 100:
-                        train_error = np.random.choice(train_error, 100)
-                    for e in train_error:
-                        print(e)
+                    if train_accuracy > 0.99:
+                        for e in train_error:
+                            print(e)
                     # print('Validation error:')
                     print('Training loss: {}'.format(train_loss))
                     print('Validation loss: {}'.format(valid_loss))
