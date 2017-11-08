@@ -523,7 +523,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 150:
+                if i >= 600:
                     break
 
         # lower everything
