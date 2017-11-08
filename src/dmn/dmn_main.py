@@ -59,9 +59,9 @@ def prepare_data(args, config):
     # print('updated_embedding:', updated_embedding)
 
     with open(config.metadata_path, 'wb') as f:
-        pickle.dump(metadata, f)
+        pickle.dump(metadata, f, protocol=4)
     with open(config.data_path, 'wb') as f:
-        pickle.dump(data, f)
+        pickle.dump(data, f, protocol=4)
 
 
 def parse_args(args):
@@ -84,12 +84,22 @@ def parse_args(args):
     args = vars(parser.parse_args(args))
     return args
 
+def _check_restore_parameters(sess, saver, model_path):
+    """ Restore the previously trained parameters if there are any. """
+    print("--checking directory:", model_path)
+    ckpt = tf.train.get_checkpoint_state(model_path)
+    if ckpt and ckpt.model_checkpoint_path:
+        print("Loading parameters for the model")
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        print("Initializing fresh parameters for the model")
 
 def main(args):
     args = parse_args(args)
     # print(args)
 
     config = Config()
+    # args['prep_data'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
@@ -98,7 +108,6 @@ def main(args):
         print('>> Preparing Data Time:{}'.format(end - begin))
         sys.exit()
 
-    args['train'] = 'yeah'
     if args['train']:
         model = DMN_PLUS(config)
         print('Training DMN-PLUS start')
@@ -119,6 +128,8 @@ def main(args):
 
             session.run(init)
 
+            _check_restore_parameters(session, saver, model_path=config.ckpt_path)
+
             best_val_epoch = 0
             prev_epoch_loss = float('inf')
             best_val_loss = float('inf')
@@ -128,19 +139,22 @@ def main(args):
             best_train_loss = float('inf')
             best_train_accuracy = 0.8
 
-            if args['restore']:
-                print('==> restoring weights')
-                saver.restore(session, config.ckpt_path + 'dmn.weights')
-                if len(model.updated_embedding):
-                    print('==> update embedding')
-                    embeddings = update_embedding(
-                        session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
-                    session.run(model.embedding_init, feed_dict={
-                                model.embedding_placeholder: embeddings})
-
-            else:
+            if config.word2vec_init:
                 session.run(model.embedding_init, feed_dict={
-                            model.embedding_placeholder: model.word_embedding})
+                                     model.embedding_placeholder: model.word_embedding})
+            # if args['restore']:
+            #     print('==> restoring weights')
+            #     saver.restore(session, config.ckpt_path + 'dmn.weights')
+            #     if len(model.updated_embedding):
+            #         print('==> update embedding')
+            #         embeddings = update_embedding(
+            #             session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
+            #         session.run(model.embedding_init, feed_dict={
+            #                     model.embedding_placeholder: embeddings})
+            #
+            # else:
+            #     session.run(model.embedding_init, feed_dict={
+            #                 model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):

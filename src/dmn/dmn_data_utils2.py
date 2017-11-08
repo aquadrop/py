@@ -16,6 +16,7 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 sys.path.insert(0, grandfatherdir)
 
 import dmn.data_utils as data_utils
+from dmn.dmn_plus2 import Config
 # from dmn.vector_helper import getVector
 from utils.embedding_util import ff_embedding
 
@@ -36,8 +37,10 @@ input_mask_mode = "sentence"
 
 from gensim.models.wrappers import FastText
 
-print('loading fasttext model..')
-model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+config = Config()
+if config.word2vec_init:
+    print('loading fasttext model..')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
 
 def ff_embedding_local(word):
     return model[word]
@@ -58,7 +61,7 @@ def load_raw_data(data_path, candid_path, word2vec_init=False):
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
         candidates_f=candid_path)
 
-    char = 2 if word2vec_init else 1
+    char = 2 if word2vec_init else 0
     train_data, test_data, val_data = data_utils.load_dialog(
         data_dir=data_path,
         candid_dic=candid2idx, char=char)
@@ -78,7 +81,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         inp, question, answer = data
         # print(inp)
         if len(inp) == 0:
-            inp = [[' ']]
+            inp = [['']]
         if split_sentences:
             inp_vector = [[w2idx.get(w, 0) for w in s] for s in inp]
             inputs.append(inp_vector)
