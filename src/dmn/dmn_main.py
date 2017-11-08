@@ -159,6 +159,8 @@ def main(args):
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, model.valid, display=True)
                     # print('Training error:')
+                    if train_error > 100:
+                        train_error = np.random.choice(train_error, 100)
                     for e in train_error:
                         print(e)
                     # print('Validation error:')
@@ -167,7 +169,7 @@ def main(args):
                     print('Training accuracy: {}'.format(train_accuracy))
                     print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                    if train_loss < best_train_loss or train_accuracy > best_train_accuracy:
+                    if train_accuracy > best_train_accuracy:
                         print('Saving weights and updating best_train_loss:{} -> {},\
                                best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,\
                                                                     best_train_accuracy, train_accuracy))
