@@ -18,7 +18,7 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 128
+    batch_size = 64
     embed_size = 300
     hidden_size = 300
 
@@ -27,13 +27,13 @@ class Config(object):
 
     dropout = 1
     lr = 0.001
-    l2 = 0.001
+    l2 = 0
 
     cap_grads = True
     max_grad_val = 10
     noisy_grads = True
 
-    word2vec_init = True
+    word2vec_init = False
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -44,7 +44,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1
 
-    num_hops = 2
+    num_hops = 5
     num_attention_features = 4
 
     max_allowed_inputs = 130
@@ -142,6 +142,13 @@ class DMN_PLUS(object):
         self.w2idx = metadata['w2idx']
         self.idx2w = metadata['idx2w']
 
+        self._init = tf.random_normal_initializer(stddev=0.1)
+
+        print('-- memory corpus config --\
+              \n max_q_len:{}\n max_input_len:{}\n max_sen_len:{}\n vocab_size:{}\n cadidate_size:{}\n'
+              .format(self.max_q_len, self.max_input_len, self.max_sen_len, self.vocab_size, self.candidate_size))
+
+
         if self.config.train_mode:
             print('Load metadata (training mode)')
 
@@ -185,12 +192,17 @@ class DMN_PLUS(object):
             None, self.num_supporting_facts), name='rel_label')
 
         with tf.variable_scope('embedding') as scope:
-            self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
-                                          trainable=False, name="embeddings")
-            self.embedding_placeholder = tf.placeholder(
-                tf.float32, [self.vocab_size, self.config.embed_size])
-            self.embedding_init = self.embeddings.assign(
-                self.embedding_placeholder)
+            if self.config.word2vec_init:
+                self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
+                                              trainable=not self.config.word2vec_init, name="embeddings")
+                self.embedding_placeholder = tf.placeholder(
+                    tf.float32, [self.vocab_size, self.config.embed_size])
+                self.embedding_init = self.embeddings.assign(
+                    self.embedding_placeholder)
+            else:
+                A = self._init(
+                    [self.vocab_size, self.config.embed_size])
+                self.embeddings = tf.Variable(A, name="embeddings")
 
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
@@ -227,7 +239,7 @@ class DMN_PLUS(object):
             loss = self.config.beta * tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=output, labels=self.answer_placeholder)) + gate_loss
         else:
-            loss = self.config.beta * tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+            loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=output, labels=self.answer_placeholder)) + gate_loss
 
         # stackoverflow :https://stackoverflow.com/questions/33712178/tensorflow-nan-bug
@@ -283,6 +295,10 @@ class DMN_PLUS(object):
 
         forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
+        # outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
+        #                   sequence_length=self.input_len_placeholder,
+        #                   dtype=np.float32)
+        # fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
         outputs, _ = tf.nn.bidirectional_dynamic_rnn(
             forward_gru_cell,
             backward_gru_cell,
