@@ -32,28 +32,31 @@ translator = Translator()
 EPOCH = 5
 
 def prepare_data(args, config):
-    train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
-        num_supporting_facts, vocab_size, candidate_size, candid2idx, \
-        idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
+    # train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
+    #     num_supporting_facts, vocab_size, candidate_size, candid2idx, \
+    #     idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
+    #         config, split_sentences=True)
+    train_data, val_data, test_data, metadata = dmn_data_utils.load_data(
             config, split_sentences=True)
-
-    metadata = dict()
+    # metadata = dict()
     data = dict()
-    data['train'] = train
-    data['valid'] = valid
-    metadata['word_embedding'] = word_embedding
-    metadata['updated_embedding'] = updated_embedding
-    metadata['word2vec'] = word2vec
-    metadata['max_q_len'] = max_q_len
-    metadata['max_input_len'] = max_input_len
-    metadata['max_sen_len'] = max_sen_len
-    metadata['num_supporting_facts'] = num_supporting_facts
-    metadata['vocab_size'] = vocab_size
-    metadata['candidate_size'] = candidate_size
-    metadata['candid2idx'] = candid2idx
-    metadata['idx2candid'] = idx2candid
-    metadata['w2idx'] = w2idx
-    metadata['idx2w'] = idx2w
+    data['train'] = train_data
+    data['valid'] = val_data
+
+    # metadata['word_embedding'] = word_embedding
+    # metadata['updated_embedding'] = updated_embedding
+    # metadata['word2vec'] = word2vec
+    #
+    # metadata['max_q_len'] = max_q_len
+    # metadata['max_input_len'] = max_input_len
+    # metadata['max_sen_len'] = max_sen_len
+    # metadata['num_supporting_facts'] = num_supporting_facts
+    # metadata['vocab_size'] = vocab_size
+    # metadata['candidate_size'] = candidate_size
+    # metadata['candid2idx'] = candid2idx
+    # metadata['idx2candid'] = idx2candid
+    # metadata['w2idx'] = w2idx
+    # metadata['idx2w'] = idx2w
 
     # print('after.')
     # print('updated_embedding:', updated_embedding)
@@ -99,7 +102,7 @@ def main(args):
     # print(args)
 
     config = Config()
-    # args['prep_data'] = 'yeah'
+    args['train'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
@@ -109,10 +112,21 @@ def main(args):
         sys.exit()
 
     if args['train']:
-        model = DMN_PLUS(config)
-        print('Training DMN-PLUS start')
 
-        best_overall_train_loss = float('inf')
+        print('Load metadata and data files (training mode)')
+        with open(config.data_path, 'rb') as f:
+            data = pickle.load(f)
+
+        with open(config.metadata_path, 'rb') as f:
+            metadata = pickle.load(f)
+
+        train = data['train']
+        valid = data['valid']
+        train = dmn_data_utils.vectorize_data(config, train, metadata)
+        valid = dmn_data_utils.vectorize_data(config, valid, metadata)
+
+        model = DMN_PLUS(config, metadata)
+        print('Training DMN-PLUS start')
 
         print('==> initializing variables')
         init = tf.global_variables_initializer()
@@ -142,25 +156,12 @@ def main(args):
             if config.word2vec_init:
                 session.run(model.embedding_init, feed_dict={
                                      model.embedding_placeholder: model.word_embedding})
-            # if args['restore']:
-            #     print('==> restoring weights')
-            #     saver.restore(session, config.ckpt_path + 'dmn.weights')
-            #     if len(model.updated_embedding):
-            #         print('==> update embedding')
-            #         embeddings = update_embedding(
-            #             session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
-            #         session.run(model.embedding_init, feed_dict={
-            #                     model.embedding_placeholder: embeddings})
-            #
-            # else:
-            #     session.run(model.embedding_init, feed_dict={
-            #                 model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
                 if not (epoch % EPOCH == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
-                    _ = model.run_epoch(session, model.train, epoch, train_writer,
+                    _ = model.run_epoch(session, train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
                     # _ = model.run_epoch(session, model.valid, epoch, train_writer,
                     #                     train_op=model.train_step, train=True)
@@ -168,10 +169,10 @@ def main(args):
                     print('Epoch {}'.format(epoch))
                     start = time.time()
                     train_loss, train_accuracy, train_error = model.run_epoch(
-                        session, model.train, epoch, train_writer,
+                        session, train, epoch, train_writer,
                         train_op=model.train_step, train=True, display=True)
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
-                        session, model.valid, display=True)
+                        session, valid, display=True)
                     # print('Training error:')
                     if train_accuracy > 0.90:
                         for e in train_error:
