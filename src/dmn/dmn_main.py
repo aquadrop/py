@@ -170,7 +170,7 @@ def main(args):
                     if train_loss < best_train_loss or train_accuracy > best_train_accuracy:
                         print('Saving weights and updating best_train_loss:{} -> {},\
                                best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,\
-                                                                    best_train_accuracy, train_loss))
+                                                                    best_train_accuracy, train_accuracy))
                         best_train_accuracy = train_accuracy
                         saver.save(
                             session, config.ckpt_path + 'dmn.weights')
