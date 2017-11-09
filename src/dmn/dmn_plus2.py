@@ -18,7 +18,7 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 64
+    batch_size = 32
     embed_size = 300
     hidden_size = 300
 
@@ -425,16 +425,16 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
-        print(len(data[0]), config.batch_size, total_steps)
+        # print(len(data[0]), config.batch_size, total_steps)
 
         total_loss = []
         accuracy = 0
         error = []
 
         # shuffle data
-        p = np.random.permutation(len(data[0]))
+        # p = np.random.permutation(len(data[0]))
         qp, ip, ql, il, im, a, r = data
-        qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
+        # qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
 
         if not display:
             for step in tqdm(range(total_steps)):
