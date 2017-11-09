@@ -18,9 +18,9 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 512
+    batch_size = 256
     embed_size = 300
-    hidden_size = 300
+    hidden_size = 128
 
     max_epochs = 345
     early_stopping = 20
@@ -44,7 +44,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1
 
-    num_hops = 5
+    num_hops = 2
     num_attention_features = 4
 
     max_allowed_inputs = 130

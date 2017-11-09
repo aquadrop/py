@@ -416,7 +416,7 @@ class TreeSimilator:
             if with_qa:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < 0.25:
                         qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
                             + np.random.choice(['在哪里', '在什么地方', '在几楼', '几楼有卖', '在哪里卖', '在哪里买', '在什么地方买'])
                         line = qa + '\t' + 'api_call_query_location_' + 'category:'\
@@ -427,7 +427,7 @@ class TreeSimilator:
                         # flow_container.append(flow.lower())
                         candidates.add('api_call_query_location_' + 'category:'
                                        + filling_slots['category'])
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < 0.25:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
@@ -460,7 +460,7 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
 
                     # ask brand of category
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < 0.25:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
@@ -523,7 +523,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 60000:
+                if i >= 120000:
                     break
 
         # lower everything
