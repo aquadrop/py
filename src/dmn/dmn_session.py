@@ -30,7 +30,7 @@ translator = Translator()
 
 class DmnSession():
     def __init__(self, session, model, config, char=2):
-        self.context = [[' ']]
+        self.context = [['']]
         self.u = None
         self.r = None
         self.model = model
@@ -49,7 +49,7 @@ class DmnSession():
 
     def clear_memory(self, history=0):
         if history == 0:
-            self.context = [['此', '乃', '空', '文']]
+            self.context = [['']]
             # self.context = [[]]
         else:
             self.context = self.context[-history:]
@@ -91,13 +91,13 @@ class DmnSession():
                 questions, q_lens, max_q_len)
             questions = np.asarray(questions)
 
-            preds = self.model.predict(self.session,
+            top_prob = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)
 
             # print('preds:', preds)
             # if self.config.multi_label:
-            indices = preds[0].indices.tolist()[0]
-            values = preds[0].values.tolist()[0]
+            indices = top_prob.indices.tolist()[0]
+            values = top_prob.values.tolist()[0]
             # else:
             #     indices = preds[1].tolist()[0]
             #     values = preds[0].tolist()[0]
@@ -113,7 +113,7 @@ class DmnSession():
         if self.config.multi_label:
             return reply_msg, values
         else:
-            return reply_msg[0], values[0]
+            return reply_msg[0], values[0] #reply_msg[0], values[0]
 
 
 class DmnInfer:
@@ -140,7 +140,7 @@ class DmnInfer:
                   ckpt.model_checkpoint_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
-        char = 2 if self.config.word2vec_init else 1
+        char = 2 if self.config.word2vec_init else 0
         isess = DmnSession(self.session, self.model, self.config, char)
         return isess
 

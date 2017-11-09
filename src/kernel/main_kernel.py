@@ -42,7 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
-# from dmn.dmn_session import DmnInfer
+from dmn.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
@@ -256,7 +256,7 @@ if __name__ == '__main__':
               "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
-              "clf": 'memory'  # or memory
+              "clf": 'dmn'  # or memory
               }
     kernel = MainKernel(config)
     while True:
