@@ -20,7 +20,7 @@ class Config(object):
 
     batch_size = 32
     embed_size = 300
-    hidden_size = 300
+    hidden_size = 128
 
     max_epochs = 345
     early_stopping = 20
@@ -44,7 +44,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1
 
-    num_hops = 5
+    num_hops = 3
     num_attention_features = 4
 
     max_allowed_inputs = 130
@@ -217,7 +217,7 @@ class DMN_PLUS(object):
             predict_proba_top_op = tf.nn.top_k(predict_proba_op, k=self.config.top_k)
             pred = tf.argmax(predict_proba_op, 1)
 
-        return pred, predict_proba_op
+        return predict_proba_top_op
         # return preds
 
     def _create_loss(self, output):
@@ -531,18 +531,21 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        preds = session.run([self.pred], feed_dict=feed)
+        preds = session.run(self.pred, feed_dict=feed)
         return preds
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
 
-    def __init__(self, config, metadata):
+    def __init__(self, config, metadata=None):
         self.config = config
         self.variables_to_save = {}
+        if not metadata:
+            with open(self.config.metadata_path, 'rb') as f:
+                metadata = pickle.load(f)
         self._load_data(metadata=metadata, debug=False)
         self._create_placeholders()
         self.output = self._inference()
-        self.pred, _ = self.get_predictions(self.output)
+        self.pred = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self._create_loss(self.output)
         self.train_step = self._create_training_op(self.calculate_loss)
