@@ -218,6 +218,8 @@ def process_word(data, w2idx, idx2w, word_embedding, word2vec, updated_embedding
             process_word_core(w, w2idx, idx2w, word_embedding,
                               word2vec, updated_embedding, init)
 
+
+
 def vectorize_data(config, data, metadata, split_sentences=True):
     data = process_data(data, config.floatX, metadata['w2idx'])
     inputs, questions, answers, input_masks, rel_labels = data
@@ -234,9 +236,11 @@ def vectorize_data(config, data, metadata, split_sentences=True):
         max_mask_len = np.max(mask_lens)
 
     q_lens = get_lens(questions)
-    max_q_len = np.max(q_lens)
+    max_q_len = metadata['max_q_len']
 
-    max_input_len = min(np.max(input_lens), config.max_allowed_inputs)
+    max_input_len = metadata['max_input_len']
+    max_mask_len = metadata['max_mask_len']
+    max_sen_len = metadata['max_sen_len']
 
     if split_sentences:
         inputs = pad_inputs(inputs, input_lens, max_input_len,
@@ -268,21 +272,32 @@ def vectorize_data(config, data, metadata, split_sentences=True):
         q_lens[:], \
         input_lens[:], input_masks[:], \
         answers[:], rel_labels[:]
-    if 'max_q_len' in metadata:
-        max_q_len = np.max([max_q_len, metadata['max_q_len']])
-    metadata['max_q_len'] = max_q_len
-    if 'max_input_len' in metadata:
-        max_input_len = np.max([max_input_len, metadata['max_input_len']])
-    metadata['max_input_len'] = max_input_len
-    if 'max_sen_len' in metadata:
-        max_sen_len = np.max([max_sen_len, metadata['max_sen_len']])
-    metadata['max_sen_len'] = max_sen_len
-    metadata['num_supporting_facts'] = rel_labels.shape[1]
 
     # print(type(self.word_embedding))
     return data
 
+def get_lens_info(data, metadata, split_sentences=True):
+    data = process_data(data, config.floatX, metadata['w2idx'])
+    inputs, questions, answers, input_masks, rel_labels = data
+    rel_labels = np.array(rel_labels)
+    candidates = metadata['candidates']
+    # print(len(train_data[0]))
 
+    if split_sentences:
+        # print(inputs)
+        input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
+        max_mask_len = max_sen_len
+    else:
+        input_lens = get_lens(inputs)
+        mask_lens = get_lens(input_masks)
+        max_mask_len = np.max(mask_lens)
+
+    q_lens = get_lens(questions)
+    max_q_len = np.max(q_lens)
+
+    max_input_len = min(np.max(input_lens), config.max_allowed_inputs)
+
+    return max_mask_len, max_q_len, max_input_len, rel_labels.shape[1]
 
 def load_data(config, split_sentences=True):
     w2idx = {}
@@ -359,6 +374,17 @@ def load_data(config, split_sentences=True):
         metadata['w2idx'] = w2idx
         metadata['idx2w'] = idx2w
         metadata['vocab_size'] = vocab_size
+        max_mask_len, max_q_len, max_input_len, num_supporting_facts = get_lens_info(train_data, metadata, split_sentences)
+        max_mask_len2, max_q_len2, max_input_len2, _ = get_lens_info(val_data, metadata, split_sentences)
+        max_mask_len3, max_q_len3, max_input_len3, _ = get_lens_info(test_data, metadata, split_sentences)
+        max_mask_len = max([max_mask_len, max_mask_len2, max_mask_len3])
+        max_q_len = max([max_q_len, max_q_len2, max_q_len3])
+        max_input_len = max([max_input_len, max_input_len2, max_input_len3])
+        metadata['max_mask_len'] = max_mask_len
+        metadata['max_q_len'] = max_q_len
+        metadata['max_input_len'] = max_input_len
+        metadata['num_supporting_facts'] = num_supporting_facts
+        metadata['max_sen_len'] = max_mask_len
         return train_data, val_data, test_data, metadata
         # word_embedding = np.random.uniform(
         #     -config.embedding_init,

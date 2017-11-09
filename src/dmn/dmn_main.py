@@ -159,7 +159,7 @@ def main(args):
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % EPOCH == 0 and epoch > 1):
+                if not (epoch % EPOCH == 0 and epoch):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
