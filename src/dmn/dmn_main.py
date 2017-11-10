@@ -31,31 +31,28 @@ translator = Translator()
 
 
 def prepare_data(args, config):
-    train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_sen_len, \
-        num_supporting_facts, vocab_size, candidate_size, candid2idx, \
-        idx2candid, w2idx, idx2w = dmn_data_utils.load_data(
-            config, split_sentences=True)
+    data_dir = config.data_dir
+    candid_path = config.candid_path
+
+    train, valid, max_q_len, max_input_len, max_sen_len, max_mask_len, \
+        num_supporting_facts, candidate_size, candid2idx, idx2candid = \
+        dmn_data_utils.load_raw_data(data_dir, candid_path,
+                                     word_vector=config.word_vector,
+                                     split_sentences=True)
 
     metadata = dict()
     data = dict()
     data['train'] = train
     data['valid'] = valid
-    metadata['word_embedding'] = word_embedding
-    metadata['updated_embedding'] = updated_embedding
-    metadata['word2vec'] = word2vec
-    metadata['max_q_len'] = max_q_len
+
     metadata['max_input_len'] = max_input_len
+    metadata['max_q_len'] = max_q_len
     metadata['max_sen_len'] = max_sen_len
+    metadata['max_mask_len'] = max_mask_len
     metadata['num_supporting_facts'] = num_supporting_facts
-    metadata['vocab_size'] = vocab_size
     metadata['candidate_size'] = candidate_size
     metadata['candid2idx'] = candid2idx
     metadata['idx2candid'] = idx2candid
-    metadata['w2idx'] = w2idx
-    metadata['idx2w'] = idx2w
-
-    # print('after.')
-    # print('updated_embedding:', updated_embedding)
 
     with open(config.metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
@@ -75,7 +72,8 @@ def parse_args(args):
                         default=0.001, help="specify l2 loss constant")
     parser.add_argument("-n", "--num_runs", type=int,
                         help="specify the number of model runs")
-    parser.add_argument("-p", "--infer", action='store_true', help="predict")
+    parser.add_argument(
+        "-p", "--infer", action='store_true', help="predict")
     parser.add_argument("-t", "--train", action='store_true', help="train")
     parser.add_argument("-d", "--prep_data",
                         action='store_true', help="prepare data")
@@ -125,24 +123,25 @@ def main(args):
             best_train_epoch = 0
             best_train_loss = float('inf')
             best_train_accuracy = 0.0
+            best_overall_train_accuracy = 0.0
 
             if args['restore']:
                 print('==> restoring weights')
                 saver.restore(session, config.ckpt_path + 'dmn.weights')
-                if len(model.updated_embedding):
-                    print('==> update embedding')
-                    embeddings = update_embedding(
-                        session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
-                    session.run(model.embedding_init, feed_dict={
-                                model.embedding_placeholder: embeddings})
+            #     if len(model.updated_embedding):
+            #         print('==> update embedding')
+            #         embeddings = update_embedding(
+            #             session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
+            #         session.run(model.embedding_init, feed_dict={
+            #             model.embedding_placeholder: embeddings})
 
-            else:
-                session.run(model.embedding_init, feed_dict={
-                            model.embedding_placeholder: model.word_embedding})
+            # else:
+            #     session.run(model.embedding_init, feed_dict={
+            #         model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % 2 == 0 and epoch > 1):
+                if not (epoch % 3 == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, model.train, epoch,
                                         train_op=model.train_step, train=True)
@@ -157,8 +156,8 @@ def main(args):
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, model.valid, display=True)
                     # print('Training error:')
-                    for e in train_error:
-                        print(e)
+                    # for e in train_error:
+                    #     print(e)
                     # print('Validation error:')
                     print('Training loss: {}'.format(train_loss))
                     print('Validation loss: {}'.format(valid_loss))
@@ -166,16 +165,19 @@ def main(args):
                     print('Vaildation accuracy: {}'.format(valid_accuracy))
 
                     if train_loss < best_train_loss:
+                        print('Saving weights')
                         best_train_loss = train_loss
                         best_train_epoch = epoch
-                        if best_train_loss < best_overall_train_loss:
-                            print('Saving weights')
-                            best_overall_train_loss = best_train_loss
-                            best_train_accuracy = train_accuracy
-                            saver.save(
-                                session, config.ckpt_path + 'dmn.weights')
+                        best_train_accuracy = train_accuracy
+                        if best_train_accuracy > best_overall_train_accuracy:
+                            best_overall_train_accuracy = best_train_accuracy
+                        saver.save(
+                            session, config.ckpt_path + 'dmn.weights')
                     print('best_train_loss: {}'.format(best_train_loss))
                     print('best_train_epoch: {}'.format(best_train_epoch))
+                    print('best_train_accuracy: {}'.format(best_train_accuracy))
+                    print('best_overall_train_accuracy: {}'.format(
+                        best_overall_train_accuracy))
 
                     # anneal
                     if train_loss > prev_epoch_loss * model.config.anneal_threshold:
@@ -188,7 +190,7 @@ def main(args):
                     #     break
                     print('Total time: {}'.format(time.time() - start))
 
-            print('Best train accuracy:', best_train_accuracy)
+            print('Best train accuracy:', best_overall_train_accuracy)
 
     else:  # inference
         config.train_mode = False

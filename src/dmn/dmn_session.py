@@ -96,8 +96,8 @@ class DmnSession():
 
             print('preds:', preds)
             # if self.config.multi_label:
-            indices = preds[0].indices.tolist()[0]
-            values = preds[0].values.tolist()[0]
+            indices = preds.indices.tolist()[0]
+            values = preds.values.tolist()[0]
             # else:
             #     indices = preds[1].tolist()[0]
             #     values = preds[0].tolist()[0]
@@ -140,7 +140,7 @@ class DmnInfer:
                   ckpt.model_checkpoint_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
-        char = 2 if self.config.word2vec_init else 1
+        char = 2 if self.config.word_vector else 1
         isess = DmnSession(self.session, self.model, self.config, char)
         return isess
 

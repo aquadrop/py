@@ -331,7 +331,7 @@ def gen_sessions(belief_tracker, output_files):
     with_multiple = False
     mlt_container = []
     mlt_candidates = []
-    with_qa = False
+    with_qa = True
     with_deny = True
     with_whatever = False
     while 1:
@@ -386,7 +386,7 @@ def gen_sessions(belief_tracker, output_files):
         if with_qa:
             filling_slots = belief_tracker.filling_slots
             if 'category' in filling_slots:
-                if np.random.uniform() < 0.25:
+                if np.random.uniform() < 1:
                     qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
                         + np.random.choice(['在哪里', '在什么地方', '在几楼', '几楼有卖', '在哪里卖', '在哪里买', '在什么地方买'])
                     line = qa + '\t' + 'api_call_query_location_' + 'category:'\
@@ -397,7 +397,7 @@ def gen_sessions(belief_tracker, output_files):
                     # flow_container.append(flow.lower())
                     candidates.add('api_call_query_location_' + 'category:'
                                    + filling_slots['category'])
-                if np.random.uniform() < 0.25:
+                if np.random.uniform() < 1:
                     brands = get_avail_brands(filling_slots['category'])
                     if 'brand' in filling_slots and 'category' in filling_slots:
                         brand = filling_slots['brand']
@@ -430,7 +430,7 @@ def gen_sessions(belief_tracker, output_files):
                                        + brand + ',' + 'category:' + filling_slots['category'])
 
                 # ask brand of category
-                if np.random.uniform() < 0.25:
+                if np.random.uniform() < 1:
                     brands = get_avail_brands(filling_slots['category'])
                     if brands:
                         brand = np.random.choice(brands)
@@ -493,7 +493,7 @@ def gen_sessions(belief_tracker, output_files):
             # print(line)
             i += 1
             print(i)
-            if i >= 60:
+            if i >= 60000:
                 break
 
     # lower everything

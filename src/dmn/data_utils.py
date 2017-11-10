@@ -19,8 +19,8 @@ config = Config()
 
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
-CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
+DATA_DIR = grandfatherdir + '/data/memn2n/train/tree/origin/'
+CANDID_PATH = grandfatherdir + '/data/memn2n/train/tree/origin/candidates.txt'
 
 jieba.load_userdict(grandfatherdir + '/data/dict/ext1.dic')
 
@@ -267,13 +267,13 @@ def get_batches(train_data, val_data, test_data, metadata, batch_size):
 
 
 if __name__ == '__main__':
-    # candidates, candid2idx, idx2candid = load_candidates()
+    candidates, candid2idx, idx2candid = load_candidates(CANDID_PATH)
     # # print(candidates)
     # # print(idx2candid)
-    # train_data, test_data, val_data = load_dialog(
-    #     data_dir=DATA_DIR,
-    #     candid_dic=candid2idx)
-    # print(train_data[1])
+    train_data, test_data, val_data = load_dialog(
+        data_dir=DATA_DIR,
+        candid_dic=candid2idx)
+    print(train_data[1])
 
     # metadata = build_vocab(train_data, candidates)
 
@@ -286,6 +286,6 @@ if __name__ == '__main__':
     # for t in test:
     #     print(tokenize(t, True))
 
-    base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
-    vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
-    build_vocab_beforehand(base_vocab, vocab_path)
+    # base_vocab = grandfatherdir + '/data/char_table/base_vocab.txt'
+    # vocab_path = grandfatherdir + '/data/char_table/vocab.txt'
+    # build_vocab_beforehand(base_vocab, vocab_path)

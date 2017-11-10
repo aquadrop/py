@@ -5,7 +5,9 @@ import sys
 import os
 import time
 import pickle
+import json
 
+from tqdm import tqdm
 import numpy as np
 from copy import deepcopy
 
@@ -14,18 +16,21 @@ from dmn.attention_gru_cell import AttentionGRUCell
 
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
+import dmn_data_utils2 as dmn_data_utils
+from utils.embedding_util import ff_embedding
+
 
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 4
+    batch_size = 64
     embed_size = 300
     hidden_size = 128
 
     max_epochs = 345
     early_stopping = 20
 
-    dropout = 0.5
+    dropout = 1
     lr = 0.001
     l2 = 0.001
 
@@ -33,7 +38,7 @@ class Config(object):
     max_grad_val = 10
     noisy_grads = True
 
-    word_vector = True
+    word_vector = False
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -44,7 +49,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1.5
 
-    num_hops = 2
+    num_hops = 3
     num_attention_features = 4
 
     max_allowed_inputs = 130
@@ -59,10 +64,9 @@ class Config(object):
 
     train_mode = True
 
-    # reserved_word_num = 5000
     vocab_size = 10000
 
-    embedding_type = 'fasttext'
+    split_sentences = True
 
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(
@@ -84,13 +88,13 @@ class Config(object):
     metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/metadata.pkl')
     data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-test/')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-char/')
 
     multi_metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
     multi_data_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_data.pkl')
-    multi_ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-test/')
+    multi_ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-ff-trainable/')
 
     metadata_path = multi_metadata_path if multi_label else metadata_path
     data_path = multi_data_path if multi_label else data_path
@@ -130,20 +134,14 @@ class DMN_PLUS(object):
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
 
-        self.word2vec = metadata['word2vec']
-        self.word_embedding = np.asarray(metadata['word_embedding'])
-        self.updated_embedding = metadata['updated_embedding']
-        # print(type(self.word_embedding))
-        self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
+        self.max_q_len = metadata['max_q_len']
         self.max_sen_len = metadata['max_sen_len']
+        self.max_mask_len = metadata['max_mask_len']
         self.num_supporting_facts = metadata['num_supporting_facts']
-        self.vocab_size = metadata['vocab_size']
         self.candidate_size = metadata['candidate_size']
         self.candid2idx = metadata['candid2idx']
         self.idx2candid = metadata['idx2candid']
-        self.w2idx = metadata['w2idx']
-        self.idx2w = metadata['idx2w']
 
         if self.config.train_mode:
             print('Load metadata (training mode)')
@@ -151,28 +149,54 @@ class DMN_PLUS(object):
             with open(self.config.data_path, 'rb') as f:
                 data = pickle.load(f)
 
-            self.train = data['train']
-            self.valid = data['valid']
+            train_raw = data['train']
+            valid_raw = data['valid']
+            self.train, self.w2idx, self.idx2w, self.vocab_size = dmn_data_utils.vectorize_data(
+                train_raw, self.config, self.max_input_len, self.max_sen_len, self.max_q_len)
+            self.valid, self.w2idx, self.idx2w, self.vocab_size = dmn_data_utils.vectorize_data(
+                valid_raw, self.config, self.max_input_len, self.max_sen_len, self.max_q_len)
         else:
             print('Load metadata (infer mode)')
 
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
 
-        # print('load:',self.updated_embedding)
-        # print(self.idx2candid)
-
     def add_placeholders(self):
         """add data placeholder to graph"""
-        self.question_placeholder = tf.placeholder(
-            tf.int32, shape=(None, self.max_q_len), name='question')
-        self.question_len_placeholder = tf.placeholder(
-            tf.int32, shape=(None,), name='question_len')
+        if not self.config.word_vector:
+            self.question_placeholder = tf.placeholder(
+                tf.int32, shape=(None, self.max_q_len), name='question')
+            self.question_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='question_len')
 
-        self.input_placeholder = tf.placeholder(tf.int32, shape=(
-            None, self.max_input_len, self.max_sen_len), name='input')
-        self.input_len_placeholder = tf.placeholder(
-            tf.int32, shape=(None,), name='input_len')
+            self.input_placeholder = tf.placeholder(tf.int32, shape=(
+                None, self.max_input_len, self.max_sen_len), name='input')
+            self.input_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='input_len')
+
+            with tf.variable_scope('embedding') as scope:
+                self.embeddings = tf.Variable(tf.random_uniform(
+                    [self.vocab_size, self.config.embed_size], -1.0, 1.0),
+                    trainable=True, dtype=tf.float32, name='embeddings')
+            # self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
+            #                               trainable=False, name="embeddings")
+            # self.embedding_placeholder = tf.placeholder(
+            #     tf.float32, [self.vocab_size, self.config.embed_size])
+            # self.embedding_init = self.embeddings.assign(
+            #     self.embedding_placeholder)
+
+        else:
+            self.question_placeholder = tf.placeholder(
+                tf.float32, shape=(None, self.max_q_len, self.config.embed_size), name='question')
+            self.question_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='question_len')
+
+            self.input_placeholder = tf.placeholder(tf.float32, shape=(
+                None, self.max_input_len, self.max_sen_len, self.config.embed_size), name='input')
+            self.input_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='input_len')
+
+            self.embeddings = None
 
         if self.config.multi_label:
             self.answer_placeholder = tf.placeholder(
@@ -181,19 +205,14 @@ class DMN_PLUS(object):
             self.answer_placeholder = tf.placeholder(
                 tf.int32, shape=(None,), name='answer')
 
-        # self.answer_len_placeholder = tf.placeholder(
-        #     tf.int32, shape=(self.config.batch_size,))
-
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
             None, self.num_supporting_facts), name='rel_label')
-
-        with tf.variable_scope('embedding') as scope:
-            self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
-                                          trainable=False, name="embeddings")
-            self.embedding_placeholder = tf.placeholder(
-                tf.float32, [self.vocab_size, self.config.embed_size])
-            self.embedding_init = self.embeddings.assign(
-                self.embedding_placeholder)
+        # self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
+        #                               trainable=False, name="embeddings")
+        # self.embedding_placeholder = tf.placeholder(
+        #     tf.float32, [self.vocab_size, self.config.embed_size])
+        # self.embedding_init = self.embeddings.assign(
+        #     self.embedding_placeholder)
 
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
@@ -264,8 +283,11 @@ class DMN_PLUS(object):
 
     def get_question_representation(self, embeddings):
         """Get question vectors via embedding and GRU"""
-        questions = tf.nn.embedding_lookup(
-            embeddings, self.question_placeholder)
+        if embeddings:
+            questions = tf.nn.embedding_lookup(
+                embeddings, self.question_placeholder)
+        else:
+            questions = self.question_placeholder
 
         gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         _, q_vec = tf.nn.dynamic_rnn(gru_cell,
@@ -279,7 +301,10 @@ class DMN_PLUS(object):
     def get_input_representation(self, embeddings):
         """Get fact (sentence) vectors via embedding, positional encoding and bi-directional GRU"""
         # get word vectors from embedding
-        inputs = tf.nn.embedding_lookup(embeddings, self.input_placeholder)
+        if embeddings:
+            inputs = tf.nn.embedding_lookup(embeddings, self.input_placeholder)
+        else:
+            inputs = self.input_placeholder
 
         # use encoding to get sentence representation
         inputs = tf.reduce_sum(inputs * self.encoding, 2)
@@ -296,6 +321,11 @@ class DMN_PLUS(object):
 
         # f<-> = f-> + f<-
         fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
+
+        # gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
+        # outputs, _ = tf.nn.dynamic_rnn(gru_cell, inputs, sequence_length=self.input_len_placeholder,
+        #                                dtype=np.float32)
+        # fact_vecs = outputs
 
         # apply dropout
         fact_vecs = tf.nn.dropout(fact_vecs, self.dropout_placeholder)
@@ -426,7 +456,7 @@ class DMN_PLUS(object):
         qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
 
         if not display:
-            for step in range(total_steps):
+            for step in tqdm(range(total_steps)):
                 index = range(step * config.batch_size,
                               (step + 1) * config.batch_size)
                 feed = {self.question_placeholder: qp[index],
@@ -497,14 +527,14 @@ class DMN_PLUS(object):
                 accuracy += np.sum(pred.tolist() == answers) / \
                     float(len(answers))
 
-                for Q, A, P in zip(questions, answers, pred):
-                    if A != P:
-                        Q = ''.join([self.idx2w.get(idx, '')
-                                     for idx in Q.astype(np.int32).tolist()])
-                        Q = Q.replace('unk', '')
-                        A = self.idx2candid[A]
-                        P = self.idx2candid[P]
-                        error.append((Q, A, P))
+                # for Q, A, P in zip(questions, answers, pred):
+                #     if A != P:
+                #         Q = ''.join([self.idx2w.get(idx, '')
+                #                      for idx in Q.astype(np.int32).tolist()])
+                #         Q = Q.replace('unk', '')
+                #         A = self.idx2candid[A]
+                #         P = self.idx2candid[P]
+                #         error.append((Q, A, P))
 
             total_loss.append(loss)
             if verbose and step % verbose == 0:
@@ -525,7 +555,7 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        preds = session.run([self.pred], feed_dict=feed)
+        preds = session.run(self.pred, feed_dict=feed)
         return preds
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
@@ -546,6 +576,6 @@ class DMN_PLUS(object):
 if __name__ == '__main__':
     config = Config()
     dmn = DMN_PLUS(config)
-    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
-    print(prefix)
+    # prefix = grandfatherdir = os.path.dirname(os.path.dirname(
+    #     os.path.dirname(os.path.abspath(__file__))))
+    # print(prefix)

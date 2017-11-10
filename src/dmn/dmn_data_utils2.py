@@ -15,7 +15,7 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 
 sys.path.insert(0, grandfatherdir)
 
-import dmn.data_utils as data_utils
+import data_utils as data_utils
 # from dmn.vector_helper import getVector
 from utils.embedding_util import ff_embedding
 
@@ -34,6 +34,19 @@ VOCAB_PATH = 'data/char_table/vocab.txt'
 # can be sentence or word
 input_mask_mode = "sentence"
 
+from dmn_plus2 import Config
+config = Config()
+
+if config.word_vector:
+    from gensim.models.wrappers import FastText
+    print('Load fasttext model.....')
+    ff_model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+    print('done.....')
+
+
+def ff_embedding_local(word):
+    return ff_model[word]
+
 
 def get_candidates_word_dict():
     with open(os.path.join(grandfatherdir, VOCAB_PATH), 'r') as f:
@@ -46,18 +59,146 @@ def get_candidates_word_dict():
     return idx2candid, w2idx
 
 
-def load_raw_data(data_path, candid_path, word2vec_init=False):
-    print('Load raw data.....')
+def load_raw_data(data_path, candid_path, word_vector=False, split_sentences=True):
+    print('Load raw data2.....')
     candidates, candid2idx, idx2candid = data_utils.load_candidates(
         candidates_f=candid_path)
+    candidate_size = len(candidates)
 
-    char = 2 if word2vec_init else 1
+    char = 2 if word_vector else 1
     train_data, test_data, val_data = data_utils.load_dialog(
         data_dir=data_path,
         candid_dic=candid2idx, char=char)
-    # print(len(train_data))
-    # print(os.path.join(grandfatherdir, DATA_DIR))
-    return train_data, test_data, val_data, candidates, candid2idx, idx2candid
+
+    train_data += test_data
+    train_data += val_data
+
+    inputs = []
+    questions = []
+    answers = []
+    relevant_labels = []
+    input_masks = []
+    for data in train_data:
+        inp, question, answer = data
+        if len(inp) == 0:
+            inp = [[' ']]
+        inputs.append(inp)
+        if len(question) == 0:
+            question = [' ']
+        questions.append(question)
+        answers.append(answer)
+        relevant_labels.append([0])
+
+    if not split_sentences:
+        if input_mask_mode == 'word':
+            input_masks.append(
+                np.array([index for index, w in enumerate(inp)], dtype=np.int32))
+        elif input_mask_mode == 'sentence':
+            input_masks.append(
+                np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
+        else:
+            raise Exception("invalid input_mask_mode")
+
+    if split_sentences:
+        # print(inputs)
+        input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
+        max_mask_len = max_sen_len
+    else:
+        input_lens = get_lens(inputs)
+        mask_lens = get_lens(input_masks)
+        max_mask_len = np.max(mask_lens)
+
+    q_lens = get_lens(questions)
+    max_q_len = np.max(q_lens)
+    max_input_len = min(np.max(input_lens), config.max_allowed_inputs)
+
+    answers = [np.sum(np.eye(candidate_size)[np.asarray(a)], axis=0) for a in
+               answers] if config.multi_label else answers
+    answers = np.stack(answers)
+
+    relevant_labels = np.zeros((len(relevant_labels), len(relevant_labels[0])))
+    for i, tt in enumerate(relevant_labels):
+        relevant_labels[i] = np.array(tt, dtype=int)
+
+    num_train = int(len(questions) * 0.8)
+    train = questions[:num_train], inputs[:num_train], \
+        q_lens[:num_train], sen_lens[:num_train],\
+        input_lens[:num_train], input_masks[:num_train], \
+        answers[:num_train], relevant_labels[:num_train]
+    valid = questions[num_train:], inputs[num_train:], \
+        q_lens[num_train:], sen_lens[num_train:], input_lens[num_train:], \
+        input_masks[num_train:], \
+        answers[num_train:], relevant_labels[num_train:]
+    print('inputs:', inputs[:3])
+    print('questions:', questions[:3])
+
+    return train, valid, max_q_len, max_input_len, max_sen_len, max_mask_len, \
+        relevant_labels.shape[1], candidate_size, candid2idx, idx2candid
+
+
+def vectorize_data(data, config, max_input_len, max_sen_len, max_q_len):
+    questions, inputs, q_lens, sen_lens, input_lens, \
+        input_masks, answers, relevant_labels = data
+    # print(questions)
+    if config.split_sentences:
+        inputs = pad_inputs2(inputs, input_lens, max_input_len,
+                             "split_sentences", sen_lens, max_sen_len)
+        input_masks = np.zeros(len(inputs))
+    else:
+        inputs = pad_inputs2(
+            inputs, input_lens, max_input_len)
+        input_masks = pad_inputs2(
+            input_masks, input_lens, max_input_len, "mask")
+
+    questions = pad_inputs2(
+        questions, q_lens, max_q_len)
+
+    w2idx = {}
+    idx2w = {}
+    vocab_size = 0
+    if not config.word_vector:
+        with open(config.vocab_path, 'r') as f:
+            vocab = json.load(f)
+        w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
+        idx2w = dict((i + 1, c) for i, c in enumerate(vocab))
+        vocab_size = len(vocab)
+
+    # embedding
+    print('inputs embedding...')
+    inputs_embeddings = []
+    for inp in inputs:
+        inp_embeddings = []
+        for line in inp:
+            line_embeddings = []
+            for word in line:
+                if config.word_vector:
+                    line_embeddings.append(
+                        ff_embedding_local(word))
+                else:
+                    line_embeddings.append(w2idx.get(word, 3))
+            inp_embeddings.append(line_embeddings)
+        inputs_embeddings.append(inp_embeddings)
+    inputs_embeddings = np.asarray(inputs_embeddings, dtype=np.float32)
+
+    print('questions embedding...')
+    questions_embeddings = []
+    for question in questions:
+        question_embedding = []
+        # print(question)
+        for word in question:
+            if config.word_vector:
+                question_embedding.append(
+                    ff_embedding_local(word))
+            else:
+                question_embedding.append(w2idx.get(word, 3))
+        questions_embeddings.append(question_embedding)
+    questions_embeddings = np.asarray(
+        questions_embeddings, dtype=np.float32)
+
+    # print(question_embedding[3])
+    data = questions_embeddings, inputs_embeddings, q_lens, input_lens, \
+        input_masks, answers, relevant_labels
+    return data, w2idx, idx2w, vocab_size
 
 
 def process_data(data_raw, floatX, w2idx, split_sentences=True):
@@ -104,6 +245,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
 
 
 def get_sentence_lens(inputs):
+    # print(inputs[0])
     lens = np.zeros((len(inputs)), dtype=int)
     sen_lens = []
     max_sen_lens = []
@@ -122,7 +264,7 @@ def get_sentence_lens(inputs):
 def get_lens(inputs, split_sentences=False):
     lens = np.zeros((len(inputs)), dtype=int)
     for i, t in enumerate(inputs):
-        lens[i] = t.shape[0]
+        lens[i] = len(t)
     return lens
 
 
@@ -153,6 +295,36 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
     padded = [np.pad(np.squeeze(inp, axis=1), (0, max_len - lens[i]),
                      'constant', constant_values=0) for i, inp in enumerate(inputs)]
     return np.vstack(padded)
+
+
+def pad_inputs2(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None):
+    if mode == "mask":
+        padded = [np.pad(inp, (0, max_len - lens[i]), 'constant',
+                         constant_values=0) for i, inp in enumerate(inputs)]
+        return np.vstack(padded)
+
+    elif mode == "split_sentences":
+        padded = np.zeros((len(inputs), max_len, max_sen_len), dtype='<U3')
+        for i, inp in enumerate(inputs):
+            padded_sentences = \
+                [np.pad(s, (0, max_sen_len - sen_lens[i][j]),
+                        'constant', constant_values=0) for j, s in enumerate(inp)]
+            # trim array according to max allowed inputs
+            if len(padded_sentences) > max_len:
+                padded_sentences = padded_sentences[(
+                    len(padded_sentences) - max_len):]
+                lens[i] = max_len
+            padded_sentences = np.vstack(padded_sentences)
+            padded_sentences = np.pad(padded_sentences, ((
+                0, max_len - lens[i]), (0, 0)), 'constant',
+                constant_values=0)
+            padded[i] = padded_sentences
+        return padded
+
+    padded = [np.pad(inp, (0, max_len - lens[i]),
+                     'constant', constant_values=0) for i, inp in enumerate(inputs)]
+    # print(padded)
+    return np.asarray(padded)
 
 
 def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embedding, init=False):
@@ -221,6 +393,8 @@ def load_data(config, split_sentences=True):
         load_raw_data(data_dir, candid_path,
                       word2vec_init=config.word_vector)
 
+    print(train_data[:2])
+
     if config.word_vector:
         print('Process word vector.')
 
@@ -232,12 +406,6 @@ def load_data(config, split_sentences=True):
             idx2w = metadata['idx2w']
             word_embedding = metadata['word_embedding']
             word2vec = metadata['word2vec']
-
-            # print('before.')
-            # print('电视机:', w2idx['电视机'])
-            # print('电冰箱:', w2idx['电冰箱'])
-            # print('vocab_size:', metadata['vocab_size'])
-            # print('word_embedding:', len(word_embedding))
 
             process_word(data=train_data, w2idx=w2idx, idx2w=idx2w,
                          word_embedding=word_embedding, word2vec=word2vec, updated_embedding=updated_embedding)
@@ -329,8 +497,6 @@ def load_data(config, split_sentences=True):
         rel_labels[i] = np.array(tt, dtype=int)
 
     candidate_size = len(candidates)
-
-    # print(word2vec)
 
     if config.train_mode:
         total_num = min(len(questions), config.total_num)
