@@ -174,7 +174,7 @@ def main(args):
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, valid, display=True)
                     # print('Training error:')
-                    if train_accuracy > 0.90:
+                    if train_accuracy > 0.99:
                         for e in train_error:
                             print(e)
                     # print('Validation error:')
