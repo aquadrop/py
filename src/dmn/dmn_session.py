@@ -91,9 +91,9 @@ class DmnSession():
                 questions, q_lens, max_q_len)
             questions = np.asarray(questions)
 
-            top_prob = self.model.predict(self.session,
+            pred, top_prob = self.model.predict(self.session,
                                        inputs, input_lens, max_sen_len, questions, q_lens)
-
+            print(pred)
             # print('preds:', preds)
             # if self.config.multi_label:
             indices = top_prob.indices.tolist()[0]
@@ -102,9 +102,10 @@ class DmnSession():
             #     indices = preds[1].tolist()[0]
             #     values = preds[0].tolist()[0]
             # print('indices:{0},values:{1}'.format(indices, values))
-            reply_msg = [self.idx2candid[ind] for ind in indices]
+            # reply_msg = [self.idx2candid[ind] for ind in indices]
             # print(reply_msg)
-            r = reply_msg[0]
+            reply_msg = self.idx2candid[pred[0]]
+            r = reply_msg
             # print('r:',r)
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
@@ -113,7 +114,7 @@ class DmnSession():
         if self.config.multi_label:
             return reply_msg, values
         else:
-            return reply_msg[0], values[0] #reply_msg[0], values[0]
+            return reply_msg, values #reply_msg[0], values[0]
 
 
 class DmnInfer:

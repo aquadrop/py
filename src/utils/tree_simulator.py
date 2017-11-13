@@ -259,7 +259,13 @@ class TreeSimilator:
                     else:
                         lang += '块'
             if 'category' in slot_values_mapper:
-                lang += slot_values_mapper['category'] + ','
+                v = render_thesaurus(slot_values_mapper['category'], thesaurus)
+                v = np.random.choice(['台', '一台', '一个', '个', '', '部','一部']) + v
+                if v in thesaurus:
+                    choice = thesaurus[v][:]
+                    choice.append(v)
+                    v = np.random.choice(choice)
+                lang += v + ','
 
             for k, v in slot_values_mapper.items():
                 if k in ['brand', 'price', 'category']:
@@ -523,7 +529,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 60000:
+                if i >= 120000:
                     break
 
         # lower everything
