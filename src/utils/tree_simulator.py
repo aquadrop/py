@@ -528,7 +528,7 @@ class TreeSimilator:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container)
+                    mapper[which].extend(single_container * 4)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
