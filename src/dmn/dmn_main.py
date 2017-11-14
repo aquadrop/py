@@ -102,7 +102,6 @@ def main(args):
     # print(args)
 
     config = Config()
-    args['prep_data'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
