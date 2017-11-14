@@ -20,14 +20,14 @@ class Config(object):
 
     batch_size = 512
     embed_size = 300
-    hidden_size = 128
+    hidden_size = 300
 
     max_epochs = 345
     early_stopping = 20
 
     dropout = 1
     lr = 0.001
-    l2 = 0
+    l2 = 0.001
 
     cap_grads = True
     max_grad_val = 10

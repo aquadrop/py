@@ -532,7 +532,7 @@ class TreeSimilator:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container * 4)
+                    mapper[which].extend(single_container * 2)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
@@ -541,12 +541,13 @@ class TreeSimilator:
                 which = np.random.choice(
                     ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 container = []
-                single_container = []
+                if np.random.uniform() < 0.5:
+                    single_container = []
                 flow_container = []
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 200:
+                if i >= 200000:
                     break
 
         # lower everything
