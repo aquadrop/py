@@ -291,22 +291,22 @@ class DMN_PLUS(object):
         # use encoding to get sentence representation
         inputs = tf.reduce_sum(inputs * self.encoding, 2)
 
-        forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
+        # forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
-        # outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
-        #                   sequence_length=self.input_len_placeholder,
-        #                   dtype=np.float32)
-        # fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
-        outputs, _ = tf.nn.bidirectional_dynamic_rnn(
-            forward_gru_cell,
-            backward_gru_cell,
-            inputs,
-            dtype=np.float32,
-            sequence_length=self.input_len_placeholder
-        )
-
-        # f<-> = f-> + f<-
-        fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
+        outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
+                          sequence_length=self.input_len_placeholder,
+                          dtype=np.float32)
+        fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
+        # outputs, _ = tf.nn.bidirectional_dynamic_rnn(
+        #     forward_gru_cell,
+        #     backward_gru_cell,
+        #     inputs,
+        #     dtype=np.float32,
+        #     sequence_length=self.input_len_placeholder
+        # )
+        #
+        # # f<-> = f-> + f<-
+        # fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
 
         # apply dropout
         fact_vecs = tf.nn.dropout(fact_vecs, self.dropout_placeholder)
