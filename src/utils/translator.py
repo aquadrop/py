@@ -75,4 +75,6 @@ def test():
 
 if __name__ == '__main__':
     _pickle()
+    tr = Translator()
+    print(tr.en2cn('api_call_slot_'))
     # test()
