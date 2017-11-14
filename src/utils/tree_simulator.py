@@ -433,7 +433,8 @@ class TreeSimilator:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
                     if np.random.uniform() < 0.9:
-                        qa = np.random.choice([render_thesaurus(filling_slots['category']), ''])\
+                        category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
+                        qa = category\
                             + np.random.choice(self.modifier_query_cateory_location)
                         line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                             + filling_slots['category'] + '\t' + 'placeholder'
@@ -443,6 +444,9 @@ class TreeSimilator:
                         # flow_container.append(flow.lower())
                         candidates.add('api_call_query_location_' + 'category:'
                                        + filling_slots['category'])
+                        if category:
+                            single_container.append(line)
+                            single_container.append('')
                     if np.random.uniform() < 0.9:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:

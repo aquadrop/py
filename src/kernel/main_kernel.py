@@ -72,6 +72,8 @@ class MainKernel:
         self.belief_tracker = BeliefTracker(config)
         # self.render = Render(self.belief_tracker, config)
         self._load_render(config)
+        self.base_counter = 0
+        self.base_clear_memory = 2
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -103,7 +105,7 @@ class MainKernel:
         else:
             self.render = MainKernel.static_render
 
-    def kernel(self, q, user='solr'):
+    def kernel(self, q, user='solr', recursive=False):
         if not q:
             return 'api_call_error'
         range_rendered, wild_card = self.range_render(q)
@@ -149,6 +151,19 @@ class MainKernel:
                     #     memory = ''
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
+                if api.startswith('reserved_'):
+                    print('miss placing cls...')
+                    self.belief_tracker.clear_memory()
+                    self.sess.clear_memory()
+                    return self.kernel(q, user)
+                if api.startswith('api_call_base'):
+                    self.base_counter += 1
+                    if self.base_counter >= self.base_clear_memory:
+                        self.base_counter = 0
+                        print('clear memory due to base...')
+                        self.belief_tracker.clear_memory()
+                        self.sess.clear_memory()
+                        return self.kernel(q, user)
                 print(range_rendered, api, prob)
                 response = api
                 memory = api
