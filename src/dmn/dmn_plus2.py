@@ -18,7 +18,7 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 32
+    batch_size = 512
     embed_size = 300
     hidden_size = 128
 
@@ -217,7 +217,7 @@ class DMN_PLUS(object):
             predict_proba_top_op = tf.nn.top_k(predict_proba_op, k=self.config.top_k)
             pred = tf.argmax(predict_proba_op, 1)
 
-        return predict_proba_top_op
+        return pred, predict_proba_top_op
         # return preds
 
     def _create_loss(self, output):
@@ -345,6 +345,7 @@ class DMN_PLUS(object):
         attentions = tf.transpose(tf.stack(attentions))
         self.attentions.append(attentions)
         attentions = tf.nn.softmax(attentions)
+
         attentions = tf.expand_dims(attentions, axis=-1)
 
         reuse = True if hop_index > 0 else False
@@ -531,8 +532,8 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        preds = session.run(self.pred, feed_dict=feed)
-        return preds
+        pred, prob_top = session.run([self.pred, self.prob_top_k], feed_dict=feed)
+        return pred, prob_top
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
 
@@ -545,7 +546,7 @@ class DMN_PLUS(object):
         self._load_data(metadata=metadata, debug=False)
         self._create_placeholders()
         self.output = self._inference()
-        self.pred = self.get_predictions(self.output)
+        self.pred, self.prob_top_k = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self._create_loss(self.output)
         self.train_step = self._create_training_op(self.calculate_loss)

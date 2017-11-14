@@ -323,7 +323,10 @@ class TreeSimilator:
             params = []
             for key in sorted(slot_values_mapper.keys()):
                 params.append(key + ":" + slot_values_mapper[key])
-            return 'api_call_slot_' + ','.join(params)
+            line = 'api_call_slot_' + ','.join(params)
+            if line == 'api_call_slot_virtual_category:root':
+                line = 'api_call_query_general'
+            return line
 
         def render_api(api):
             return api[0]
@@ -370,15 +373,13 @@ class TreeSimilator:
 
         with_multiple = False
         with_qa = True
-        with_deny = False
-        with_whatever = False
+        with_deny = True
+        with_whatever = True
         with_flow = True
-        with_base = False
+        with_base = True
         with_gbdt = False
-        with_faq = False
-        with_single = True
 
-
+        with_faq = True
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -537,7 +538,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 200:
+                if i >= 120000:
                     break
 
         # lower everything

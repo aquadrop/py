@@ -27,6 +27,7 @@ unit|phone.rmem|G/g
 unit|fr.people|人
 unit|fr.height|米
 unit|fr.width|米
+unit|phone.pixel|像素
 quantum|电视|台/一台/一个/个/
 quantum|冰箱|台/一台/一个/个/
 quantum|空调|台/一台/一个/个/

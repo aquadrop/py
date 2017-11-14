@@ -130,8 +130,8 @@ def parse_dialogs_per_response(lines, candid_dic, char=1):
                 context.append(u)
                 # r = r if placeholder == 'placeholder' else r + salt
                 context.append(r)
-                if salt != 'placeholder':
-                    context.append(salt)
+                # if salt != 'placeholder':
+                #     context.append(salt)
         else:
             # clear context
             context = []

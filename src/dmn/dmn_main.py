@@ -62,9 +62,9 @@ def prepare_data(args, config):
     # print('updated_embedding:', updated_embedding)
 
     with open(config.metadata_path, 'wb') as f:
-        pickle.dump(metadata, f)
+        pickle.dump(metadata, f, protocol=4)
     with open(config.data_path, 'wb') as f:
-        pickle.dump(data, f)
+        pickle.dump(data, f, protocol=4)
 
 
 def parse_args(args):
@@ -159,7 +159,7 @@ def main(args):
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % EPOCH == 0):
+                if not (epoch % EPOCH == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, train, epoch, train_writer,
                                         train_op=model.train_step, train=True)
