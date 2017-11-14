@@ -11,8 +11,8 @@ import os
 import sys
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 parentdir = os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))

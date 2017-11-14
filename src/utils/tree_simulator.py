@@ -412,7 +412,7 @@ class TreeSimilator:
             flow = cls + '\t' + api
             if requested == 'category':
                 single_container.append(line)
-                single_container.append('')
+                # single_container.append('')
             requested = self.belief_tracker.get_requested_field()
             trans_api = translator.en2cn(api)
             if not api.startswith('api_call_search'):
@@ -432,7 +432,7 @@ class TreeSimilator:
             if with_qa:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < 0.25:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
                         qa = category\
                             + np.random.choice(self.modifier_query_cateory_location)
@@ -446,8 +446,8 @@ class TreeSimilator:
                                        + filling_slots['category'])
                         if category:
                             single_container.append(line)
-                            single_container.append('')
-                    if np.random.uniform() < 0.9:
+                            # single_container.append('')
+                    if np.random.uniform() < 0.25:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
@@ -480,7 +480,7 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
 
                     # ask brand of category
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < 0.25:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
@@ -528,7 +528,7 @@ class TreeSimilator:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container * 4)
+                    mapper[which].extend(single_container * 32)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
@@ -537,7 +537,8 @@ class TreeSimilator:
                 which = np.random.choice(
                     ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 container = []
-                single_container = []
+                if np.random.uniform() < 0.5:
+                    single_container = []
                 flow_container = []
                 # print(line)
                 i += 1
