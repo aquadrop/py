@@ -55,7 +55,7 @@ class Translator():
         _q = query
         for k,v in self.dic.items():
             query=query.replace(k,v)
-        print('translated..{}->{}'.format(_q, query))
+        # print('translated..{}->{}'.format(_q, query))
         return query
 
     def cn2en(self, query):

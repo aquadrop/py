@@ -412,7 +412,7 @@ class TreeSimilator:
             flow = cls + '\t' + api
             if requested == 'category':
                 single_container.append(line)
-                single_container.append('')
+                # single_container.append('')
             requested = self.belief_tracker.get_requested_field()
             trans_api = translator.en2cn(api)
             if not api.startswith('api_call_search'):
@@ -434,8 +434,12 @@ class TreeSimilator:
                 if 'category' in filling_slots:
                     if np.random.uniform() < 0.9:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
-                        qa = category\
-                            + np.random.choice(self.modifier_query_cateory_location)
+                        if np.random.uniform() < 0.5:
+                            qa = category\
+                                + np.random.choice(self.modifier_query_cateory_location)
+                        else:
+                            qa = np.random.choice(self.modifier_query_cateory_location) \
+                                 + category
                         line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                             + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_location_' + 'category:'\
@@ -446,7 +450,7 @@ class TreeSimilator:
                                        + filling_slots['category'])
                         if category:
                             single_container.append(line)
-                            single_container.append('')
+                            # single_container.append('')
                     if np.random.uniform() < 0.9:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
@@ -521,7 +525,7 @@ class TreeSimilator:
                 single_bulk = '#'.join(single_container).lower()
                 if bulk not in duplicate_removal:
                     duplicate_removal.add(bulk)
-                    mapper[which].extend(container)
+                    # mapper[which].extend(container)
                     # for a in container:
                     #     print(a)
                 else:
