@@ -44,7 +44,7 @@ class Config(object):
     anneal_threshold = 1000
     anneal_by = 1
 
-    num_hops = 3
+    num_hops = 2
     num_attention_features = 4
 
     max_allowed_inputs = 130
