@@ -70,7 +70,7 @@ def load_raw_data(data_path, candid_path, word2vec_init=False):
     return train_data, test_data, val_data, candidates, candid2idx, idx2candid
 
 
-def process_data(data_raw, floatX, w2idx, split_sentences=True):
+def process_data(data_raw, floatX, w2idx, split_sentences=True, memory_size=config.max_memory_size):
     questions = []
     inputs = []
     answers = []
@@ -79,6 +79,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
 
     for data in data_raw:
         inp, question, answer = data
+        inp = inp[:memory_size]
         # print(inp)
         if len(inp) == 0:
             inp = [['']]
