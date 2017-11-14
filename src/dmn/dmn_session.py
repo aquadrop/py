@@ -69,7 +69,7 @@ class DmnSession():
             print('q_vector:', q_vector)
             inp_vector = [[self.w2idx.get(w, 0) for w in s]
                           for s in self.context]
-
+            inp_vector = inp_vector[-self.config.max_memory_size:]
             inputs.append(inp_vector)
             questions.append(np.vstack(q_vector).astype(np.float32))
 

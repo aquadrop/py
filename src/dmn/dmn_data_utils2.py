@@ -79,7 +79,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True, memory_size=conf
 
     for data in data_raw:
         inp, question, answer = data
-        inp = inp[:memory_size]
+        inp = inp[-memory_size:]
         # print(inp)
         if len(inp) == 0:
             inp = [['']]
