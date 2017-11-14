@@ -18,7 +18,7 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 512
+    batch_size = 128
     embed_size = 300
     hidden_size = 300
 

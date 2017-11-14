@@ -542,12 +542,12 @@ class TreeSimilator:
                     ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 container = []
                 if np.random.uniform() < 0.5:
-                    single_container = []
+                    single_container = [""]
                 flow_container = []
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 200000:
+                if i >= 30000:
                     break
 
         # lower everything
