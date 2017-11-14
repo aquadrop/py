@@ -432,7 +432,7 @@ class TreeSimilator:
             if with_qa:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
-                    if np.random.uniform() < 0.25:
+                    if np.random.uniform() < 0.9:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
                         qa = category\
                             + np.random.choice(self.modifier_query_cateory_location)
@@ -447,7 +447,7 @@ class TreeSimilator:
                         if category:
                             single_container.append(line)
                             # single_container.append('')
-                    if np.random.uniform() < 0.25:
+                    if np.random.uniform() < 0.9:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
@@ -480,7 +480,7 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
 
                     # ask brand of category
-                    if np.random.uniform() < 0.25:
+                    if np.random.uniform() < 0.9:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
@@ -528,7 +528,7 @@ class TreeSimilator:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container * 32)
+                    mapper[which].extend(single_container * 2)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
@@ -543,7 +543,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 200:
+                if i >= 200000:
                     break
 
         # lower everything
