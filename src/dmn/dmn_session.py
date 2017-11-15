@@ -28,8 +28,8 @@ translator = Translator()
 
 
 class DmnSession():
-    def __init__(self, config, graph, metadata, char=2):
-        self.context = [[' ']]
+    def __init__(self, session, model, config, char=2):
+        self.context = [['']]
         self.u = None
         self.r = None
         self.config = config
@@ -48,7 +48,8 @@ class DmnSession():
 
     def clear_memory(self, history=0):
         if history == 0:
-            self.context = [[' ']]
+            # self.context = [[' ']]
+            self.context = [['']]
             # self.context = [[]]
         else:
             self.context = self.context[-history:]
@@ -64,43 +65,77 @@ class DmnSession():
             questions = []
 
             q = tokenize(line, self.char)
-            if not self.config.word:
-                q_vector = [self.w2idx.get(w, 0) for w in q]
-                inp_vector = [[self.w2idx.get(w, 0) for w in s]
-                              for s in self.context]
-            else:
-                q_vector = q
-                inp_vector = self.context
+            # if not self.config.word:
+            #     q_vector = [self.w2idx.get(w, 0) for w in q]
+            #     inp_vector = [[self.w2idx.get(w, 0) for w in s]
+            #                   for s in self.context]
+            # else:
+            #     q_vector = q
+            #     inp_vector = self.context
+            q_vector = [self.w2idx.get(w, 0) for w in q]
+            print('q_vector:', q_vector)
+            inp_vector = [[self.w2idx.get(w, 0) for w in s]
+                          for s in self.context]
+            inp_vector = inp_vector[-self.config.max_memory_size:]
             inputs.append(inp_vector)
             questions.append(q_vector)
             input_lens, sen_lens, max_sen_len = data_helper.get_sentence_lens(
                 inputs)
-            q_lens = data_helper.get_lens(questions)
+            # q_lens = data_helper.get_lens(questions)
 
-            data = questions, inputs, q_lens, sen_lens, input_lens, [], [], []
-            qp_vc, ip_vc, ql_vc, il_vc, im_vc, a_vc, r_vc = data_helper.vectorize_data(
-                data, self.config, self.metadata)
+            # data = questions, inputs, q_lens, sen_lens, input_lens, [], [], []
+            # qp_vc, ip_vc, ql_vc, il_vc, im_vc, a_vc, r_vc = data_helper.vectorize_data(
+            #     data, self.config, self.metadata)
 
-            with tf.Session() as session:
-                session.run(tf.global_variables_initializer())
+            # with tf.Session() as session:
+            #     session.run(tf.global_variables_initializer())
 
-                top_predict_proba = self.graph.get_tensor_by_name(
-                    'pred:0')
-                qp = self.graph.get_tensor_by_name('questions:0')
-                ql = self.graph.get_tensor_by_name('question_lens:0')
-                ip = self.graph.get_tensor_by_name('inputs:0')
-                il = self.graph.get_tensor_by_name('input_lens:0')
-                dp = self.graph.get_tensor_by_name('dropout:0')
-                output = session.run(top_predict_proba, feed_dict={
-                    qp: qp_vc, ql: ql_vc, ip: ip_vc, il: il_vc, dp: self.config.dropout})
+            #     top_predict_proba = self.graph.get_tensor_by_name(
+            #         'pred:0')
+            #     qp = self.graph.get_tensor_by_name('questions:0')
+            #     ql = self.graph.get_tensor_by_name('question_lens:0')
+            #     ip = self.graph.get_tensor_by_name('inputs:0')
+            #     il = self.graph.get_tensor_by_name('input_lens:0')
+            #     dp = self.graph.get_tensor_by_name('dropout:0')
+            #     output = session.run(top_predict_proba, feed_dict={
+            #         qp: qp_vc, ql: ql_vc, ip: ip_vc, il: il_vc, dp: self.config.dropout})
 
-            print('output:', output)
-            # indices = output.indices.tolist()[0]
-            # values = output.values.tolist()[0]
+            # print('output:', output)
+            # # indices = output.indices.tolist()[0]
+            # # values = output.values.tolist()[0]
 
-            reply_msg = [self.idx2candid[ind] for ind in output]
+            # reply_msg = [self.idx2candid[ind] for ind in output]
+
+            q_lens = dmn_data_utils.get_lens(questions)
+
+            max_input_len = self.model.max_input_len
+            max_sen_len = self.model.max_sen_len
+            max_q_len = self.model.max_q_len
+
+            inputs = dmn_data_utils.pad_inputs(inputs, input_lens, max_input_len,
+                                               "split_sentences", sen_lens, max_sen_len)
+
+            inputs = np.asarray(inputs)
+
+            questions = dmn_data_utils.pad_inputs(
+                questions, q_lens, max_q_len)
+            questions = np.asarray(questions)
+
+            pred, top_prob = self.model.predict(self.session,
+                                                inputs, input_lens, max_sen_len, questions, q_lens)
+            print(pred)
+            # print('preds:', preds)
+            # if self.config.multi_label:
+            indices = top_prob.indices.tolist()[0]
+            values = top_prob.values.tolist()[0]
+            # else:
+            #     indices = preds[1].tolist()[0]
+            #     values = preds[0].tolist()[0]
+            # print('indices:{0},values:{1}'.format(indices, values))
+            # reply_msg = [self.idx2candid[ind] for ind in indices]
             # print(reply_msg)
-            r = reply_msg[0]
+            reply_msg = self.idx2candid[pred[0]]
+            r = reply_msg
             # print('r:',r)
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
@@ -109,7 +144,8 @@ class DmnSession():
         if self.config.multi_label:
             return reply_msg
         else:
-            return reply_msg[0]
+            # return reply_msg[0]
+            return reply_msg, values  # reply_msg[0], values[0]
 
 
 class DmnInfer:
@@ -124,8 +160,10 @@ class DmnInfer:
             self.config.ckpt_path + 'dmn.weights.meta')
         graph = tf.get_default_graph()
 
-        char = 2 if self.config.word else 1
-        isess = DmnSession(self.config, graph, metadata, char)
+        # char = 2 if self.config.word else 1
+        # isess = DmnSession(self.config, graph, metadata, char)
+        char = 2 if self.config.word2vec_init else 0
+        isess = DmnSession(self.session, self.model, self.config, char)
         return isess
 
 

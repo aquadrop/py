@@ -47,16 +47,18 @@ class Translator():
     def __init__(self,path=os.path.join(grandfatherdir, "model/graph/translator_graph.pkl")):
         self.dic=self._load(path)
 
-    def _load(self,path):
+    def _load(self, path):
         with open(path,'rb') as f:
             return pickle.load(f)
 
-    def en2cn(self,query):
+    def en2cn(self, query):
+        _q = query
         for k,v in self.dic.items():
             query=query.replace(k,v)
+        # print('translated..{}->{}'.format(_q, query))
         return query
 
-    def cn2en(self,query):
+    def cn2en(self, query):
         for k,v in self.dic.items():
             query=query.replace(v,k)
         return query
@@ -75,4 +77,6 @@ def test():
 
 if __name__ == '__main__':
     _pickle()
+    tr = Translator()
+    print(tr.en2cn('api_call_slot_'))
     # test()

@@ -200,7 +200,7 @@ def vectorize_data(data, config, max_input_len, max_sen_len, max_q_len):
     return data, w2idx, idx2w, vocab_size
 
 
-def process_data(data_raw, floatX, w2idx, split_sentences=True):
+def process_data(data_raw, floatX, w2idx, split_sentences=True, memory_size=config.max_memory_size):
     questions = []
     inputs = []
     answers = []
@@ -209,6 +209,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
 
     for data in data_raw:
         inp, question, answer = data
+        inp = inp[-memory_size:]
         # print(inp)
         if len(inp) == 0:
             inp = [['']]
@@ -220,7 +221,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
             inp_vector = [w2idx.get(w, 0) for w in inp]
             inputs.append(np.vstack(inp_vector).astype(floatX))
 
-        question = question if len(question) else [' ']
+        question = question if len(question) else ['']
         q_vector = [w2idx.get(w, 0) for w in question]
         # print(q_vector)
         questions.append(np.vstack(q_vector).astype(floatX))
@@ -380,6 +381,87 @@ def process_word(data, w2idx, idx2w, word_embedding, word2vec, updated_embedding
                               word2vec, updated_embedding, init)
 
 
+def vectorize_data(config, data, metadata, split_sentences=True):
+    data = process_data(data, config.floatX, metadata['w2idx'])
+    inputs, questions, answers, input_masks, rel_labels = data
+    candidates = metadata['candidates']
+    # print(len(train_data[0]))
+
+    if split_sentences:
+        # print(inputs)
+        input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
+        max_mask_len = max_sen_len
+    else:
+        input_lens = get_lens(inputs)
+        mask_lens = get_lens(input_masks)
+        max_mask_len = np.max(mask_lens)
+
+    q_lens = get_lens(questions)
+    max_q_len = metadata['max_q_len']
+
+    max_input_len = metadata['max_input_len']
+    max_mask_len = metadata['max_mask_len']
+    max_sen_len = metadata['max_sen_len']
+
+    if split_sentences:
+        inputs = pad_inputs(inputs, input_lens, max_input_len,
+                            "split_sentences", sen_lens, max_sen_len)
+        input_masks = np.zeros(len(inputs))
+    else:
+        inputs = pad_inputs(inputs, input_lens, max_input_len)
+        input_masks = pad_inputs(input_masks, mask_lens, max_mask_len, "mask")
+
+    questions = pad_inputs(questions, q_lens, max_q_len)
+
+    candidate_size = len(candidates)
+
+    answers = [np.sum(np.eye(candidate_size)[np.asarray(a)], axis=0) for a in
+               answers] if config.multi_label else answers
+
+    answers = np.stack(answers)
+
+    rel_labels = np.zeros((len(rel_labels), len(rel_labels[0])))
+
+    for i, tt in enumerate(rel_labels):
+        rel_labels[i] = np.array(tt, dtype=int)
+
+    candidate_size = len(candidates)
+
+    # print(word2vec)
+
+    data = questions[:], inputs[:], \
+        q_lens[:], \
+        input_lens[:], input_masks[:], \
+        answers[:], rel_labels[:]
+
+    # print(type(self.word_embedding))
+    return data
+
+
+def get_lens_info(data, metadata, split_sentences=True):
+    data = process_data(data, config.floatX, metadata['w2idx'])
+    inputs, questions, answers, input_masks, rel_labels = data
+    rel_labels = np.array(rel_labels)
+    candidates = metadata['candidates']
+    # print(len(train_data[0]))
+
+    if split_sentences:
+        # print(inputs)
+        input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
+        max_mask_len = max_sen_len
+    else:
+        input_lens = get_lens(inputs)
+        mask_lens = get_lens(input_masks)
+        max_mask_len = np.max(mask_lens)
+
+    q_lens = get_lens(questions)
+    max_q_len = np.max(q_lens)
+
+    max_input_len = min(np.max(input_lens), config.max_allowed_inputs)
+
+    return max_mask_len, max_q_len, max_input_len, rel_labels.shape[1]
+
+
 def load_data(config, split_sentences=True):
     w2idx = {}
     idx2w = {}
@@ -388,6 +470,10 @@ def load_data(config, split_sentences=True):
 
     updated_embedding = {}
 
+    metadata = dict()
+    metadata['word_embedding'] = word_embedding
+    metadata['updated_embedding'] = updated_embedding
+    metadata['word2vec'] = word2vec
     data_dir = config.data_dir
     candid_path = config.candid_path
 
@@ -395,9 +481,11 @@ def load_data(config, split_sentences=True):
         load_raw_data(data_dir, candid_path,
                       word2vec_init=config.word_vector)
 
-    print(train_data[:2])
-
-    if config.word_vector:
+    metadata['candidates'] = candidates
+    metadata['candid2idx'] = candid2idx
+    metadata['idx2candid'] = idx2candid
+    metadata['candidate_size'] = len(candidates)
+    if config.word2vec_init:
         print('Process word vector.')
 
         if os.path.exists(config.metadata_path):
@@ -442,85 +530,34 @@ def load_data(config, split_sentences=True):
         w2idx = dict((c, i + 1) for i, c in enumerate(vocab))
         idx2w = dict((i + 1, c) for i, c in enumerate(vocab))
         vocab_size = len(vocab)
-        word_embedding = np.random.uniform(
-            -config.embedding_init,
-            config.embedding_init,
-            (vocab_size, config.embed_size))
+        metadata['w2idx'] = w2idx
+        metadata['idx2w'] = idx2w
+        metadata['vocab_size'] = vocab_size
+        max_mask_len, max_q_len, max_input_len, num_supporting_facts = get_lens_info(
+            train_data, metadata, split_sentences)
+        max_mask_len2, max_q_len2, max_input_len2, _ = get_lens_info(
+            val_data, metadata, split_sentences)
+        max_mask_len3, max_q_len3, max_input_len3, _ = get_lens_info(
+            test_data, metadata, split_sentences)
+        max_mask_len = max([max_mask_len, max_mask_len2, max_mask_len3])
+        max_q_len = max([max_q_len, max_q_len2, max_q_len3])
+        max_input_len = max([max_input_len, max_input_len2, max_input_len3])
+        metadata['max_mask_len'] = max_mask_len
+        metadata['max_q_len'] = max_q_len
+        metadata['max_input_len'] = max_input_len
+        metadata['num_supporting_facts'] = num_supporting_facts
+        metadata['max_sen_len'] = max_mask_len
+        return train_data, val_data, test_data, metadata
+        # word_embedding = np.random.uniform(
+        #     -config.embedding_init,
+        #     config.embedding_init,
+        #     (vocab_size, config.embed_size))
 
-    train_data = process_data(train_data, config.floatX, w2idx)
-    val_data = process_data(val_data, config.floatX, w2idx)
-    test_data = process_data(test_data, config.floatX, w2idx)
+    # train_data = process_data(train_data, config.floatX, w2idx)
+    # val_data = process_data(val_data, config.floatX, w2idx)
+    # test_data = process_data(test_data, config.floatX, w2idx)
 
     # print(len(train_data[0]))
-
-    for t, v in zip(train_data, val_data):
-        t += v
-    for t, v in zip(train_data, test_data):
-        t += v
-
-    inputs, questions, answers, input_masks, rel_labels = train_data if config.train_mode else test_data
-
-    # print(len(train_data[0]))
-
-    if split_sentences:
-        # print(inputs)
-        input_lens, sen_lens, max_sen_len = get_sentence_lens(inputs)
-        max_mask_len = max_sen_len
-    else:
-        input_lens = get_lens(inputs)
-        mask_lens = get_lens(input_masks)
-        max_mask_len = np.max(mask_lens)
-
-    q_lens = get_lens(questions)
-    max_q_len = np.max(q_lens)
-
-    max_input_len = min(np.max(input_lens), config.max_allowed_inputs)
-
-    if split_sentences:
-        inputs = pad_inputs(inputs, input_lens, max_input_len,
-                            "split_sentences", sen_lens, max_sen_len)
-        input_masks = np.zeros(len(inputs))
-    else:
-        inputs = pad_inputs(inputs, input_lens, max_input_len)
-        input_masks = pad_inputs(input_masks, mask_lens, max_mask_len, "mask")
-
-    questions = pad_inputs(questions, q_lens, max_q_len)
-
-    candidate_size = len(candidates)
-
-    answers = [np.sum(np.eye(candidate_size)[np.asarray(a)], axis=0) for a in
-               answers] if config.multi_label else answers
-
-    answers = np.stack(answers)
-
-    rel_labels = np.zeros((len(rel_labels), len(rel_labels[0])))
-
-    for i, tt in enumerate(rel_labels):
-        rel_labels[i] = np.array(tt, dtype=int)
-
-    candidate_size = len(candidates)
-
-    if config.train_mode:
-        total_num = min(len(questions), config.total_num)
-        num_train = int(total_num * 0.8)
-        print(total_num)
-        print(num_train)
-        train = questions[:num_train], inputs[:num_train], \
-            q_lens[:num_train], \
-            input_lens[:num_train], input_masks[:num_train], \
-            answers[:num_train], rel_labels[:num_train]
-
-        valid = questions[num_train:total_num], inputs[num_train:total_num], \
-            q_lens[num_train:total_num], input_lens[num_train:total_num], \
-            input_masks[num_train:total_num], \
-            answers[num_train:total_num], rel_labels[num_train:total_num]
-        return train, valid, word_embedding, word2vec, updated_embedding, max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], vocab_size, candidate_size, candid2idx, idx2candid, w2idx, idx2w
-
-    else:
-        test = questions, inputs, q_lens, input_lens, input_masks, answers, rel_labels
-        return test, np.asarray(word_embedding), max_q_len, max_input_len, max_mask_len, \
-            rel_labels.shape[1], len(vocab), candidate_size
 
 
 def main():

@@ -25,24 +25,45 @@ translator = Translator()
 class TreeSimilator:
     def __init__(self, config):
         self.belief_tracker = BeliefTracker(config)
-        # self._load_template(config)
+        self._load_template(config)
 
     def _load_template(self, config):
         template_file = config['template']
+        self.field_trans = dict()
+        self.quantum = dict()
+        self.unit = dict()
+        self.thesaurus = dict()
         with open(template_file, 'r') as tf:
             for line in tf:
                 line = line.strip('\n')
                 parsers = line.split('|')
-                if parsers[0] == 'prefix':
-                    self.buy_prefix = parsers[2].split('/')
-                if parsers[1] == 'postfix':
+                if parsers[0] == 'prefix_buy':
+                    self.prefix_buy = parsers[1].split('/')
+                if parsers[0] == 'prefix_buy_root':
+                    self.prefix_buy_root = parsers[1].split('/')
+                if parsers[0] == 'prefix_deny':
+                    self.prefix_deny = parsers[1].split('/')
+                if parsers[0] == 'modifier_query_cateory_location':
+                    self.modifier_query_cateory_location = parsers[1].split(
+                        '/')
+                if parsers[0] == 'prefix_price':
+                    self.prefix_price = parsers[1].split('/')
+                if parsers[0] == 'prefix_brand':
+                    self.prefix_brand = parsers[1].split('/')
+                if parsers[0] == 'postfix_price':
+                    self.postfix_price = parsers[1].split('/')
+                if parsers[0] == 'postfix_brand':
+                    self.postfix_brand = parsers[1].split('/')
+                if parsers[0] == 'postfix':
                     self.postfix = parsers[1].split('/')
-                if parsers[0] == 'field':
-                    self.field_template[parsers[1]] = parsers[2].split('/')
+                if parsers[0] == 'field_trans':
+                    self.field_trans[parsers[1]] = parsers[2].split('/')
+                if parsers[0] == 'quantum':
+                    self.quantum[parsers[1]] = parsers[2].split('/')
                 if parsers[0] == 'unit':
                     self.unit[parsers[1]] = parsers[2].split('/')
                 if parsers[0] == 'thesaurus':
-                    self.unit[parsers[1]] = parsers[2].split(
+                    self.thesaurus[parsers[1]] = parsers[2].split(
                         '/')[:] + [parsers[1]]
 
     def gen_sessions(self, output_files):
@@ -240,31 +261,38 @@ class TreeSimilator:
                 ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
             return requested
 
-        def render_thesaurus(v, thesaurus):
-            if v in thesaurus:
-                choice = thesaurus[v][:]
-                choice.append(v)
-                v = np.random.choice(choice)
+        def render_thesaurus(v):
+            if v in self.thesaurus:
+                v = np.random.choice(self.thesaurus[v])
             return v
 
-        def render_lang(slot_values_mapper, fresh, thesaurus):
+        def render_lang(slot_values_mapper, fresh):
+
+            def render_template(key, replace):
+                append = np.random.choice(self.field_trans[key])\
+                    .replace('<{}>'.format(key), replace)
+                return append
+
             search_node = self.belief_tracker.search_node
-            prefix = ['', '我来买', '我来看看', '看看', '我要买', '我想买', '有没有']
-            postfix = ['吧', '呢', '']
+            prefix = self.prefix_buy
+            postfix = self.postfix
             lang = np.random.choice(prefix)
             if 'brand' in slot_values_mapper:
-                lang += slot_values_mapper['brand'] + \
-                    np.random.choice(['的', ''], p=[0.7, 0.3])
+                lang += render_template('brand', slot_values_mapper['brand'])
             if 'price' in slot_values_mapper:
-                lang += np.random.choice(['价格', '价位', '']) + \
-                    slot_values_mapper['price']
-                if np.random.uniform() < 0.3:
-                    if np.random.uniform() < 0.5:
-                        lang += '元'
-                    else:
-                        lang += '块'
+                unit = np.random.choice(self.unit['price'])
+                with_unit = slot_values_mapper['price'] + unit
+                lang += render_template('price', with_unit)
             if 'category' in slot_values_mapper:
-                lang += slot_values_mapper['category'] + ','
+                v = slot_values_mapper['category']
+                quantum = ''
+                syn = v
+                if v in self.quantum:
+                    quantum = np.random.choice(self.quantum[v])
+                if v in self.thesaurus:
+                    syn = np.random.choice(self.thesaurus[v])
+                v = quantum + syn
+                lang += v + ","
 
             for k, v in slot_values_mapper.items():
                 if k in ['brand', 'price', 'category']:
@@ -273,57 +301,44 @@ class TreeSimilator:
                     trans = search_node.get_node_slot_trans(k)
                     if fresh or 'range' in lang:
                         lang += trans + 'range'
-                        if k in ['tv.size', 'phone.size', 'pc.size']:
-                            lang += '寸'
-                        if k in ['tv.distance']:
-                            lang += '米'
-                        if k in ['ac.power_float']:
-                            lang += np.random.choice(['p', '匹'])
+                        unit = np.random.choice(self.unit[k])
+                        lang += unit
                     else:
                         lang += trans + 'range'
-                        if k in ['tv.size', 'phone.size']:
-                            lang += '寸'
-                        if k in ['tv.distance']:
-                            lang += '米'
-                        if k in ['ac.power_float']:
-                            lang += np.random.choice(['p', '匹', ''])
+                        unit = np.random.choice(self.unit[k])
+                        lang += unit
                 else:
-                    if v in ['电视', '冰箱', '空调', '电脑']:
-                        if v == '电视':
-                            v = np.random.choice(['电视', '电视机', '彩电'])
-                        if v == '冰箱':
-                            v = np.random.choice(['冰箱', '电冰箱'])
-                        if v == '电脑':
-                            v = np.random.choice(['pc', '电脑', '计算机'])
-                        v = np.random.choice(['台', '一台', '一个', '个', '']) + v
-                    if v in ['手机']:
-                        v = np.random.choice(['部', '一部', '一个', '个', '']) + v
-                    if v in thesaurus:
-                        choice = thesaurus[v][:]
-                        choice.append(v)
-                        v = np.random.choice(choice)
+                    quantum = ''
+                    syn = v
+                    if v in self.quantum:
+                        quantum = np.random.choice(self.quantum['v'])
+                    if v in self.thesaurus:
+                        syn = np.random.choice(self.thesaurus[v])
+                    v = quantum + syn
                     lang += v + ","
 
             if lang[-1] == ',':
                 lang = lang[0:-1]
-            lang = lang + np.random.choice(postfix, p=[0.1, 0.1, 0.8])
+            lang = lang + np.random.choice(postfix)
             lang = lang.lower()
             if 'root' in lang:
-                lang = np.random.choice(['我来买东西', '购物', '买点东西'])
+                lang = np.random.choice(self.prefix_buy_root)
             return lang
 
         def render_cls(slot_values_mapper):
             params = []
             for key in sorted(slot_values_mapper.keys()):
                 params.append(key + ":" + slot_values_mapper[key])
-            return 'api_call_slot_' + ','.join(params)
+            line = 'api_call_slot_' + ','.join(params)
+            if line == 'api_call_slot_virtual_category:root':
+                line = 'api_call_query_general'
+            return line
 
         def render_api(api):
             return api[0]
 
         def render_deny():
-            prefix = np.random.choice(
-                ['我不要', '不要', '不要这个', '不想要', '不喜欢', '不喜欢这个'])
+            prefix = np.random.choice(self.prefix_deny)
             lang = prefix
             cls = 'api_call_deny_all'
             if 'brand' in self.belief_tracker.filling_slots:
@@ -335,12 +350,12 @@ class TreeSimilator:
         requested = get_requested_field()
         i = 0
 
-        thesaurus = dict()
-        with open('../../data/gen_product/thesaurus.txt', 'r') as f:
-            for line in f:
-                line = line.strip('\n')
-                key, value = line.split('#')
-                thesaurus[key] = value.split(',')
+        # thesaurus = dict()
+        # with open('../../data/gen_product/thesaurus.txt', 'r') as f:
+        #     for line in f:
+        #         line = line.strip('\n')
+        #         key, value = line.split('#')
+        #         thesaurus[key] = value.split(',')
 
         candidates = set()
         api_set = set()
@@ -364,12 +379,13 @@ class TreeSimilator:
 
         with_multiple = False
         with_qa = True
-        with_deny = False
-        with_whatever = False
+        with_deny = True
+        with_whatever = True
         with_flow = True
-        with_base = False
+        with_base = True
         with_gbdt = False
-        with_faq = False
+
+        with_faq = True
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -381,7 +397,7 @@ class TreeSimilator:
                     required_field=requested)
                 self.belief_tracker.color_graph(
                     slot_values_mapper=slot_values_mapper, range_render=False)
-            user_reply = render_lang(slot_values_mapper, fresh, thesaurus)
+            user_reply = render_lang(slot_values_mapper, fresh)
             if not fresh:
                 gbdt = 'plugin:' + 'api_call_slot' + '|'\
                     + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
@@ -402,7 +418,7 @@ class TreeSimilator:
             flow = cls + '\t' + api
             if requested == 'category':
                 single_container.append(line)
-                single_container.append('')
+                # single_container.append('')
             requested = self.belief_tracker.get_requested_field()
             trans_api = translator.en2cn(api)
             if not api.startswith('api_call_search'):
@@ -423,8 +439,14 @@ class TreeSimilator:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
                     if np.random.uniform() < 0.9:
-                        qa = np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
-                            + np.random.choice(['在哪里', '在什么地方', '在几楼', '几楼有卖', '在哪里卖', '在哪里买', '在什么地方买'])
+                        category = np.random.choice(
+                            [render_thesaurus(filling_slots['category']), ''])
+                        if np.random.uniform() < 0.5:
+                            qa = category\
+                                + np.random.choice(self.modifier_query_cateory_location)
+                        else:
+                            qa = np.random.choice(self.modifier_query_cateory_location) \
+                                + category
                         line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                             + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_location_' + 'category:'\
@@ -434,13 +456,16 @@ class TreeSimilator:
                         # flow_container.append(flow.lower())
                         candidates.add('api_call_query_location_' + 'category:'
                                        + filling_slots['category'])
+                        if category:
+                            single_container.append(line)
+                            # single_container.append('')
                     if np.random.uniform() < 0.9:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
-                            qa = np.random.choice([brand, '这个', '这款', ''])\
-                                + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '']) \
-                                + np.random.choice(['多少钱', '什么价格', '什么价格', '要多少钱'])
+                            qa = np.random.choice([brand] + self.prefix_price)\
+                                + np.random.choice([render_thesaurus(filling_slots['category']), '']) \
+                                + np.random.choice(self.postfix_price)
                             line = qa + '\t' + 'api_call_query_price_' + 'brand:' \
                                 + brand + ',' + 'category:' + \
                                 filling_slots['category'] + \
@@ -455,8 +480,8 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
-                            qa = brand + np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), '的', ''])\
-                                + np.random.choice(['多少钱', '什么价格', '什么价格', '要多少钱'])
+                            qa = brand + np.random.choice([render_thesaurus(filling_slots['category']), ''])\
+                                + np.random.choice(self.postfix_price)
                             line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
                                 + brand + ',' + 'category:' + \
                                 filling_slots['category'] + \
@@ -475,10 +500,9 @@ class TreeSimilator:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
-                            qa = np.random.choice(['你们', '你这里', '你们这里', '这里']) + \
-                                np.random.choice([render_thesaurus(filling_slots['category'], thesaurus), ''])\
-                                + np.random.choice(['都', ''])\
-                                + np.random.choice(['有哪些品牌', '有哪些牌子', '有什么品牌', '有什么牌子'])
+                            qa = np.random.choice(self.prefix_brand) + \
+                                np.random.choice([render_thesaurus(filling_slots['category']), ''])\
+                                + np.random.choice(self.postfix_brand)
                             line = qa + '\t' + 'api_call_query_brand_category:' + \
                                 filling_slots['category'] + \
                                 '\t' + 'placeholder'
@@ -516,14 +540,14 @@ class TreeSimilator:
                 single_bulk = '#'.join(single_container).lower()
                 if bulk not in duplicate_removal:
                     duplicate_removal.add(bulk)
-                    mapper[which].extend(container)
+                    # mapper[which].extend(container)
                     # for a in container:
                     #     print(a)
                 else:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container)
+                    mapper[which].extend(single_container * 2)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
@@ -532,12 +556,13 @@ class TreeSimilator:
                 which = np.random.choice(
                     ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 container = []
-                single_container = []
+                if np.random.uniform() < 0.5:
+                    single_container = [""]
                 flow_container = []
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 120000:
+                if i >= 30000:
                     break
 
         # lower everything
@@ -673,6 +698,7 @@ if __name__ == "__main__":
     config['solr.facet'] = 'off'
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
+    config['template'] = 'template.txt'
     tree_simulator = TreeSimilator(config)
 
     output_files = ['../../data/memn2n/train/tree/origin/candidates.txt',

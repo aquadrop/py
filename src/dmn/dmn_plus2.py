@@ -15,8 +15,84 @@ from dmn.attention_gru_cell import AttentionGRUCell
 
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
-import dmn_data_utils2 as dmn_data_utils
-from utils.embedding_util import ff_embedding
+
+class Config(object):
+    """Holds model hyperparams and data information."""
+
+    batch_size = 128
+    embed_size = 300
+    hidden_size = 300
+
+    max_epochs = 345
+    early_stopping = 20
+
+    dropout = 1
+    lr = 0.001
+    l2 = 0.001
+
+    cap_grads = True
+    max_grad_val = 10
+    noisy_grads = True
+
+    word2vec_init = False
+    embedding_init = np.sqrt(3)
+
+    # set to zero with strong supervision to only train gates
+    strong_supervision = False
+    beta = 1
+
+    # NOTE not currently used hence non-sensical anneal_threshold
+    anneal_threshold = 1000
+    anneal_by = 1
+
+    num_hops = 2
+    num_attention_features = 4
+
+    max_allowed_inputs = 130
+    total_num = 3000000
+
+    floatX = np.int32
+
+    multi_label = False
+    top_k = 5
+    max_memory_size = 10
+    fix_vocab = True
+
+    train_mode = True
+
+    # reserved_word_num = 5000
+    vocab_size = 10000
+
+    embedding_type = 'fasttext'
+
+    # paths
+    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
+    DATA_DIR = os.path.join(prefix, 'data/memn2n/train/tree/origin/')
+    CANDID_PATH = os.path.join(
+        prefix, 'data/memn2n/train/tree/origin/candidates.txt')
+
+    MULTI_DATA_DIR = os.path.join(prefix, 'data/memn2n/train/multi_tree')
+    MULTI_CANDID_PATH = os.path.join(
+        prefix, 'data/memn2n/train/multi_tree/candidates.txt')
+
+    data_dir = MULTI_DATA_DIR if multi_label else DATA_DIR
+    candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
+
+    metadata_path = os.path.join(
+        prefix, 'model/dmn/dmn_processed/metadata.pkl')
+    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt/')
+
+    multi_metadata_path = os.path.join(
+        prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
+    multi_data_path = os.path.join(
+        prefix, 'model/dmn/dmn_processed/multi_data.pkl')
+    multi_ckpt_path = os.path.join(prefix, 'model/dmn/multi_ckpt/')
+
+    metadata_path = multi_metadata_path if multi_label else metadata_path
+    data_path = multi_data_path if multi_label else data_path
+    ckpt_path = multi_ckpt_path if multi_label else ckpt_path
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -47,11 +123,13 @@ def _position_encoding(sentence_size, embedding_size):
 
 
 class DMN_PLUS(object):
-    def _load_data(self, debug=False):
+    def _load_data(self, metadata, debug=False):
         """Loads data from metadata"""
-        with open(self.config.metadata_path, 'rb') as f:
-            metadata = pickle.load(f)
-
+        self.word2vec = metadata['word2vec']
+        self.word_embedding = np.asarray(metadata['word_embedding'])
+        self.updated_embedding = metadata['updated_embedding']
+        # print(type(self.word_embedding))
+        self.max_q_len = metadata['max_q_len']
         self.max_input_len = metadata['max_input_len']
         self.max_q_len = metadata['max_q_len']
         self.max_sen_len = metadata['max_sen_len']
@@ -67,20 +145,17 @@ class DMN_PLUS(object):
               \n max_q_len:{}\n max_input_len:{}\n max_sen_len:{}\n vocab_size:{}\n cadidate_size:{}\n'
               .format(self.max_q_len, self.max_input_len, self.max_sen_len, self.vocab_size, self.candidate_size))
 
-        if self.config.train_mode:
-            print('Load metadata (training mode)')
-
-            with open(self.config.data_path, 'rb') as f:
-                data = pickle.load(f)
-
-            train_raw = data['train']
-            valid_raw = data['valid']
-            self.train, self.w2idx, self.idx2w, self.vocab_size = dmn_data_utils.vectorize_data(
-                train_raw, self.config, self.max_input_len, self.max_sen_len, self.max_q_len)
-            self.valid, self.w2idx, self.idx2w, self.vocab_size = dmn_data_utils.vectorize_data(
-                valid_raw, self.config, self.max_input_len, self.max_sen_len, self.max_q_len)
-        else:
-            print('Load metadata (infer mode)')
+        # if self.config.train_mode:
+        #     print('Load metadata (training mode)')
+        #
+        #     with open(self.config.data_path, 'rb') as f:
+        #         data = pickle.load(f)
+        #
+        #     train = data['train']
+        #     valid = data['valid']
+        #     self.train =
+        # else:
+        #     print('Load metadata (infer mode)')
 
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
@@ -164,7 +239,7 @@ class DMN_PLUS(object):
                 predict_proba_op, k=self.config.top_k)
             pred = tf.argmax(predict_proba_op, 1)
 
-        return pred, predict_proba_op
+        return pred, predict_proba_top_op
         # return preds
 
     def _create_loss(self, output):
@@ -245,22 +320,22 @@ class DMN_PLUS(object):
         # use encoding to get sentence representation
         inputs = tf.reduce_sum(inputs * self.encoding, 2)
 
-        forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
+        # forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
-        # outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
-        #                   sequence_length=self.input_len_placeholder,
-        #                   dtype=np.float32)
-        # fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
-        outputs, _ = tf.nn.bidirectional_dynamic_rnn(
-            forward_gru_cell,
-            backward_gru_cell,
-            inputs,
-            dtype=np.float32,
-            sequence_length=self.input_len_placeholder
-        )
-
-        # f<-> = f-> + f<-
-        fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
+        outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
+                                       sequence_length=self.input_len_placeholder,
+                                       dtype=np.float32)
+        fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
+        # outputs, _ = tf.nn.bidirectional_dynamic_rnn(
+        #     forward_gru_cell,
+        #     backward_gru_cell,
+        #     inputs,
+        #     dtype=np.float32,
+        #     sequence_length=self.input_len_placeholder
+        # )
+        #
+        # # f<-> = f-> + f<-
+        # fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
 
         # gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         # outputs, _ = tf.nn.dynamic_rnn(gru_cell, inputs, sequence_length=self.input_len_placeholder,
@@ -304,6 +379,7 @@ class DMN_PLUS(object):
         attentions = tf.transpose(tf.stack(attentions))
         self.attentions.append(attentions)
         attentions = tf.nn.softmax(attentions)
+
         attentions = tf.expand_dims(attentions, axis=-1)
 
         reuse = True if hop_index > 0 else False
@@ -384,16 +460,16 @@ class DMN_PLUS(object):
             train_op = tf.no_op()
             dp = 1
         total_steps = len(data[0]) // config.batch_size
-        # print(len(data[0]))
+        # print(len(data[0]), config.batch_size, total_steps)
 
         total_loss = []
         accuracy = 0
         error = []
 
         # shuffle data
-        p = np.random.permutation(len(data[0]))
+        # p = np.random.permutation(len(data[0]))
         qp, ip, ql, il, im, a, r = data
-        qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
+        # qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
 
         if not display:
             for step in tqdm(range(total_steps)):
@@ -493,18 +569,22 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        preds = session.run(self.pred, feed_dict=feed)
-        return preds
+        pred, prob_top = session.run(
+            [self.pred, self.prob_top_k], feed_dict=feed)
+        return pred, prob_top
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred
 
-    def __init__(self, config):
+    def __init__(self, config, metadata=None):
         self.config = config
         self.variables_to_save = {}
-        self._load_data(debug=False)
+        if not metadata:
+            with open(self.config.metadata_path, 'rb') as f:
+                metadata = pickle.load(f)
+        self._load_data(metadata=metadata, debug=False)
         self._create_placeholders()
         self.output = self._inference()
-        self.pred, _ = self.get_predictions(self.output)
+        self.pred, self.prob_top_k = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self._create_loss(self.output)
         self.train_step = self._create_training_op(self.calculate_loss)
