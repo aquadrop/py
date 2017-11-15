@@ -164,6 +164,8 @@ class MainKernel:
                         self.belief_tracker.clear_memory()
                         self.sess.clear_memory()
                         return self.kernel(q, user)
+                else:
+                    self.base_counter = 0
                 print(range_rendered, api, prob)
                 response = api
                 memory = api
