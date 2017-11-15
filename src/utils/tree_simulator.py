@@ -380,8 +380,8 @@ class TreeSimilator:
         with_gbdt = False
         with_main = True
         with_faq = True
-        qa_prob = 0.9
-        N = 200000
+        qa_prob = 0.25
+        N = 120000
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -436,8 +436,12 @@ class TreeSimilator:
                 if 'category' in filling_slots:
                     if np.random.uniform() < qa_prob:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
-                        qa = category\
-                            + np.random.choice(self.modifier_query_cateory_location)
+                        if np.random.uniform() < 0.5:
+                            qa = category\
+                                + np.random.choice(self.modifier_query_cateory_location)
+                        else:
+                            qa = np.random.choice(self.modifier_query_cateory_location) \
+                                 + category
                         line = qa + '\t' + 'api_call_query_location_' + 'category:'\
                             + filling_slots['category'] + '\t' + 'placeholder'
                         flow = 'api_call_query_location_' + 'category:'\
@@ -578,6 +582,13 @@ class TreeSimilator:
                     base.append(line)
                     if not line:
                         base_count += 1
+            with open(grandfatherdir + '/data/memn2n/train/tree/extra/location.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    base.append(line)
+                    if not line:
+                        pass
+                        # base_count += 1
 
         train_count = 0
         with open(output_files[1], 'w', encoding='utf-8') as f:

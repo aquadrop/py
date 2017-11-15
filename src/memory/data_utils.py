@@ -112,6 +112,8 @@ def parse_dialogs_per_response(lines, candid_dic, dmn=False):
                 if config.MULTILABEL >= 1:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
+                    if r not in candid_dic:
+                        continue
                     a = candid_dic[r]
                 u = tokenize(u)
                 if config.FIX_VOCAB:
