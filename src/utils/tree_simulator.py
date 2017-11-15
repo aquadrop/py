@@ -378,8 +378,10 @@ class TreeSimilator:
         with_flow = True
         with_base = True
         with_gbdt = False
-
+        with_main = True
         with_faq = True
+        qa_prob = 0.9
+        N = 200000
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -432,7 +434,7 @@ class TreeSimilator:
             if with_qa:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
                         qa = category\
                             + np.random.choice(self.modifier_query_cateory_location)
@@ -447,7 +449,7 @@ class TreeSimilator:
                         if category:
                             single_container.append(line)
                             # single_container.append('')
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
@@ -480,7 +482,7 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
 
                     # ask brand of category
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
@@ -521,7 +523,8 @@ class TreeSimilator:
                 single_bulk = '#'.join(single_container).lower()
                 if bulk not in duplicate_removal:
                     duplicate_removal.add(bulk)
-                    mapper[which].extend(container)
+                    if with_main:
+                        mapper[which].extend(container)
                     # for a in container:
                     #     print(a)
                 else:
@@ -538,12 +541,12 @@ class TreeSimilator:
                     ['train', 'val', 'test'], p=[0.8, 0.1, 0.1])
                 container = []
                 if np.random.uniform() < 0.5:
-                    single_container = []
+                    single_container = [""]
                 flow_container = []
                 # print(line)
                 i += 1
                 print(i)
-                if i >= 200000:
+                if i >= N:
                     break
 
         # lower everything
