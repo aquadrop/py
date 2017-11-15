@@ -29,6 +29,8 @@ from dmn_plus2 import Config, DMN_PLUS
 
 translator = Translator()
 
+EPOCH = 5
+
 
 def prepare_data(args, config):
     data_dir = config.data_dir
@@ -82,12 +84,23 @@ def parse_args(args):
     return args
 
 
+def _check_restore_parameters(sess, saver, model_path):
+    """ Restore the previously trained parameters if there are any. """
+    print("--checking directory:", model_path)
+    ckpt = tf.train.get_checkpoint_state(model_path)
+    if ckpt and ckpt.model_checkpoint_path:
+        print("Loading parameters for the model")
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        print("Initializing fresh parameters for the model")
+
+
 def main(args):
     args = parse_args(args)
     # print(args)
 
     config = Config()
-
+    # args['prep_data'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
@@ -112,8 +125,12 @@ def main(args):
             # if not os.path.exists(sum_dir):
             #     os.makedirs(sum_dir)
             # train_writer = tf.summary.FileWriter(sum_dir, session.graph)
+            train_writer = None
 
             session.run(init)
+
+            _check_restore_parameters(
+                session, saver, model_path=config.ckpt_path)
 
             best_val_epoch = 0
             prev_epoch_loss = float('inf')
@@ -122,26 +139,28 @@ def main(args):
 
             best_train_epoch = 0
             best_train_loss = float('inf')
-            best_train_accuracy = 0.0
-            best_overall_train_accuracy = 0.0
+            best_train_accuracy = 0.8
 
-            if args['restore']:
-                print('==> restoring weights')
-                saver.restore(session, config.ckpt_path + 'dmn.weights')
+            if config.word2vec_init:
+                session.run(model.embedding_init, feed_dict={
+                    model.embedding_placeholder: model.word_embedding})
+            # if args['restore']:
+            #     print('==> restoring weights')
+            #     saver.restore(session, config.ckpt_path + 'dmn.weights')
             #     if len(model.updated_embedding):
             #         print('==> update embedding')
             #         embeddings = update_embedding(
             #             session, config.ckpt_path + 'dmn.weights.meta', model.updated_embedding)
             #         session.run(model.embedding_init, feed_dict={
-            #             model.embedding_placeholder: embeddings})
-
+            #                     model.embedding_placeholder: embeddings})
+            #
             # else:
             #     session.run(model.embedding_init, feed_dict={
-            #         model.embedding_placeholder: model.word_embedding})
+            #                 model.embedding_placeholder: model.word_embedding})
 
             print('==> starting training')
             for epoch in range(config.max_epochs):
-                if not (epoch % 3 == 0 and epoch > 1):
+                if not (epoch % EPOCH == 0 and epoch > 1):
                     print('Epoch {}'.format(epoch))
                     _ = model.run_epoch(session, model.train, epoch,
                                         train_op=model.train_step, train=True)
@@ -156,28 +175,27 @@ def main(args):
                     valid_loss, valid_accuracy, valid_error = model.run_epoch(
                         session, model.valid, display=True)
                     # print('Training error:')
-                    # for e in train_error:
-                    #     print(e)
+                    if train_accuracy > 0.90:
+                        for e in train_error:
+                            print(e)
                     # print('Validation error:')
                     print('Training loss: {}'.format(train_loss))
                     print('Validation loss: {}'.format(valid_loss))
                     print('Training accuracy: {}'.format(train_accuracy))
                     print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                    if train_loss < best_train_loss:
-                        print('Saving weights')
-                        best_train_loss = train_loss
-                        best_train_epoch = epoch
+                    if train_accuracy > best_train_accuracy:
+                        print('Saving weights and updating best_train_loss:{} -> {},\
+                               best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,
+                                                                    best_train_accuracy, train_accuracy))
                         best_train_accuracy = train_accuracy
-                        if best_train_accuracy > best_overall_train_accuracy:
-                            best_overall_train_accuracy = best_train_accuracy
                         saver.save(
                             session, config.ckpt_path + 'dmn.weights')
+                        best_train_loss = train_loss
+                        best_train_epoch = epoch
                     print('best_train_loss: {}'.format(best_train_loss))
                     print('best_train_epoch: {}'.format(best_train_epoch))
                     print('best_train_accuracy: {}'.format(best_train_accuracy))
-                    print('best_overall_train_accuracy: {}'.format(
-                        best_overall_train_accuracy))
 
                     # anneal
                     if train_loss > prev_epoch_loss * model.config.anneal_threshold:

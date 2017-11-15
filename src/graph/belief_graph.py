@@ -70,8 +70,11 @@ class Graph(Node, object):
         self.range_adapter_mapper['fr.width'] = 'width'
         self.range_adapter_mapper['phone.rmem'] = 'memory'
         self.range_adapter_mapper['pc.mem'] = 'memory'
+        self.range_adapter_mapper['fr.vol'] = '__L__'
 
     def range_adapter(self, key):
+        if key not in self.range_adapter_mapper:
+            return ''
         return self.range_adapter_mapper[key]
 
     def is_entity_value(self, value):
@@ -367,7 +370,7 @@ if __name__ == "__main__":
 面包机.txt,\
 饮水机.txt".split(',')
     additional = ['../../data/gen_product/' + a for a in additional]
-    table_files.extend(additional)
+    # table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
     with open(output_file,'rb') as f:

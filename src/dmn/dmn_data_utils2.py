@@ -1,6 +1,6 @@
 import sys
 
-import os as os
+import os
 import json
 import pickle
 import numpy as np
@@ -15,7 +15,8 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 
 sys.path.insert(0, grandfatherdir)
 
-import data_utils as data_utils
+import dmn.data_utils as data_utils
+from dmn.dmn_plus2 import Config
 # from dmn.vector_helper import getVector
 from utils.embedding_util import ff_embedding
 
@@ -34,18 +35,16 @@ VOCAB_PATH = 'data/char_table/vocab.txt'
 # can be sentence or word
 input_mask_mode = "sentence"
 
-from dmn_plus2 import Config
-config = Config()
+from gensim.models.wrappers import FastText
 
-if config.word_vector:
-    from gensim.models.wrappers import FastText
-    print('Load fasttext model.....')
-    ff_model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
-    print('done.....')
+config = Config()
+if config.word2vec_init:
+    print('loading fasttext model..')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
 
 
 def ff_embedding_local(word):
-    return ff_model[word]
+    return model[word]
 
 
 def get_candidates_word_dict():
@@ -65,7 +64,7 @@ def load_raw_data(data_path, candid_path, word_vector=False, split_sentences=Tru
         candidates_f=candid_path)
     candidate_size = len(candidates)
 
-    char = 2 if word_vector else 1
+    char = 2 if word2vec_init else 0
     train_data, test_data, val_data = data_utils.load_dialog(
         data_dir=data_path,
         candid_dic=candid2idx, char=char)
@@ -164,7 +163,7 @@ def vectorize_data(data, config, max_input_len, max_sen_len, max_q_len):
         vocab_size = len(vocab)
 
     # embedding
-    print('inputs embedding...')
+    # print('inputs embedding...')
     inputs_embeddings = []
     for inp in inputs:
         inp_embeddings = []
@@ -180,7 +179,7 @@ def vectorize_data(data, config, max_input_len, max_sen_len, max_q_len):
         inputs_embeddings.append(inp_embeddings)
     inputs_embeddings = np.asarray(inputs_embeddings, dtype=np.float32)
 
-    print('questions embedding...')
+    # print('questions embedding...')
     questions_embeddings = []
     for question in questions:
         question_embedding = []
@@ -212,7 +211,7 @@ def process_data(data_raw, floatX, w2idx, split_sentences=True):
         inp, question, answer = data
         # print(inp)
         if len(inp) == 0:
-            inp = [[' ']]
+            inp = [['']]
         if split_sentences:
             inp_vector = [[w2idx.get(w, 0) for w in s] for s in inp]
             inputs.append(inp_vector)
@@ -344,7 +343,10 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
             next_index = len(w2idx)
             w2idx[word] = next_index
             idx2w[next_index] = word
-            embedding = ff_embedding(word)
+            if word.startswith('reserved_'):
+                embedding = word2vec['unk']
+            else:
+                embedding = ff_embedding_local(word)
             word2vec[word] = embedding
             word_embedding.append(embedding)
         else:
@@ -358,7 +360,7 @@ def process_word_core(word, w2idx, idx2w, word_embedding, word2vec, updated_embe
                 w2idx[word] = next_index
                 idx2w[next_index] = word
                 # embedding = word2vec[w]
-                new_embedding = ff_embedding(word)
+                new_embedding = ff_embedding_local(word)
                 # index = word_embedding.index(embedding)
                 word_embedding[next_index] = new_embedding
                 updated_embedding[next_index] = new_embedding

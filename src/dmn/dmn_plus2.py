@@ -7,10 +7,9 @@ import time
 import pickle
 import json
 
-from tqdm import tqdm
 import numpy as np
 from copy import deepcopy
-
+from tqdm import tqdm
 import tensorflow as tf
 from dmn.attention_gru_cell import AttentionGRUCell
 
@@ -18,87 +17,6 @@ from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
 import dmn_data_utils2 as dmn_data_utils
 from utils.embedding_util import ff_embedding
-
-
-class Config(object):
-    """Holds model hyperparams and data information."""
-
-    batch_size = 64
-    embed_size = 300
-    hidden_size = 128
-
-    max_epochs = 345
-    early_stopping = 20
-
-    dropout = 1
-    lr = 0.001
-    l2 = 0.001
-
-    cap_grads = True
-    max_grad_val = 10
-    noisy_grads = True
-
-    word_vector = False
-    embedding_init = np.sqrt(3)
-
-    # set to zero with strong supervision to only train gates
-    strong_supervision = False
-    beta = 1
-
-    # NOTE not currently used hence non-sensical anneal_threshold
-    anneal_threshold = 1000
-    anneal_by = 1.5
-
-    num_hops = 3
-    num_attention_features = 4
-
-    max_allowed_inputs = 130
-    total_num = 3000000
-
-    floatX = np.float32
-
-    multi_label = False
-    top_k = 5
-    max_memory_size = 20
-    fix_vocab = True
-
-    train_mode = True
-
-    vocab_size = 10000
-
-    split_sentences = True
-
-    # paths
-    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
-
-    vocab_path = os.path.join(prefix, 'data/char_table/dmn_vocab.txt')
-
-    DATA_DIR = os.path.join(prefix, 'data/memn2n/train/tree/origin/')
-    CANDID_PATH = os.path.join(
-        prefix, 'data/memn2n/train/tree/origin/candidates.txt')
-
-    MULTI_DATA_DIR = os.path.join(prefix, 'data/memn2n/train/multi_tree')
-    MULTI_CANDID_PATH = os.path.join(
-        prefix, 'data/memn2n/train/multi_tree/candidates.txt')
-
-    data_dir = MULTI_DATA_DIR if multi_label else DATA_DIR
-    candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
-
-    metadata_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/metadata.pkl')
-    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-char/')
-
-    multi_metadata_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
-    multi_data_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/multi_data.pkl')
-    multi_ckpt_path = os.path.join(prefix, 'model/dmn/ckpt-ff-trainable/')
-
-    metadata_path = multi_metadata_path if multi_label else metadata_path
-    data_path = multi_data_path if multi_label else data_path
-    ckpt_path = multi_ckpt_path if multi_label else ckpt_path
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -129,7 +47,7 @@ def _position_encoding(sentence_size, embedding_size):
 
 
 class DMN_PLUS(object):
-    def load_data(self, debug=False):
+    def _load_data(self, debug=False):
         """Loads data from metadata"""
         with open(self.config.metadata_path, 'rb') as f:
             metadata = pickle.load(f)
@@ -142,6 +60,12 @@ class DMN_PLUS(object):
         self.candidate_size = metadata['candidate_size']
         self.candid2idx = metadata['candid2idx']
         self.idx2candid = metadata['idx2candid']
+
+        self._init = tf.random_normal_initializer(stddev=0.1)
+
+        print('-- memory corpus config --\
+              \n max_q_len:{}\n max_input_len:{}\n max_sen_len:{}\n vocab_size:{}\n cadidate_size:{}\n'
+              .format(self.max_q_len, self.max_input_len, self.max_sen_len, self.vocab_size, self.candidate_size))
 
         if self.config.train_mode:
             print('Load metadata (training mode)')
@@ -161,7 +85,10 @@ class DMN_PLUS(object):
         self.encoding = _position_encoding(
             self.max_sen_len, self.config.embed_size)
 
-    def add_placeholders(self):
+        # print('load:',self.updated_embedding)
+        # print(self.idx2candid)
+
+    def _create_placeholders(self):
         """add data placeholder to graph"""
         if not self.config.word_vector:
             self.question_placeholder = tf.placeholder(
@@ -207,12 +134,19 @@ class DMN_PLUS(object):
 
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
             None, self.num_supporting_facts), name='rel_label')
-        # self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
-        #                               trainable=False, name="embeddings")
-        # self.embedding_placeholder = tf.placeholder(
-        #     tf.float32, [self.vocab_size, self.config.embed_size])
-        # self.embedding_init = self.embeddings.assign(
-        #     self.embedding_placeholder)
+
+        with tf.variable_scope('embedding') as scope:
+            if self.config.word2vec_init:
+                self.embeddings = tf.Variable(tf.constant(0.0, shape=[self.vocab_size, self.config.embed_size]),
+                                              trainable=not self.config.word2vec_init, name="embeddings")
+                self.embedding_placeholder = tf.placeholder(
+                    tf.float32, [self.vocab_size, self.config.embed_size])
+                self.embedding_init = self.embeddings.assign(
+                    self.embedding_placeholder)
+            else:
+                A = self._init(
+                    [self.vocab_size, self.config.embed_size])
+                self.embeddings = tf.Variable(A, name="embeddings")
 
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
@@ -225,14 +159,15 @@ class DMN_PLUS(object):
             preds = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
-            preds = tf.nn.softmax(output)
-            preds = tf.nn.top_k(preds, k=self.config.top_k)
-            # pred = tf.argmax(preds, 1)
+            predict_proba_op = tf.nn.softmax(output)
+            predict_proba_top_op = tf.nn.top_k(
+                predict_proba_op, k=self.config.top_k)
+            pred = tf.argmax(predict_proba_op, 1)
 
-        # return pred, probs
-        return preds
+        return pred, predict_proba_op
+        # return preds
 
-    def add_loss_op(self, output):
+    def _create_loss(self, output):
         """Calculate loss"""
         # optional strong supervision of attention with supporting facts
         gate_loss = 0
@@ -266,9 +201,10 @@ class DMN_PLUS(object):
 
         return loss
 
-    def add_training_op(self, loss):
+    def _create_training_op(self, loss):
         """Calculate and apply gradients"""
-        opt = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+        opt = tf.train.AdamOptimizer(
+            learning_rate=self.config.lr, epsilon=1e-8)
         gvs = opt.compute_gradients(loss)
 
         # optionally cap and noise gradients to regularize
@@ -311,6 +247,10 @@ class DMN_PLUS(object):
 
         forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
+        # outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
+        #                   sequence_length=self.input_len_placeholder,
+        #                   dtype=np.float32)
+        # fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
         outputs, _ = tf.nn.bidirectional_dynamic_rnn(
             forward_gru_cell,
             backward_gru_cell,
@@ -391,7 +331,7 @@ class DMN_PLUS(object):
 
         return output
 
-    def inference(self):
+    def _inference(self):
         """Performs inference on the DMN model"""
 
         # set up embedding
@@ -522,19 +462,17 @@ class DMN_PLUS(object):
                 accuracy += correct / float(len(answers))
 
             else:
-                pred = pred.indices
-                pred = pred.T[0]
-                accuracy += np.sum(pred.tolist() == answers) / \
-                    float(len(answers))
+                accuracy += np.sum(pred == answers) / float(len(answers))
 
-                # for Q, A, P in zip(questions, answers, pred):
-                #     if A != P:
-                #         Q = ''.join([self.idx2w.get(idx, '')
-                #                      for idx in Q.astype(np.int32).tolist()])
-                #         Q = Q.replace('unk', '')
-                #         A = self.idx2candid[A]
-                #         P = self.idx2candid[P]
-                #         error.append((Q, A, P))
+                for Q, A, P in zip(questions, answers, pred):
+                    # print(A, P)
+                    if A != P:
+                        Q = ''.join([self.idx2w.get(idx, '')
+                                     for idx in Q.astype(np.int32).tolist()])
+                        Q = Q.replace('unk', '')
+                        A = self.idx2candid[A]
+                        P = self.idx2candid[P]
+                        error.append((Q, A, P))
 
             total_loss.append(loss)
             if verbose and step % verbose == 0:
@@ -563,13 +501,13 @@ class DMN_PLUS(object):
     def __init__(self, config):
         self.config = config
         self.variables_to_save = {}
-        self.load_data(debug=False)
-        self.add_placeholders()
-        self.output = self.inference()
-        self.pred = self.get_predictions(self.output)
+        self._load_data(debug=False)
+        self._create_placeholders()
+        self.output = self._inference()
+        self.pred, _ = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
-        self.calculate_loss = self.add_loss_op(self.output)
-        self.train_step = self.add_training_op(self.calculate_loss)
+        self.calculate_loss = self._create_loss(self.output)
+        self.train_step = self._create_training_op(self.calculate_loss)
         # self.merged = tf.summary.merge_all()
 
 
