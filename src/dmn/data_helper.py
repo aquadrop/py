@@ -88,6 +88,8 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
+                    if r not in candid_dic:
+                        continue
                     a = candid_dic[r]
                 u = tokenize(u, char=char)
                 if config.fix_vocab:
