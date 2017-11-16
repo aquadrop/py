@@ -109,3 +109,4 @@ model/
 summaries/
 weights*/
 processed/
+debug.txt

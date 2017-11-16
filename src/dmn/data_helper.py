@@ -23,9 +23,9 @@ from config import Config
 from gensim.models.wrappers import FastText
 
 config = Config()
-# if config.word:
-#     print('loading fasttext model...')
-#     model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+if config.word:
+    print('loading fasttext model...')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
 
 translator = Translator()
 
@@ -155,8 +155,6 @@ def load_raw_data(config):
                                                   data_dir=config.data_dir,
                                                   candid_dic=candid2idx,  char=char)
 
-    with open('debug.txt', 'a') as f:
-        print(train_data[:4], file=f)
     train_data += test_data
     train_data += val_data
 
