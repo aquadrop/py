@@ -301,18 +301,30 @@ class DMN_PLUS(object):
             predict_by_value = tf.nn.top_k(
                 output, k=self.config.top_k, name="predict_op")
             predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
-            preds = tf.nn.top_k(
+            pred = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
             predict_proba_op = tf.nn.softmax(output)
             predict_proba_top_op = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name='top_predict_proba_op')
-            preds = tf.argmax(predict_proba_op, 1, name='pred')
+            pred = tf.argmax(predict_proba_op, 1, name='pred')
 
         # predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
         # preds = tf.nn.top_k(
         #     predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
-        return preds
+        return pred, predict_proba_top_op
+
+    def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
+        feed = {
+            self.question_placeholder: questions,
+            self.input_placeholder: inputs,
+            self.question_len_placeholder: q_lens,
+            self.input_len_placeholder: input_lens,
+            self.dropout_placeholder: self.config.dropout
+        }
+        pred, prob_top = session.run(
+            [self.pred, self.prob_top_k], feed_dict=feed)
+        return pred, prob_top
 
     def __init__(self, config, metadata):
         self.config = config
@@ -322,7 +334,7 @@ class DMN_PLUS(object):
             self.max_sen_len, self.config.embed_size)
         self._create_placeholders()
         self.output = self._inference()
-        self.preds = self.get_predictions(self.output)
+        self.pred, self.prob_top_k = self.get_predictions(self.output)
         # self.pred = self.get_predictions(self.output)
         self.calculate_loss = self._create_loss(self.output)
         self.train_step = self._create_training_op(self.calculate_loss)

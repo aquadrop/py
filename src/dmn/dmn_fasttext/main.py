@@ -32,6 +32,16 @@ def prepare_data(config):
     sentences_embedding, max_len = data_helper.sentence_embedding(
         config, sentences,  w2idx)
 
+    # debug
+    questions, inputs, q_lens, sen_lens, input_lens, input_masks, answers, relevant_labels=train
+    with open('debug.txt','a') as f:
+        print('inputs ==>\n', inputs[:4], file=f)
+        print('questions ==>\n',questions[:4],file=f)
+        print('answers ==>\n', answers[:4], file=f)
+        print('sentences ==>\n',sentences[:10],file=f)
+        print('sentences embedding ==>\n',sentences_embedding,file=f)
+
+
     metadata = dict()
     data = dict()
     data['train'] = train
@@ -101,7 +111,7 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
     error = []
 
     # shuffle data
-    p = np.random.permutation(len(data[0]))
+    # p = np.random.permutation(len(data[0]))
     qp, ip, ql, sl, il, im, a, r = data
     # qp, ip, ql, sl, il, im, a, r = qp[p], ip[p], ql[p], sl[p], il[p], im[p], a[p], r[p]
     # ql, sl, il, im, a, r = ql[p], sl[p], il[p], im[p], a[p], r[p]
@@ -146,7 +156,7 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
                 model.dropout_placeholder: dp}
 
         loss, pred, output, _ = session.run(
-            [model.calculate_loss, model.preds, model.output, train_op], feed_dict=feed)
+            [model.calculate_loss, model.pred, model.output, train_op], feed_dict=feed)
 
         # if train_writer is not None:
         #     train_writer.add_summary(

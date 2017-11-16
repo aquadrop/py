@@ -370,7 +370,7 @@ if __name__ == "__main__":
 面包机.txt,\
 饮水机.txt".split(',')
     additional = ['../../data/gen_product/' + a for a in additional]
-    # table_files.extend(additional)
+    table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)
     with open(output_file,'rb') as f:

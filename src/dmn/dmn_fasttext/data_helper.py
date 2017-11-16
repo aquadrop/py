@@ -88,6 +88,8 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
+                    if r not in candid_dic:
+                        continue
                     a = candid_dic[r]
                 u = tokenize(u, char=char)
                 if config.fix_vocab:
@@ -109,8 +111,8 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 context.append(u)
                 # r = r if placeholder == 'placeholder' else r + salt
                 context.append(r)
-                if salt != 'placeholder':
-                    context.append(salt)
+                # if salt != 'placeholder':
+                #     context.append(salt)
         else:
             # clear context
             context = []
@@ -304,8 +306,11 @@ def sentence_embedding_core(config, sentences, w2idx):
 
     # print('split_sentences:', split_sentences[:2])
 
+
     pad_sentences = pad_inputs(split_sentences, sen_lens, max_len)
-    # print('pad_sentences:', pad_sentences[:2])
+    with open('debug.txt','a') as f:
+        print('split_sentences ==>',split_sentences[:4],file=f)
+        print('pad_sentences ==>',pad_sentences[:4],file=f)
 
     sentences_embedding = OrderedDict()
     for sen in pad_sentences:
