@@ -21,7 +21,7 @@ class Config(object):
     max_grad_val = 10
     noisy_grads = True
 
-    word = True
+    word = False
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -52,8 +52,8 @@ class Config(object):
     split_sentences = True
 
     # paths
-    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    prefix = grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))))
 
     vocab_path = os.path.join(prefix, 'data/char_table/dmn_vocab.txt')
 

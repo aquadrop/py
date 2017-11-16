@@ -23,9 +23,9 @@ from config import Config
 from gensim.models.wrappers import FastText
 
 config = Config()
-if config.word:
-    print('loading fasttext model...')
-    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+# if config.word:
+#     print('loading fasttext model...')
+#     model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
 
 translator = Translator()
 
@@ -317,7 +317,10 @@ def sentence_embedding_core(config, sentences, w2idx):
         sen = [i for i in sen if len(i)]
         join_sen = ','.join(sen)
         sentences_embedding[join_sen] = sen_embedding
-    inp_empty_embedding = [ff_embedding_local('') for _ in range(max_len)]
+    if config.word:
+        inp_empty_embedding = [ff_embedding_local('') for _ in range(max_len)]
+    else:
+        inp_empty_embedding = [3 for _ in range(max_len)]
     sentences_embedding['empty'] = inp_empty_embedding
 
     return sentences_embedding, max_len
