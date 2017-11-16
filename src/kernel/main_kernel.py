@@ -42,7 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
-from dmn.dmn_session import DmnInfer
+from dmn.char.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util

@@ -13,12 +13,12 @@ sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
-from dmn.dmn_plus2 import Config
+from dmn.char.dmn_plus import Config
 
 config = Config()
 
-grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
 DATA_DIR = grandfatherdir + '/data/memn2n/train/complex/'
 CANDID_PATH = grandfatherdir + '/data/memn2n/train/complex/candidates.txt'
 
