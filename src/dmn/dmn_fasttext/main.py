@@ -29,17 +29,19 @@ def prepare_data(config):
     # print('origin sentences:', sentences[:2])
 
     # embedding
+    print('embedding')
     sentences_embedding, max_len = data_helper.sentence_embedding(
         config, sentences,  w2idx)
+    print('embedding done')
 
     # debug
     questions, inputs, q_lens, sen_lens, input_lens, input_masks, answers, relevant_labels=train
-    with open('debug.txt','a') as f:
-        print('inputs ==>\n', inputs[:4], file=f)
-        print('questions ==>\n',questions[:4],file=f)
-        print('answers ==>\n', answers[:4], file=f)
-        print('sentences ==>\n',sentences[:10],file=f)
-        print('sentences embedding ==>\n',sentences_embedding,file=f)
+    # with open('debug.txt','a') as f:
+    #     print('inputs ==>\n', inputs[:4], file=f)
+    #     print('questions ==>\n',questions[:4],file=f)
+    #     print('answers ==>\n', answers[:4], file=f)
+    #     print('sentences ==>\n',sentences[:10],file=f)
+    #     print('sentences embedding ==>\n',sentences_embedding,file=f)
 
 
     metadata = dict()

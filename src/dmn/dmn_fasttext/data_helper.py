@@ -21,19 +21,30 @@ from utils.query_util import tokenize
 from utils.translator import Translator
 from config import Config
 from gensim.models.wrappers import FastText
+# from vector_helper import getVector
+
+EMPTY='EMPTY'
+PAD='PAD'
+NONE=''
+UNK='UNK'
 
 config = Config()
+
 if config.word:
     print('loading fasttext model...')
-    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/skipgram.bin')
 
 translator = Translator()
 
 
 def ff_embedding_local(word):
-    # print(type(word))
-    return model[word]
-    # return np.random.rand(300,)
+    if model.__contains__(word.strip()):
+        return model[word]
+    else:
+        print(word)
+        return model[UNK]
+
+translator = Translator()
 
 
 def load_candidates(candidates_f):
@@ -117,7 +128,7 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
             # clear context
             context = []
     # print(data)
-    sentences.add(' ')
+    sentences.add(EMPTY)
     return data
 
 
@@ -169,10 +180,10 @@ def load_raw_data(config):
         inp, question, answer = data
         inp = inp[-config.max_memory_size:]
         if len(inp) == 0:
-            inp = [[' ']]
+            inp = [[EMPTY]]
         inputs.append(inp)
         if len(question) == 0:
-            question = [' ']
+            question = [EMPTY]
         questions.append(question)
         answers.append(answer)
         relevant_labels.append([0])
@@ -243,7 +254,7 @@ def pad_inputs(inputs, lens, max_len, mode="", sen_lens=None, max_sen_len=None, 
         return np.vstack(padded)
 
     elif mode == "split_sentences":
-        padded = np.zeros((len(inputs), max_len, max_sen_len), dtype='<U3')
+        padded = np.zeros((len(inputs), max_len, max_sen_len), dtype=dtype)
         for i, inp in enumerate(inputs):
             padded_sentences = \
                 [np.pad(s, (0, max_sen_len - sen_lens[i][j]),
@@ -308,22 +319,26 @@ def sentence_embedding_core(config, sentences, w2idx):
 
 
     pad_sentences = pad_inputs(split_sentences, sen_lens, max_len)
-    with open('debug.txt','a') as f:
-        print('split_sentences ==>',split_sentences[:4],file=f)
-        print('pad_sentences ==>',pad_sentences[:4],file=f)
+    # with open('debug.txt','a') as f:
+    #     print('split_sentences ==>',split_sentences[:4],file=f)
+    #     print('pad_sentences ==>',pad_sentences[:4],file=f)
 
     sentences_embedding = OrderedDict()
     for sen in pad_sentences:
         sen = sen.tolist()
+        sen = list(map(lambda x: [x, PAD][x == NONE], sen))
+        # print(sen)
         if config.word:
             sen_embedding = [ff_embedding_local(word) for word in sen]
+            # sen_embedding = [getVector(word) for word in sen]
         else:
             sen_embedding = [w2idx.get(word, 3) for word in sen]
-        sen = [i for i in sen if len(i)]
+        sen = [i for i in sen if i!=PAD]
         join_sen = ','.join(sen)
         sentences_embedding[join_sen] = sen_embedding
     if config.word:
-        inp_empty_embedding = [ff_embedding_local('') for _ in range(max_len)]
+        inp_empty_embedding = [ff_embedding_local(PAD) for _ in range(max_len)]
+        # inp_empty_embedding = [getVector(PAD) for _ in range(max_len)]
     else:
         inp_empty_embedding = [3 for _ in range(max_len)]
     sentences_embedding['empty'] = inp_empty_embedding
