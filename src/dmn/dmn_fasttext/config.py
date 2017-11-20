@@ -5,12 +5,12 @@ import numpy as np
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 64
+    batch_size = 32
     embed_size = 300
     hidden_size = 128
 
     max_epochs = 3456
-    interval_epochs = 2
+    interval_epochs = 5
     early_stopping = 20
 
     dropout = 0.9
@@ -21,7 +21,7 @@ class Config(object):
     max_grad_val = 10
     noisy_grads = True
 
-    word = False
+    word = True
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates
@@ -51,6 +51,11 @@ class Config(object):
 
     split_sentences = True
 
+    EMPTY = 'EMPTY'
+    PAD = 'PAD'
+    NONE = ''
+    UNK = 'UNK'
+
     # paths
     prefix = grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))))
@@ -69,9 +74,9 @@ class Config(object):
     candid_path = MULTI_CANDID_PATH if multi_label else CANDID_PATH
 
     metadata_path = os.path.join(
-        prefix, 'model/dmn/dmn_processed/metadata_char.pkl')
-    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data_char.pkl')
-    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt_char/')
+        prefix, 'model/dmn/dmn_processed/metadata_word.pkl')
+    data_path = os.path.join(prefix, 'model/dmn/dmn_processed/data_word.pkl')
+    ckpt_path = os.path.join(prefix, 'model/dmn/ckpt_word/')
 
     multi_metadata_path = os.path.join(
         prefix, 'model/dmn/dmn_processed/multi_metadata.pkl')
