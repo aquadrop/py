@@ -1009,6 +1009,7 @@ def test_facet():
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'on'
+    config['shuffle']=False
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     bt = BeliefTracker(config)
     bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]

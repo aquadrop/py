@@ -377,7 +377,7 @@ class TreeSimilator:
         mlt_candidates = []
 
         with_multiple = False
-        with_qa = False
+        with_qa = True
         with_deny = False
         with_whatever = False
         with_flow = True
@@ -565,7 +565,7 @@ class TreeSimilator:
                 i += 1
                 print(i)
 
-                if i >= 200:
+                if i >= 2000:
 
                     break
 
