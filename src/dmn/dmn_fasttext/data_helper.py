@@ -30,9 +30,9 @@ UNK='UNK'
 
 config = Config()
 
-if config.word:
-    print('loading fasttext model...')
-    model = FastText.load_fasttext_format('/opt/fasttext/model/skipgram.bin')
+# if config.word:
+#     print('loading fasttext model...')
+#     model = FastText.load_fasttext_format('/opt/fasttext/model/skipgram.bin')
 
 translator = Translator()
 
@@ -329,16 +329,16 @@ def sentence_embedding_core(config, sentences, w2idx):
         sen = list(map(lambda x: [x, PAD][x == NONE], sen))
         # print(sen)
         if config.word:
-            sen_embedding = [ff_embedding_local(word) for word in sen]
-            # sen_embedding = [getVector(word) for word in sen]
+            # sen_embedding = [ff_embedding_local(word) for word in sen]
+            sen_embedding = [getVector(word) for word in sen]
         else:
             sen_embedding = [w2idx.get(word, 3) for word in sen]
         sen = [i for i in sen if i!=PAD]
         join_sen = ','.join(sen)
         sentences_embedding[join_sen] = sen_embedding
     if config.word:
-        inp_empty_embedding = [ff_embedding_local(PAD) for _ in range(max_len)]
-        # inp_empty_embedding = [getVector(PAD) for _ in range(max_len)]
+        # inp_empty_embedding = [ff_embedding_local(PAD) for _ in range(max_len)]
+        inp_empty_embedding = [getVector(PAD) for _ in range(max_len)]
     else:
         inp_empty_embedding = [3 for _ in range(max_len)]
     sentences_embedding['empty'] = inp_empty_embedding

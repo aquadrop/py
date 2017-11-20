@@ -703,6 +703,7 @@ if __name__ == "__main__":
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     config['template'] = 'register_template.txt'
+    config['shuffle']=False
     tree_simulator = TreeSimilator(config)
 
     output_files = ['../../data/memn2n/train/tree/origin/candidates.txt',

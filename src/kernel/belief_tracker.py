@@ -987,6 +987,7 @@ def test():
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'off'
+    config['shuffle']=False
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
     bt = BeliefTracker(config)
