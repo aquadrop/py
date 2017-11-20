@@ -29,9 +29,13 @@ NONE=''
 UNK='UNK'
 
 config = Config()
-# if config.word:
-#     print('loading fasttext model...')
-#     model = FastText.load_fasttext_format('/opt/fasttext/model/skipgram.bin')
+
+if config.word:
+    print('loading fasttext model...')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/skipgram.bin')
+
+translator = Translator()
+
 
 def ff_embedding_local(word):
     if model.__contains__(word.strip()):
