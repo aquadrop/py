@@ -702,7 +702,7 @@ if __name__ == "__main__":
     config['solr.facet'] = 'off'
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
-    config['template'] = 'template.txt'
+    config['template'] = 'register_template.txt'
     tree_simulator = TreeSimilator(config)
 
     output_files = ['../../data/memn2n/train/tree/origin/candidates.txt',

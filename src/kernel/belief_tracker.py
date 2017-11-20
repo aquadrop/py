@@ -53,6 +53,7 @@ class BeliefTracker:
         self._load_graph(config['belief_graph'])
         # self._load_clf(clf_path)
         self.search_node = self.belief_graph.get_root_node()
+        self.shuffle = config['shuffle']
 
         # keep tracker of user profile, for instance: name, location, gender
         self.user_slots = {}
@@ -239,7 +240,8 @@ class BeliefTracker:
         # self.clear_memory()
         self.filling_slots.clear()
         self.requested_slots = self.search_node.gen_required_slot_fields()
-        random.shuffle(self.requested_slots)
+        if self.shuffle:
+            random.shuffle(self.requested_slots)
         self.fill_slot(node.slot, node.value)
 
     def fill_slot(self, slot, value):
@@ -388,7 +390,11 @@ class BeliefTracker:
                 if node.parent_node != self.search_node:
                     # move to parent node if relation is grand
                     self.move_to_node(node.parent_node)
-                self.fill_slot(node.slot, node.value)
+                ## TODO: 有问题!!
+                if not node.is_leaf():
+                    self.move_to_node(node)
+                else:
+                    self.fill_slot(node.slot, node.value)
             else:
                 filtered = []
                 # ambiguity state, 删除非self.search_node节点

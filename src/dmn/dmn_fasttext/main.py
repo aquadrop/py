@@ -170,29 +170,30 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
         # print(pred)
 
         if config.multi_label:
+            pass
             # multi target
-            correct = 0
-            pred = pred.indices.tolist()
-
-            for i in range(config.batch_size):
-                predicts = pred[i]
-                labels = answers[i]
-                labels = [idx for idx, i in enumerate(
-                    labels) if int(i) == 1]
-                while len(predicts) > len(labels):
-                    predicts.pop()
-                if set(predicts) == set(labels):
-                    correct += 1
-                else:
-                    Q = ''.join([self.idx2w.get(idx, '')
-                                 for idx in questions[i].astype(np.int32).tolist()])
-                    Q = Q.replace('unk', '')
-                    labels.sort()
-                    predicts.sort()
-                    A = ','.join([self.idx2candid[a] for a in labels])
-                    P = ','.join([self.idx2candid[p] for p in predicts])
-                    error.append((Q, A, P))
-            accuracy += correct / float(len(answers))
+            # correct = 0
+            # pred = pred.indices.tolist()
+            #
+            # for i in range(config.batch_size):
+            #     predicts = pred[i]
+            #     labels = answers[i]
+            #     labels = [idx for idx, i in enumerate(
+            #         labels) if int(i) == 1]
+            #     while len(predicts) > len(labels):
+            #         predicts.pop()
+            #     if set(predicts) == set(labels):
+            #         correct += 1
+            #     else:
+            #         Q = ''.join([self.idx2w.get(idx, '')
+            #                      for idx in questions[i].astype(np.int32).tolist()])
+            #         Q = Q.replace('unk', '')
+            #         labels.sort()
+            #         predicts.sort()
+            #         A = ','.join([self.idx2candid[a] for a in labels])
+            #         P = ','.join([self.idx2candid[p] for p in predicts])
+            #         error.append((Q, A, P))
+            # accuracy += correct / float(len(answers))
         else:
             # print(pred)
             accuracy += np.sum(pred == answers) / float(len(answers))

@@ -231,3 +231,6 @@ class Node:
         children_names = np.array(children_names)
         children_names = np.random.choice(children_names, max_num)
         return children_names
+
+    def is_leaf(self):
+        return len(self.children) == 0

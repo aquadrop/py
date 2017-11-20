@@ -21,7 +21,7 @@ class Config(object):
     max_grad_val = 10
     noisy_grads = True
 
-    word = False
+    word = True
     embedding_init = np.sqrt(3)
 
     # set to zero with strong supervision to only train gates

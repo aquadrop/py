@@ -23,9 +23,9 @@ from config import Config
 from gensim.models.wrappers import FastText
 
 config = Config()
-# if config.word:
-#     print('loading fasttext model...')
-#     model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
+if config.word:
+    print('loading fasttext model...')
+    model = FastText.load_fasttext_format('/opt/fasttext/model/wiki.zh.bin')
 
 translator = Translator()
 
