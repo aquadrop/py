@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import sys
 
 import os
@@ -16,12 +18,12 @@ grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 
 sys.path.insert(0, grandfatherdir)
-
+sys.path.append(grandfatherdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
-from config import Config
+from dmn.dmn_fasttext.config import Config
 from gensim.models.wrappers import FastText
-from vector_helper import getVector
+from dmn.dmn_fasttext.vector_helper import getVector
 
 EMPTY='EMPTY'
 PAD='PAD'

@@ -377,7 +377,8 @@ class TreeSimilator:
         mlt_candidates = []
 
         with_multiple = False
-        with_qa_location = True
+        with_qa_location = False
+        with_map_location = False
         with_qa_price = False
         with_deny = False
         with_whatever = False
@@ -542,6 +543,19 @@ class TreeSimilator:
                     base.append(line)
                     if not line:
                         base_count += 1
+
+        # whatever = []
+        map_count = 0
+        if with_map_location:
+            with open(grandfatherdir + '/data/memn2n/train/map/map.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    if line:
+                        candidate = line.split('\t')[1]
+                    candidates.add(candidate)
+                    base.append(line)
+                    if not line:
+                        map_count += 1
 
         train_count = 0
         with open(output_files[1], 'w', encoding='utf-8') as f:

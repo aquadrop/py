@@ -22,13 +22,10 @@ sys.path.insert(0, grandfatherdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-# from dmn.dmn_fasttext.config import Config
-# from dmn.dmn_fasttext.vector_helper import getVector
-# from dmn.dmn_fasttext.dmn import DMN_PLUS
+from dmn.dmn_fasttext.config import Config
+from dmn.dmn_fasttext.vector_helper import getVector
+from dmn.dmn_fasttext.dmn_plus import DMN_PLUS
 
-from config import Config
-from vector_helper import getVector
-from dmn import DMN_PLUS
 
 translator = Translator()
 
