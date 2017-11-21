@@ -42,7 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
-from dmn.char.dmn_session import DmnInfer
+from dmn.dmn_fasttext.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
@@ -133,6 +133,7 @@ class MainKernel:
                     #     memory = ''
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
+                return api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
@@ -243,19 +244,20 @@ if __name__ == '__main__':
     #           "clf": 'memory'  # or memory
     #           }
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
+              "solr.facet": 'off',
               "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
-              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
-              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
-              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad_anchor.txt'),
-              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
-              "clf": 'dmn'  # or memory
+              "render_api_file": os.path.join(grandfatherdir, 'model/render_2/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render_2/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
+              "clf": 'dmn',  # or memory
+              "shuffle": False
               }
     kernel = MainKernel(config)
     while True:

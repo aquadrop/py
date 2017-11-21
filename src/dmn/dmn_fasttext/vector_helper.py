@@ -49,8 +49,7 @@ class BenebotVector(metaclass=Singleton):
         result = self.model.similarity(word1.strip(), word2.strip())
         return result
 
-    def getVectorBySentence(self, sentence):
-        words = sentence.strip().split(' ')
+    def getVectorBySentence(self, words):
         vectors = []
         for word in words:
             vector = self.getVectorByWord(word)
@@ -86,7 +85,9 @@ def getVector(word, embedding_dim=300):
     # print(vector)
     if vector:
         return vector
-    return np.random.uniform(0.0, 1.0, (embedding_dim,)).tolist()
+    else:
+        words = [w for w in word]
+        return bv.getVectorBySentence(words)
 
 
 def embedding_lookup(sequence_num, sequence_length, embedding_dim, input_x, maintain=0):

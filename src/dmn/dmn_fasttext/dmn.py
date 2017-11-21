@@ -7,10 +7,10 @@ import numpy as np
 from copy import deepcopy
 from tqdm import tqdm
 import tensorflow as tf
-from attention_gru_cell import AttentionGRUCell
+from dmn.attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
-from config import Config
+from dmn.dmn_fasttext.config import Config
 # config = Config()
 
 

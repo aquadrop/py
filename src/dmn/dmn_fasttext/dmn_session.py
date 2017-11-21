@@ -21,10 +21,9 @@ sys.path.insert(0, grandfatherdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
-from config import Config
-import data_helper
-# from vector_helper import getVector
-from dmn import DMN_PLUS
+from dmn.dmn_fasttext.config import Config
+from dmn.dmn_fasttext.vector_helper import getVector
+from dmn.dmn_fasttext.dmn import DMN_PLUS
 
 translator = Translator()
 
@@ -97,7 +96,7 @@ class DmnSession():
             pred, top_prob = self.model.predict(self.session,
                                                 inputs, [len(self.context)], self.max_sen_len, questions, [self.max_sen_len])
 
-            print('pred:', pred)
+            print('pred:', pred, top_prob)
             # indices = output.indices.tolist()[0]
             # values = output.values.tolist()[0]
 
@@ -112,7 +111,7 @@ class DmnSession():
             self.context.append(q_vector)
             self.context.append(r_vector)
 
-            return reply_msg[0]
+            return reply_msg[0], top_prob[0]
 
 
 class DmnInfer:
