@@ -220,6 +220,7 @@ def load_belief_graph_from_tables(files, output_file):
     node_header = {}
     id_node = {}
     slots = dict()
+    main_nodes = dict()
     # stage 1, build node
     for f in files:
         with open(f, 'r', encoding='utf-8') as inpt:
@@ -239,15 +240,20 @@ def load_belief_graph_from_tables(files, output_file):
                     else:
                         node = Node(value=slot_value, fields=dict(),
                                     slot=slot, id=id, node_type=slot)
+                        main_nodes[slot_value] = node
                     if slot_value not in node_header:
                         node_header[slot_value] = []
+                    else:
+                        raise ValueError(
+                            'non property node value should be unique')
                     node_header[slot_value].append(node)
                     id_node[_id] = node
                 if note == '*':
-                    tokens = slot_value.split(",")
-                    for t in tokens:
-                        a, b = t.split(":")
-                        node.fields[a] = float(b)
+                    if slot_value:
+                        tokens = slot_value.split(",")
+                        for t in tokens:
+                            a, b = t.split(":")
+                            node.fields[a] = float(b)
                     # node.fields = dict()
     belief_graph.id_node = id_node
     belief_graph.node_header = node_header
@@ -280,7 +286,7 @@ def load_belief_graph_from_tables(files, output_file):
                             try:
                                 nodes = node_header[name]
                             except:
-                                print(line)
+                                raise ValueError(line)
                             if len(nodes) > 1 or len(nodes) == 0:
                                 raise ValueError(
                                     'non property node value should be unique')
@@ -289,22 +295,21 @@ def load_belief_graph_from_tables(files, output_file):
                             node.add_node(child_node)
                             continue
                         _id = str(uuid.uuid4())
-                        child_node = Node(value=name, fields=dict(),
-                                          slot=slot, id=_id, node_type="property")
+                        if name in main_nodes:
+                            child_node = main_nodes[name]
+                        else:
+                            child_node = Node(value=name, fields=dict(),
+                                              slot=slot, id=_id, node_type="property")
+                            if name not in node_header:
+                                node_header[name] = []
+                            node_header[name].append(child_node)
+                            id_node[id] = child_node
                         node.add_node(child_node)
-                        if name not in node_header:
-                            node_header[name] = []
-                        node_header[name].append(child_node)
-                        id_node[id] = child_node
 
     with open(output_file, "wb") as omp:
         pickle.dump(belief_graph, omp)
 
-
-if __name__ == "__main__":
-    # load_belief_graph(
-    #     "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
-    #     "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+def get_sunning():
     table_files = ['../../data/gen_product/冰箱.txt',
                    '../../data/gen_product/电视.txt',
                    '../../data/gen_product/digitals.txt',
@@ -316,60 +321,80 @@ if __name__ == "__main__":
                    '../../data/gen_product/grocery.txt',
                    '../../data/gen_product/fruits.txt']
     additional = "净水器.txt,household.txt,kitchenwares.txt,\
-剃毛器.txt,\
-加湿器.txt,\
-取暖器.txt,\
-吸尘器.txt,\
-咖啡机.txt,\
-垃圾处理机.txt,\
-多用途锅.txt,\
-干衣机.txt,\
-微波炉.txt,\
-打蛋器.txt,\
-扫地机器人.txt,\
-挂烫机.txt,\
-按摩器.txt,\
-按摩椅.txt,\
-排气扇.txt,\
-搅拌机.txt,\
-料理机.txt,\
-榨汁机.txt,\
-油烟机.txt,\
-洗碗机.txt,\
-洗衣机.txt,\
-浴霸.txt,\
-消毒柜.txt,\
-烟灶套装.txt,\
-烤箱.txt,\
-热水器.txt,\
-煮蛋器.txt,\
-燃气灶.txt,\
-电动剃须刀.txt,\
-电动牙刷.txt,\
-电压力锅.txt,\
-电吹风.txt,\
-电子秤.txt,\
-电水壶.txt,\
-电炖锅.txt,\
-电磁炉.txt,\
-电蒸炉.txt,\
-电风扇.txt,\
-电饭煲.txt,\
-电饼铛.txt,\
-相机.txt,\
-空气净化器.txt,\
-空调扇.txt,\
-美发器.txt,\
-美容器.txt,\
-豆浆机.txt,\
-足浴盆.txt,\
-酸奶机.txt,\
-采暖炉.txt,\
-除湿机.txt,\
-集成灶.txt,\
-面包机.txt,\
-饮水机.txt".split(',')
+    剃毛器.txt,\
+    加湿器.txt,\
+    取暖器.txt,\
+    吸尘器.txt,\
+    咖啡机.txt,\
+    垃圾处理机.txt,\
+    多用途锅.txt,\
+    干衣机.txt,\
+    微波炉.txt,\
+    打蛋器.txt,\
+    扫地机器人.txt,\
+    挂烫机.txt,\
+    按摩器.txt,\
+    按摩椅.txt,\
+    排气扇.txt,\
+    搅拌机.txt,\
+    料理机.txt,\
+    榨汁机.txt,\
+    油烟机.txt,\
+    洗碗机.txt,\
+    洗衣机.txt,\
+    浴霸.txt,\
+    消毒柜.txt,\
+    烟灶套装.txt,\
+    烤箱.txt,\
+    热水器.txt,\
+    煮蛋器.txt,\
+    燃气灶.txt,\
+    电动剃须刀.txt,\
+    电动牙刷.txt,\
+    电压力锅.txt,\
+    电吹风.txt,\
+    电子秤.txt,\
+    电水壶.txt,\
+    电炖锅.txt,\
+    电磁炉.txt,\
+    电蒸炉.txt,\
+    电风扇.txt,\
+    电饭煲.txt,\
+    电饼铛.txt,\
+    相机.txt,\
+    空气净化器.txt,\
+    空调扇.txt,\
+    美发器.txt,\
+    美容器.txt,\
+    豆浆机.txt,\
+    足浴盆.txt,\
+    酸奶机.txt,\
+    采暖炉.txt,\
+    除湿机.txt,\
+    集成灶.txt,\
+    面包机.txt,\
+    饮水机.txt".split(',')
     additional = ['../../data/gen_product/' + a for a in additional]
+    return table_files, additional
+
+def get_bookstore():
+    table_files = ['../../data/bookstore/root.txt',
+                   '../../data/bookstore/书店注册.txt',
+                   '../../data/bookstore/扫码.txt',
+                   '../../data/bookstore/扫码关注成功.txt',
+                   '../../data/bookstore/扫码关注失败.txt',
+                   '../../data/bookstore/点击验证成功.txt',
+                   '../../data/bookstore/点击验证失败.txt',]
+    additional = []
+    additional = ['../../data/bookstore/' + a for a in additional]
+    return table_files, additional
+
+
+if __name__ == "__main__":
+    # load_belief_graph(
+    #     "/home/deep/solr/memory/memory_py/data/graph/belief_graph.txt",
+    #     "/home/deep/solr/memory/memory_py/model/graph/belief_graph.pkl")
+    table_files, additional = get_bookstore()
     table_files.extend(additional)
     output_file = "../../model/graph/belief_graph.pkl"
     load_belief_graph_from_tables(table_files, output_file)

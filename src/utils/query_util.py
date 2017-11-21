@@ -32,6 +32,7 @@ import requests
 import jieba
 
 import os
+import json
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
@@ -253,9 +254,28 @@ def range_extract(pattern, query, single, range_render=False):
     return range_rendered_query, numbers
 
 
+def build_dmn_vocab():
+    char_path = os.path.join(
+        grandfatherdir, 'data/char_table/char2index_dict_big.txt')
+    vocab_path = os.path.join(grandfatherdir, 'data/char_table/vocab.txt')
+    dmn_vocab_path = os.path.join(
+        grandfatherdir, 'data/char_table/dmn_vocab.txt')
+    with open(char_path, 'r') as f:
+        char1 = json.load(f).keys()
+    with open(vocab_path, 'r') as f:
+        char2 = json.load(f)
+
+    char = list(set(char1) | set(char2))
+    char.sort()
+
+    with open(dmn_vocab_path, 'w') as f:
+        json.dump(char, f, ensure_ascii=False)
+
+
 if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
-    print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
-    print(tokenize('电冰箱', char=2))
-    print(rule_base_num_retreive(''))
+    # print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
+    # print(tokenize('电冰箱', char=2))
+    # print(rule_base_num_retreive(''))
+    build_dmn_vocab()

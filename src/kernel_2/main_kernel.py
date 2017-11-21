@@ -42,7 +42,7 @@ import traceback
 from graph.belief_graph import Graph
 from kernel.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
-from dmn.char.dmn_session import DmnInfer
+from dmn.dmn_fasttext.dmn_session import DmnInfer
 from utils.cn2arab import *
 
 import utils.query_util as query_util
@@ -112,25 +112,7 @@ class MainKernel:
         print(range_rendered, wild_card)
         prob = -1
         if self.config['clf'] == 'gbdt':
-            requested = self.belief_tracker.get_requested_field()
-            api = self.gbdt_reply(range_rendered, requested)
-            print(api)
-            if 'api_call_slot' == api['plugin']:
-                del api['plugin']
-                response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
-                    q, api, wild_card)
-            elif 'api_call_base' == api['plugin'] or 'api_call_greet' == api['plugin']:
-                # self.sess.clear_memory()
-                matched, answer, score = self.interactive.get_responses(
-                    query=q)
-                response = answer
-                avails = []
-            else:
-                response = api['plugin']
-                avails = []
-            if len(avails) == 0:
-                return self.render_response(response)
-            return self.render_response(response) + '#avail_vals:' + str(avails)
+            pass
         else:
             if q.lower() == 'clear':
                 self.belief_tracker.clear_memory()
@@ -183,7 +165,7 @@ class MainKernel:
                         response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
                         if should_clear_memory:
-                            print('restart suning session..')
+                            print('restart xinhua bookstore session..')
                             self.sess.clear_memory(history=2)
                     memory = response
                     print('tree rendered..', response)
@@ -212,8 +194,9 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
-                avails)
+            # render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
+            #     avails)
+            render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
             return render
@@ -261,19 +244,20 @@ if __name__ == '__main__':
     #           "clf": 'memory'  # or memory
     #           }
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
+              "solr.facet": 'off',
               "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
-              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
-              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
-              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad_anchor.txt'),
-              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
-              "clf": 'dmn'  # or memory
+              "render_api_file": os.path.join(grandfatherdir, 'model/render_2/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render_2/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
+              "clf": 'dmn',  # or memory
+              "shuffle": False
               }
     kernel = MainKernel(config)
     while True:

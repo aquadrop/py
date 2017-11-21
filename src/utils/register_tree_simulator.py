@@ -64,6 +64,7 @@ class TreeSimilator:
                 if parsers[0] == 'thesaurus':
                     self.thesaurus[parsers[1]] = parsers[2].split('/')[:] + [parsers[1]]
 
+
     def gen_sessions(self, output_files):
         """
         :param belief_tracker:
@@ -77,7 +78,7 @@ class TreeSimilator:
         """
         def gen_random_slot_values(required_field):
             slot_values_mapper = dict()
-            num_rnd_external_max = 2
+            num_rnd_external_max = 0
             if required_field == 'virtual_category':
                 nodes = belief_graph.get_nodes_by_slot(required_field)
                 # choose one
@@ -93,9 +94,11 @@ class TreeSimilator:
                         required_field)
                     # choose one
                     name = np.random.choice(children_names)
-                    slot = self.belief_tracker.search_node.get_slot_by_value(name)
+                    slot = self.belief_tracker.search_node.get_slot_by_value(
+                        name)
                     slot_values_mapper[slot] = name
-                    node = self.belief_tracker.search_node.get_node_by_value(name)
+                    node = self.belief_tracker.search_node.get_node_by_value(
+                        name)
                 slot_values_mapper[node.slot] = node.value
                 fields = list(node.fields.keys())
                 if 'ac.power' in fields:
@@ -104,8 +107,10 @@ class TreeSimilator:
                 n = np.random.randint(
                     0, np.min([len(fields), num_rnd_external_max]) + 1)
                 # fields = list(belief_tracker.requested_slots)
-
-                picked_fields = np.random.choice(fields, n).tolist()
+                if fields:
+                    picked_fields = np.random.choice(fields, n).tolist()
+                else:
+                    picked_fields = []
                 # picked_fields = set()
                 # for i in range(n):
                 #     if np.random.uniform() < 0.25 and 'brand' in fields:
@@ -188,16 +193,18 @@ class TreeSimilator:
 
         def gen_ambiguity_initial():
             slot_values_mapper = dict()
-            nodes_value_list = list(self.belief_tracker.belief_graph.node_header.keys())
+            nodes_value_list = list(
+                self.belief_tracker.belief_graph.node_header.keys())
             property_flag = False
             while True:
                 key = np.random.choice(nodes_value_list)
-                nodes = self.belief_tracker.belief_graph.get_nodes_by_value(key)
+                nodes = self.belief_tracker.belief_graph.get_nodes_by_value(
+                    key)
                 if len(nodes) == 1 or not belief_graph.is_entity_value(key):
                     node = nodes[0]
                     if node.slot == 'category' or node.slot == 'virtual_category':
                         continue
-                    property_flag = True # other property must identity category
+                    property_flag = True  # other property must identity category
                     slot_values_mapper[node.slot] = node.value
                     break
                 slot_values_mapper['entity'] = key
@@ -252,7 +259,7 @@ class TreeSimilator:
 
         def get_requested_field():
             requested = np.random.choice(
-                ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.8, 0.1, 0])
+                ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0, 1, 0, 0])
             return requested
 
         def render_thesaurus(v):
@@ -372,16 +379,20 @@ class TreeSimilator:
         mlt_candidates = []
 
         with_multiple = False
-        with_qa = True
-        with_deny = True
-        with_whatever = True
+        with_qa_location = False
+        with_map_location = True
+        with_qa_price = False
+        with_deny = False
+        with_whatever = False
         with_flow = True
-        with_base = True
+        with_base = False
         with_gbdt = False
         with_main = True
-        with_faq = True
+        with_faq = False
+        with_single = False
         qa_prob = 0.25
-        N = 120000
+        with_ad = 0.75
+        ad_cls = 'api_call_request_category:注册'
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -391,9 +402,9 @@ class TreeSimilator:
             else:
                 slot_values_mapper = gen_random_slot_values(
                     required_field=requested)
-                self.belief_tracker.color_graph(
-                slot_values_mapper=slot_values_mapper, range_render=False)
+                self.belief_tracker.color_graph(slot_values_mapper=slot_values_mapper, range_render=False)
             user_reply = render_lang(slot_values_mapper, fresh)
+
             if not fresh:
                 gbdt = 'plugin:' + 'api_call_slot' + '|'\
                     + '|'.join([key + ":" + value for key, value in slot_values_mapper.items()])\
@@ -431,76 +442,27 @@ class TreeSimilator:
                 + '\t' + api
             mlt_container.append(mlt_line)
 
-            if with_qa:
+            if with_qa_location and requested:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
                     if np.random.uniform() < qa_prob:
-                        category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
+                        category = np.random.choice([render_thesaurus(
+                            self.belief_tracker.belief_graph.slots_trans[requested]), ''])
                         if np.random.uniform() < 0.5:
                             qa = category\
                                 + np.random.choice(self.modifier_query_cateory_location)
                         else:
                             qa = np.random.choice(self.modifier_query_cateory_location) \
                                  + category
-                        line = qa + '\t' + 'api_call_query_location_' + 'category:'\
-                            + filling_slots['category'] + '\t' + 'placeholder'
-                        flow = 'api_call_query_location_' + 'category:'\
-                               + filling_slots['category'] + '\t' + 'placeholder'
+                        line = qa + '\t' + 'api_call_query_location_' + '{}:'.format(requested)\
+                            + self.belief_tracker.belief_graph.slots_trans[requested] + '\t' + 'placeholder'
                         container.append(line)
                         # flow_container.append(flow.lower())
-                        candidates.add('api_call_query_location_' + 'category:'
-                                       + filling_slots['category'])
+                        candidates.add('api_call_query_location_' + '{}:'.format(requested)\
+                                       + self.belief_tracker.belief_graph.slots_trans[requested])
                         if category:
                             single_container.append(line)
                             # single_container.append('')
-                    if np.random.uniform() < qa_prob:
-                        brands = get_avail_brands(filling_slots['category'])
-                        if 'brand' in filling_slots and 'category' in filling_slots:
-                            brand = filling_slots['brand']
-                            qa = np.random.choice([brand] + self.prefix_price)\
-                                 + np.random.choice([render_thesaurus(filling_slots['category']), '']) \
-                                + np.random.choice(self.postfix_price)
-                            line = qa + '\t' + 'api_call_query_price_' + 'brand:' \
-                                + brand + ',' + 'category:' + \
-                                filling_slots['category'] + '\t' + 'placeholder'
-                            flow = 'api_call_query_price_' + 'brand:' \
-                                   + brand + ',' + 'category:' + \
-                                filling_slots['category'] + '\t' + 'placeholder'
-                            # flow_container.append(flow.lower())
-                            container.append(line)
-                            candidates.add('api_call_query_price_' + 'brand:'
-                                           + brand + ',' + 'category:' + filling_slots['category'])
-                        if brands:
-                            brand = np.random.choice(brands)
-                            qa = brand + np.random.choice([render_thesaurus(filling_slots['category']), ''])\
-                                + np.random.choice(self.postfix_price)
-                            line = qa + '\t' + 'api_call_query_price_' + 'brand:'\
-                                + brand + ',' + 'category:' + \
-                                filling_slots['category'] + '\t' + 'placeholder'
-                            flow = 'api_call_query_price_' + 'brand:'\
-                                   + brand + ',' + 'category:' + \
-                                filling_slots['category'] + '\t' + 'placeholder'
-                            # flow_container.append(flow.lower())
-                            container.append(line)
-                            candidates.add('api_call_query_price_' + 'brand:'
-                                           + brand + ',' + 'category:' + filling_slots['category'])
-
-                    # ask brand of category
-                    if np.random.uniform() < qa_prob:
-                        brands = get_avail_brands(filling_slots['category'])
-                        if brands:
-                            brand = np.random.choice(brands)
-                            qa = np.random.choice(self.prefix_brand) + \
-                                 np.random.choice([render_thesaurus(filling_slots['category']), ''])\
-                                 + np.random.choice(self.postfix_brand)
-                            line = qa + '\t' + 'api_call_query_brand_category:' + filling_slots['category'] + '\t' + 'placeholder'
-                            flow = 'api_call_query_price_' + 'brand:'\
-                                   + brand + ',' + 'category:' + \
-                                filling_slots['category'] + '\t' + 'placeholder'
-                            # flow_container.append(flow.lower())
-                            container.append(line)
-                            candidates.add(
-                                'api_call_query_brand_category:' + filling_slots['category'])
 
             if requested and requested != 'ambiguity_removal':
                 if np.random.uniform() < 0:
@@ -535,7 +497,8 @@ class TreeSimilator:
                     print('# duplicate #')
                 if single_bulk not in duplicate_removal:
                     duplicate_removal.add(single_bulk)
-                    mapper[which].extend(single_container * 2)
+                    if with_single:
+                        mapper[which].extend(single_container * 4)
 
                 flow_bulk = '#'.join(flow_container).lower()
                 if flow_bulk not in flow_removal:
@@ -550,7 +513,8 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-                if i >= N:
+
+                if i >= 20000:
                     break
 
         # lower everything
@@ -582,13 +546,19 @@ class TreeSimilator:
                     base.append(line)
                     if not line:
                         base_count += 1
-            with open(grandfatherdir + '/data/memn2n/train/tree/extra/location.txt', encoding='utf-8') as cf:
+
+        # whatever = []
+        map_count = 0
+        if with_map_location:
+            with open(grandfatherdir + '/data/memn2n/train/map/map.txt', encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
+                    if line:
+                        candidate = line.split('\t')[1]
+                    candidates.add(candidate)
                     base.append(line)
                     if not line:
-                        pass
-                        # base_count += 1
+                        map_count += 1
 
         train_count = 0
         with open(output_files[1], 'w', encoding='utf-8') as f:
@@ -691,9 +661,10 @@ if __name__ == "__main__":
     config = dict()
     config['belief_graph'] = graph_dir
     config['solr.facet'] = 'off'
+    config['shuffle'] = False
     # memory_dir = os.path.join(grandfatherdir, "model/memn2n/ckpt")
     log_dir = os.path.join(grandfatherdir, "log/test2.log")
-    config['template'] = 'template.txt'
+    config['template'] = 'register_template.txt'
     tree_simulator = TreeSimilator(config)
 
     output_files = ['../../data/memn2n/train/tree/origin/candidates.txt',

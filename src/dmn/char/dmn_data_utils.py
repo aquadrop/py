@@ -15,8 +15,8 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 
 sys.path.insert(0, grandfatherdir)
 
-import dmn.data_utils as data_utils
-from dmn.dmn_plus2 import Config
+import dmn.char.data_utils as data_utils
+from dmn.char.dmn_plus import Config
 # from dmn.vector_helper import getVector
 from utils.embedding_util import ff_embedding
 

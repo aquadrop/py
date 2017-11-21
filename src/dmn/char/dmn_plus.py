@@ -6,6 +6,9 @@ import os
 import time
 import pickle
 
+grandfatherdir = os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
+
 import numpy as np
 from copy import deepcopy
 from tqdm import tqdm
@@ -65,8 +68,7 @@ class Config(object):
     embedding_type = 'fasttext'
 
     # paths
-    prefix = grandfatherdir = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    prefix = grandfatherdir
     DATA_DIR = os.path.join(prefix, 'data/memn2n/train/tree/origin/')
     CANDID_PATH = os.path.join(
         prefix, 'data/memn2n/train/tree/origin/candidates.txt')
@@ -145,7 +147,6 @@ class DMN_PLUS(object):
               \n max_q_len:{}\n max_input_len:{}\n max_sen_len:{}\n vocab_size:{}\n cadidate_size:{}\n'
               .format(self.max_q_len, self.max_input_len, self.max_sen_len, self.vocab_size, self.candidate_size))
 
-
         # if self.config.train_mode:
         #     print('Load metadata (training mode)')
         #
@@ -210,11 +211,12 @@ class DMN_PLUS(object):
             predict_by_value = tf.nn.top_k(
                 output, k=self.config.top_k, name="predict_op")
             predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
-            preds = tf.nn.top_k(
+            pred = tf.nn.top_k(
                 predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
         else:
             predict_proba_op = tf.nn.softmax(output)
-            predict_proba_top_op = tf.nn.top_k(predict_proba_op, k=self.config.top_k)
+            predict_proba_top_op = tf.nn.top_k(
+                predict_proba_op, k=self.config.top_k)
             pred = tf.argmax(predict_proba_op, 1)
 
         return pred, predict_proba_top_op
@@ -256,7 +258,8 @@ class DMN_PLUS(object):
 
     def _create_training_op(self, loss):
         """Calculate and apply gradients"""
-        opt = tf.train.AdamOptimizer(learning_rate=self.config.lr, epsilon=1e-8)
+        opt = tf.train.AdamOptimizer(
+            learning_rate=self.config.lr, epsilon=1e-8)
         gvs = opt.compute_gradients(loss)
 
         # optionally cap and noise gradients to regularize
@@ -294,8 +297,8 @@ class DMN_PLUS(object):
         # forward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         backward_gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         outputs, _ = tf.nn.dynamic_rnn(backward_gru_cell, inputs,
-                          sequence_length=self.input_len_placeholder,
-                          dtype=np.float32)
+                                       sequence_length=self.input_len_placeholder,
+                                       dtype=np.float32)
         fact_vecs = tf.nn.dropout(outputs, self.dropout_placeholder)
         # outputs, _ = tf.nn.bidirectional_dynamic_rnn(
         #     forward_gru_cell,
@@ -532,7 +535,8 @@ class DMN_PLUS(object):
             self.input_len_placeholder: input_lens,
             self.dropout_placeholder: self.config.dropout
         }
-        pred, prob_top = session.run([self.pred, self.prob_top_k], feed_dict=feed)
+        pred, prob_top = session.run(
+            [self.pred, self.prob_top_k], feed_dict=feed)
         return pred, prob_top
         # pred = session.run([self.pred], feed_dict=feed)
         # return pred

@@ -1,65 +1,19 @@
-from __future__ import print_function
-from __future__ import division
-
-import sys
+import os
 import time
 import pickle
+import json
 
 import numpy as np
 from copy import deepcopy
-
+from tqdm import tqdm
 import tensorflow as tf
-from attention_gru_cell import AttentionGRUCell
-
+# from dmn.attention_gru_cell import AttentionGRUCell
+from dmn.attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
-# import babi_input
-import dmn_data_utils2 as dmn_data_utils
-
-
-class Config(object):
-    """Holds model hyperparams and data information."""
-
-    batch_size = 128
-    embed_size = 300
-    hidden_size = 128
-
-    max_epochs = 345
-    early_stopping = 20
-
-    dropout = 0.9
-    lr = 0.001
-    l2 = 0.001
-
-    cap_grads = True
-    max_grad_val = 10
-    noisy_grads = True
-
-    word2vec_init = False
-    embedding_init = np.sqrt(3)
-
-    # set to zero with strong supervision to only train gates
-    strong_supervision = False
-    beta = 1
-
-    # NOTE not currently used hence non-sensical anneal_threshold
-    anneal_threshold = 1000
-    anneal_by = 1.5
-
-    num_hops = 3
-    num_attention_features = 4
-
-    max_allowed_inputs = 130
-    num_train = 30000
-
-    floatX = np.float32
-
-    # babi_id = "1"
-    # babi_test_id = ""
-
-    train_mode = True
-
-    metadata_path = 'processed/metadata.pkl'
+# from dmn.dmn_fasttext.config import Config
+from dmn.dmn_fasttext.config import Config
+# config = Config()
 
 
 def _add_gradient_noise(t, stddev=1e-3, name=None):
@@ -89,67 +43,71 @@ def _position_encoding(sentence_size, embedding_size):
 
 
 class DMN_PLUS(object):
+    """FUCKING DMN_PLUS MODEL"""
 
-    def load_data(self, debug=False):
-        """Loads data from metadata"""
-        print('Load metadata')
+    def _load_metadata(self):
+        self.max_input_len = self.metadata['max_input_len']
+        self.max_q_len = self.metadata['max_q_len']
+        self.max_sen_len = self.metadata['max_sen_len']
+        self.max_mask_len = self.metadata['max_mask_len']
+        self.num_supporting_facts = self.metadata['num_supporting_facts']
+        self.candidate_size = self.metadata['candidate_size']
+        self.candid2idx = self.metadata['candid2idx']
+        self.idx2candid = self.metadata['idx2candid']
+        self.w2idx = self.metadata['w2idx']
+        self.idx2w = self.metadata['idx2w']
+        self.vocab_size = self.metadata['vocab_size']
 
-        with open(self.config.metadata_path, 'rb') as f:
-            metadata = pickle.load(f)
-        self.train = metadata['train']
-        self.valid = metadata['valid']
-        self.word_embedding = metadata['word_embedding']
-        self.max_q_len = metadata['max_q_len']
-        self.max_input_len = metadata['max_input_len']
-        self.max_sen_len = metadata['max_sen_len']
-        self.num_supporting_facts = metadata['num_supporting_facts']
-        self.vocab_size = metadata['vocab_size']
-        self.candidate_size = metadata['candidate_size']
-        self.candid2idx = metadata['candid2idx']
-        self.idx2candid = metadata['idx2candid']
-        self.w2idx = metadata['w2idx']
-        self.idx2w = metadata['idx2w']
+    def _create_placeholders(self):
+        """add data and placeholder to graph"""
 
-        # if self.config.train_mode:
-        #     self.train, self.valid, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-        #             self.config, split_sentences=True)
+        if self.config.word:
+            self.question_placeholder = tf.placeholder(
+                tf.float32, shape=(None, self.max_q_len, self.config.embed_size), name='questions')
+            # self.question_placeholder = tf.placeholder(
+            #         tf.float32, shape=(None, None, None), name='questions')
+            self.question_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='question_lens')
 
-        # else:
-        #     self.test, self.word_embedding, self.max_q_len, self.max_input_len, self.max_sen_len, \
-        #         self.num_supporting_facts, self.vocab_size, self.candidate_size = dmn_data_utils.load_data(
-        #             self.config, split_sentences=True)
-        self.encoding = _position_encoding(
-            self.max_sen_len, self.config.embed_size)
+            self.input_placeholder = tf.placeholder(tf.float32, shape=(
+                None, self.max_input_len, self.max_sen_len, self.config.embed_size), name='inputs')
+            # self.input_placeholder = tf.placeholder(tf.float32, shape=(
+            #     None, None, None, self.config.embed_size), name='inputs')
+            self.input_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='input_lens')
 
-    def add_placeholders(self):
-        """add data placeholder to graph"""
-        self.question_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size, self.max_q_len), name='question')
-        self.question_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='question_len')
+            self.embeddings = None
+        else:
+            self.question_placeholder = tf.placeholder(
+                tf.int32, shape=(None, self.max_q_len), name='questions')
+            self.question_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='question_lens')
 
-        self.input_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.max_input_len, self.max_sen_len), name='input')
-        self.input_len_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='input_len')
+            self.input_placeholder = tf.placeholder(tf.int32, shape=(
+                None, self.max_input_len, self.max_sen_len), name='inputs')
+            self.input_len_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='input_lens')
 
-        self.answer_placeholder = tf.placeholder(
-            tf.int32, shape=(self.config.batch_size,), name='answer')
-        # self.answer_len_placeholder = tf.placeholder(
-        #     tf.int32, shape=(self.config.batch_size,))
+            self.embeddings = tf.Variable(tf.random_uniform(
+                [self.vocab_size, self.config.embed_size], -1.0, 1.0),
+                trainable=True, dtype=tf.float32, name='embeddings')
+            self.embedding_placeholder = tf.placeholder(
+                tf.float32, [None, None])
+            self.embedding_init = self.embeddings.assign(
+                self.embedding_placeholder)
+
+        if self.config.multi_label:
+            self.answer_placeholder = tf.placeholder(
+                tf.float32, shape=(None, self.candidate_size), name='answers')
+        else:
+            self.answer_placeholder = tf.placeholder(
+                tf.int32, shape=(None,), name='answers')
 
         self.rel_label_placeholder = tf.placeholder(tf.int32, shape=(
-            self.config.batch_size, self.num_supporting_facts), name='rel_label')
-
+            None, self.num_supporting_facts), name='rel_labels')
         self.dropout_placeholder = tf.placeholder(tf.float32, name='dropout')
 
-    def get_predictions(self, output):
-        preds = tf.nn.softmax(output)
-        pred = tf.argmax(preds, 1)
-        return pred
-
-    def add_loss_op(self, output):
+    def _create_loss(self, output):
         """Calculate loss"""
         # optional strong supervision of attention with supporting facts
         gate_loss = 0
@@ -159,11 +117,15 @@ class DMN_PLUS(object):
                 gate_loss += tf.reduce_sum(
                     tf.nn.sparse_softmax_cross_entropy_with_logits(logits=att, labels=labels))
 
-        loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits=output, labels=self.answer_placeholder)) + gate_loss
-
-        # loss = self.config.beta * tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(
+        # loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
         #     logits=output, labels=self.answer_placeholder)) + gate_loss
+        if self.config.multi_label:
+            # multi targets
+            loss = self.config.beta * tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=output, labels=self.answer_placeholder)) + gate_loss
+        else:
+            loss = self.config.beta * tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=output, labels=self.answer_placeholder)) + gate_loss
 
         # stackoverflow :https://stackoverflow.com/questions/33712178/tensorflow-nan-bug
         # cross_entropy = - tf.reduce_sum(self.answer_placeholder *
@@ -175,13 +137,14 @@ class DMN_PLUS(object):
             if not 'bias' in v.name.lower():
                 loss += self.config.l2 * tf.nn.l2_loss(v)
 
-        tf.summary.scalar('loss', loss)
+        # tf.summary.scalar('loss', loss)
 
         return loss
 
-    def add_training_op(self, loss):
+    def _create_training_op(self, loss):
         """Calculate and apply gradients"""
-        opt = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+        opt = tf.train.AdamOptimizer(
+            learning_rate=self.config.lr, epsilon=1e-8)
         gvs = opt.compute_gradients(loss)
 
         # optionally cap and noise gradients to regularize
@@ -196,8 +159,11 @@ class DMN_PLUS(object):
 
     def get_question_representation(self, embeddings):
         """Get question vectors via embedding and GRU"""
-        questions = tf.nn.embedding_lookup(
-            embeddings, self.question_placeholder)
+        if embeddings:
+            questions = tf.nn.embedding_lookup(
+                embeddings, self.question_placeholder)
+        else:
+            questions = self.question_placeholder
 
         gru_cell = tf.contrib.rnn.GRUCell(self.config.hidden_size)
         _, q_vec = tf.nn.dynamic_rnn(gru_cell,
@@ -205,13 +171,15 @@ class DMN_PLUS(object):
                                      dtype=np.float32,
                                      sequence_length=self.question_len_placeholder
                                      )
-
         return q_vec
 
     def get_input_representation(self, embeddings):
         """Get fact (sentence) vectors via embedding, positional encoding and bi-directional GRU"""
         # get word vectors from embedding
-        inputs = tf.nn.embedding_lookup(embeddings, self.input_placeholder)
+        if embeddings:
+            inputs = tf.nn.embedding_lookup(embeddings, self.input_placeholder)
+        else:
+            inputs = self.input_placeholder
 
         # use encoding to get sentence representation
         inputs = tf.reduce_sum(inputs * self.encoding, 2)
@@ -228,7 +196,6 @@ class DMN_PLUS(object):
 
         # f<-> = f-> + f<-
         fact_vecs = tf.reduce_sum(tf.stack(outputs), axis=0)
-
         # apply dropout
         fact_vecs = tf.nn.dropout(fact_vecs, self.dropout_placeholder)
 
@@ -237,7 +204,6 @@ class DMN_PLUS(object):
     def get_attention(self, q_vec, prev_memory, fact_vec, reuse):
         """Use question vector and previous memory to create scalar attention for current fact"""
         with tf.variable_scope("attention", reuse=reuse):
-
             features = [fact_vec * q_vec,
                         fact_vec * prev_memory,
                         tf.abs(fact_vec - q_vec),
@@ -294,21 +260,16 @@ class DMN_PLUS(object):
 
         return output
 
-    def inference(self):
+    def _inference(self):
         """Performs inference on the DMN model"""
-
-        # set up embedding
-        embeddings = tf.Variable(
-            self.word_embedding.astype(np.float32), name="Embedding")
-
         # input fusion module
         with tf.variable_scope("question", initializer=tf.contrib.layers.xavier_initializer()):
             print('==> get question representation')
-            q_vec = self.get_question_representation(embeddings)
+            q_vec = self.get_question_representation(self.embeddings)
 
         with tf.variable_scope("input", initializer=tf.contrib.layers.xavier_initializer()):
             print('==> get input representation')
-            fact_vecs = self.get_input_representation(embeddings)
+            fact_vecs = self.get_input_representation(self.embeddings)
 
         # keep track of attentions for possible strong supervision
         self.attentions = []
@@ -340,81 +301,47 @@ class DMN_PLUS(object):
 
         return output
 
-    def run_epoch(self, session, data, num_epoch=0, train_writer=None, train_op=None, verbose=2, train=False):
-        config = self.config
-        dp = config.dropout
-        if train_op is None:
-            train_op = tf.no_op()
-            dp = 1
-        total_steps = len(data[0]) // config.batch_size
+    def get_predictions(self, output):
+        if self.config.multi_label:
+            # multi targets
+            predict_by_value = tf.nn.top_k(
+                output, k=self.config.top_k, name="predict_op")
+            predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
+            pred = tf.nn.top_k(
+                predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
+        else:
+            predict_proba_op = tf.nn.softmax(output)
+            predict_proba_top_op = tf.nn.top_k(
+                predict_proba_op, k=self.config.top_k, name='top_predict_proba_op')
+            pred = tf.argmax(predict_proba_op, 1, name='pred')
 
-        total_loss = []
-        accuracy = 0
+        # predict_proba_op = tf.nn.softmax(output, name="predict_proba_op")
+        # preds = tf.nn.top_k(
+        #     predict_proba_op, k=self.config.top_k, name="top_predict_proba_op")
+        return pred, predict_proba_top_op
 
-        # shuffle data
-        p = np.random.permutation(len(data[0]))
-        qp, ip, ql, il, im, a, r = data
-        qp, ip, ql, il, im, a, r = qp[p], ip[p], ql[p], il[p], im[p], a[p], r[p]
-
-        for step in range(total_steps):
-            index = range(step * config.batch_size,
-                          (step + 1) * config.batch_size)
-            feed = {self.question_placeholder: qp[index],
-                    self.input_placeholder: ip[index],
-                    self.question_len_placeholder: ql[index],
-                    self.input_len_placeholder: il[index],
-                    self.answer_placeholder: a[index],
-                    self.rel_label_placeholder: r[index],
-                    self.dropout_placeholder: dp}
-            loss, pred, summary, _ = session.run(
-                [self.calculate_loss, self.pred, self.merged, train_op], feed_dict=feed)
-
-            if train_writer is not None:
-                train_writer.add_summary(
-                    summary, num_epoch * total_steps + step)
-
-            answers = a[step *
-                        config.batch_size:(step + 1) * config.batch_size]
-            accuracy += np.sum(pred == answers) / float(len(answers))
-
-            total_loss.append(loss)
-            if verbose and step % verbose == 0:
-                sys.stdout.write('\r{} / {} : loss = {}'.format(
-                    step, total_steps, np.mean(total_loss)))
-                sys.stdout.flush()
-
-        if verbose:
-            sys.stdout.write('\r')
-        # print('total_steps:', total_steps)
-        # print('float_total_steps:', float(total_steps))
-        return np.mean(total_loss), accuracy / float(total_steps)
-
-    def predict(self, session, inputs, max_input_len, max_sen_len, questions, max_q_len):
-        dropout = 0.9
-        # answer = np.zeros((self.config.batch_size,))
-        # rel_label = np.zeros(
-        #     (self.config.batch_size, self.num_supporting_facts))
-
+    def predict(self, session, inputs, input_lens, max_sen_len, questions, q_lens):
         feed = {
             self.question_placeholder: questions,
             self.input_placeholder: inputs,
-            self.question_len_placeholder: max_q_len,
-            self.input_len_placeholder: max_input_len,
-            # self.answer_placeholder: answer,
-            # self.rel_label_placeholder: rel_label,
-            self.dropout_placeholder: dropout
+            self.question_len_placeholder: q_lens,
+            self.input_len_placeholder: input_lens,
+            self.dropout_placeholder: self.config.dropout
         }
-        pred = session.run([self.pred], feed_dict=feed)
+        pred, prob_top = session.run(
+            [self.pred, self.prob_top_k], feed_dict=feed)
+        return pred, prob_top
 
-        return pred
-
-    def __init__(self, config):
+    def __init__(self, config, metadata):
         self.config = config
-        self.variables_to_save = {}
-        self.load_data(debug=False)
-        self.add_placeholders()
-        self.output = self.inference()
-        self.pred = self.get_predictions(self.output)
-        self.calculate_loss = self.add_loss_op(self.output)
-        self.train_step = self.add_training_op(self.calculate_loss)
-        self.merged = tf.summary.merge_all()
+        self.metadata = metadata
+        self._load_metadata()
+        self.encoding = _position_encoding(
+            self.max_sen_len, self.config.embed_size)
+        self._create_placeholders()
+        self.output = self._inference()
+        self.pred, self.prob_top_k = self.get_predictions(self.output)
+        # self.pred = self.get_predictions(self.output)
+        self.calculate_loss = self._create_loss(self.output)
+        self.train_step = self._create_training_op(self.calculate_loss)
+        # self.merged = tf.summary.merge_all()
