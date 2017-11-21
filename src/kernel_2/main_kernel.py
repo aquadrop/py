@@ -193,7 +193,7 @@ class MainKernel:
                     #     response = answer
                     #     memory = api
                     #     avails = []
-            # self.sess.append_memory(memory)
+            self.sess.append_memory(memory)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
                 avails)
             # render = api

@@ -143,6 +143,7 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
             qp_vc, ip_vc, ql_vc, il_vc, im_vc, a_vc, r_vc = data_helper.vectorize_data(
                 batch_size_data, config, metadata)
             # print(qp[:2])
+            # print(il_vc)
             feed = {model.question_placeholder: qp_vc,
                     model.input_placeholder: ip_vc,
                     model.question_len_placeholder: ql_vc,
@@ -221,7 +222,7 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
                     # Q = ''.join([idx2w.get(idx, '')
                     #              for idx in Q.astype(np.int32).tolist()])
                     Q = ''.join(Q)
-                    Q = Q.replace('unk', '')
+                    Q = Q.replace(config.UNK, '')
                     A = idx2candid[A]
                     P = idx2candid[P]
                     error.append((Q, A, P))
@@ -359,6 +360,7 @@ def inference(config):
 def main(args):
     args = parse_args(args)
     config = Config()
+    args['train'] = ';'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()

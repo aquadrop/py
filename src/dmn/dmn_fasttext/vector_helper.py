@@ -3,6 +3,9 @@ import os
 import gensim
 import numpy as np
 
+from dmn.dmn_fasttext.config import Config
+
+config = Config()
 loop_word = 0
 dim_shrink = 1
 sentence_vector_dict = {}
@@ -81,6 +84,8 @@ bv = BenebotVector(path)
 
 
 def getVector(word, embedding_dim=300):
+    if word == config.PAD:
+        return np.array([0.0] * embedding_dim)
     vector = bv.getVectorByWord(word)
     # print(vector)
     if vector:
