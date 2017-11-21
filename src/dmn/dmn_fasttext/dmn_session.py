@@ -51,6 +51,7 @@ class DmnSession():
             return
         m = translator.en2cn(m)
         m = tokenize(m, self.char)
+        print('appending memory..', m)
         q_vector = m + \
                    [self.config.PAD for _ in range(
                        self.max_sen_len - len(m))]
