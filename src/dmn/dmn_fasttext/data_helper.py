@@ -345,10 +345,10 @@ def sentence_embedding_core(config, sentences, w2idx):
         inp_empty_embedding = [3 for _ in range(max_len)]
     sentences_embedding['empty'] = inp_empty_embedding
 
-    return sentences_embedding, max_len
+    return sentences_embedding
 
 
 def sentence_embedding(config, sentences, w2idx):
-    sentences_embedding, max_sen_len = sentence_embedding_core(
+    sentences_embedding = sentence_embedding_core(
         config, sentences, w2idx)
-    return sentences_embedding, max_sen_len
+    return sentences_embedding

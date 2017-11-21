@@ -43,6 +43,7 @@ class Config(object):
     multi_label = False
     top_k = 5
     max_memory_size = 2
+    max_sen_len=10
     fix_vocab = True
 
     train_mode = True

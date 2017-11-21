@@ -34,6 +34,10 @@ def prepare_data(config):
 
     sentences = list(sentences)
     sentences.sort()
+    split_sentences = [sen.split(',') for sen in sentences]
+    sen_lens = [len(split_sentence) for split_sentence in split_sentences]
+    max_len = max(sen_lens)
+
     # print('origin sentences:', sentences[:2])
 
     # embedding
@@ -61,8 +65,8 @@ def prepare_data(config):
     # metadata['sentences_embedding'] = sentences_embedding
     metadata['sentences'] = sentences
     metadata['max_input_len'] = max_input_len
-    # metadata['max_q_len'] = max_len
-    # metadata['max_sen_len'] = max_len
+    metadata['max_q_len'] = max_len
+    metadata['max_sen_len'] = max_len
     metadata['max_mask_len'] = max_mask_len
     metadata['num_supporting_facts'] = num_supporting_facts
     metadata['candidate_size'] = candidate_size
@@ -249,11 +253,11 @@ def load_data(config):
     w2idx = metadata['w2idx']
     # embedding
     print('pre embedding')
-    sentences_embedding, max_len = data_helper.sentence_embedding(
+    sentences_embedding = data_helper.sentence_embedding(
         config, sentences, w2idx)
     print('pre embedding done')
-    metadata['max_q_len'] = max_len
-    metadata['max_sen_len'] = max_len
+    # metadata['max_q_len'] = max_len
+    # metadata['max_sen_len'] = max_len
     metadata['sentences_embedding'] = sentences_embedding
 
     return train, valid, metadata

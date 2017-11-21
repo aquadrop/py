@@ -13,9 +13,9 @@ import sys
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 parentdir = os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))
+        os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))))
+        os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, parentdir)
 sys.path.insert(0, grandfatherdir)
 
@@ -25,7 +25,6 @@ from utils.translator import Translator
 from dmn.dmn_fasttext.config import Config
 from dmn.dmn_fasttext.vector_helper import getVector
 from dmn.dmn_fasttext.dmn_plus import DMN_PLUS
-
 
 translator = Translator()
 
@@ -44,6 +43,7 @@ class DmnSession():
         # self.context = [[data_helper.ff_embedding_local(self.config.EMPTY) for _ in range(self.max_sen_len)]]
         self.context = [[getVector(self.config.EMPTY)
                          for _ in range(self.max_sen_len)]]
+        self.context_raw = [[self.config.EMPTY]]
         self.char = char
 
     def append_memory(self, m):
@@ -69,25 +69,26 @@ class DmnSession():
             self.context = [[getVector(self.config.EMPTY)
                              for _ in range(self.max_sen_len)]]
             reply_msg = ['memory cleared!']
-            values = [0]
+            top_prob = [0]
         else:
             inputs = []
             questions = []
 
             q = tokenize(line, self.char)
-            q=q[:self.max_sen_len]
-            q_vector = q
-            q_vector = q_vector + \
-                [self.config.PAD for _ in range(
-                    self.max_sen_len - len(q_vector))]
-            print(q_vector)
+            q_len=len(q)
+            q = q[:self.max_sen_len]
+            self.context_raw.append(q)
+            q_vector = q + \
+                       [self.config.PAD for _ in range(
+                               self.max_sen_len - len(q))]
             q_vector = [getVector(word) for word in q_vector]
+
             inp_vector = self.context
             pad_vector = [getVector(self.config.PAD)
                           for _ in range(self.max_sen_len)]
             inp_vector = inp_vector + \
-                [pad_vector for _ in range(
-                    self.max_input_len - len(inp_vector))]
+                         [pad_vector for _ in range(
+                                 self.max_input_len - len(inp_vector))]
 
             inputs.append(inp_vector)
             questions.append(q_vector)
@@ -106,27 +107,28 @@ class DmnSession():
             #         qp: questions, ql: [self.max_sen_len], ip: inputs, il: [len(self.context)], dp: self.config.dropout})
 
             pred, top_prob = self.model.predict(self.session,
-                                                inputs, [len(self.context)], self.max_sen_len, questions, [self.max_sen_len])
+                                                inputs, [len(self.context)], self.max_sen_len, questions,
+                                                [q_len])
 
             print('pred:', pred, top_prob)
             # indices = output.indices.tolist()[0]
             # values = output.values.tolist()[0]
 
             reply_msg = [self.idx2candid[ind] for ind in pred]
-            # print(reply_msg)
             r = reply_msg[0]
-            # print('r:',r)
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
+            r = r[:self.max_sen_len]
+            self.context_raw.append(r)
             r_vector = r + \
-                [self.config.PAD for _ in range(self.max_sen_len - len(r))]
+                       [self.config.PAD for _ in range(self.max_sen_len - len(r))]
             r_vector = [getVector(word) for word in r_vector]
             self.context.append(q_vector)
             self.context.append(r_vector)
-            if len(self.context)>self.config.max_memory_size:
-                self.context=self.context[-self.config.max_memory_size:]
+            if len(self.context) > self.config.max_memory_size:
+                self.context = self.context[-self.config.max_memory_size:]
 
-            return reply_msg[0], top_prob[0]
+        return reply_msg[0], top_prob[0]
 
 
 class DmnInfer:
