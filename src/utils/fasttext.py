@@ -4,12 +4,12 @@ import time
 
 begin=time.clock()
 print('Load model')
-# model = FastText.load_fasttext_format('/media/ecovacs/DATA/model/fasttext/skipgram.bin')
-model = gensim.models.Word2Vec.load('/opt/word2vec/benebot_vector/word2vec.bin')
+model = FastText.load_fasttext_format('/media/ecovacs/DATA/model/fasttext/cbow.bin')
+# model = gensim.models.Word2Vec.load('/opt/word2vec/benebot_vector/word2vec.bin')
 end=time.clock()
 print('Lode model done,time: {}'.format(end-begin))
 
-l=['彩','电','电','视','冰','箱','手机','电吹风','西门子','Dyson','科','沃','斯','e','covacs','步步高','新华书店','吴中','小明','辛健','松下','猪八戒']
+l=['彩电','电视','冰箱','手机','电吹风','西门子','Dyson','科斯','ecovacs','步步高','新华书店','吴中','小明','辛健','松下','猪八戒']
 for word in l:
     if model.__contains__(word.strip()):
         print(word,model.most_similar(positive=word))

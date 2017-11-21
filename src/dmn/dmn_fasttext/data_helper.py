@@ -21,7 +21,7 @@ from utils.query_util import tokenize
 from utils.translator import Translator
 from config import Config
 from gensim.models.wrappers import FastText
-# from vector_helper import getVector
+from vector_helper import getVector
 
 EMPTY='EMPTY'
 PAD='PAD'
@@ -162,7 +162,7 @@ def load_raw_data(config):
         candidates_f=config.candid_path)
     candidate_size = len(candidates)
 
-    char = 2 if config.word else 0
+    char = 2 if config.word else 1
     sentences = set()
     train_data, test_data, val_data = load_dialog(sentences,
                                                   data_dir=config.data_dir,
