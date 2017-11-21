@@ -42,8 +42,8 @@ def prepare_data(config):
 
     # embedding
     # print('embedding')
-    sentences_embedding, max_len = data_helper.sentence_embedding(
-        config, sentences,  w2idx)
+    # sentences_embedding, max_len = data_helper.sentence_embedding(
+    #     config, sentences,  w2idx)
     # print('embedding done')
 
     # debug
@@ -319,7 +319,7 @@ def train(config, restore=False):
                 print('Training accuracy: {}'.format(train_accuracy))
                 print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                if train_accuracy > best_train_accuracy:
+                if train_loss > best_train_loss:
                     print('Saving weights and updating best_train_loss:{} -> {},\
                             best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,
                                                                  best_train_accuracy, train_accuracy))
