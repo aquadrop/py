@@ -7,10 +7,12 @@ import numpy as np
 from copy import deepcopy
 from tqdm import tqdm
 import tensorflow as tf
-from dmn.attention_gru_cell import AttentionGRUCell
+# from dmn.attention_gru_cell import AttentionGRUCell
+from attention_gru_cell import AttentionGRUCell
 from tensorflow.contrib.cudnn_rnn.python.ops import cudnn_rnn_ops
 
-from dmn.dmn_fasttext.config import Config
+# from dmn.dmn_fasttext.config import Config
+from config import Config
 # config = Config()
 
 
@@ -62,11 +64,15 @@ class DMN_PLUS(object):
         if self.config.word:
             self.question_placeholder = tf.placeholder(
                 tf.float32, shape=(None, self.max_q_len, self.config.embed_size), name='questions')
+            # self.question_placeholder = tf.placeholder(
+            #         tf.float32, shape=(None, None, None), name='questions')
             self.question_len_placeholder = tf.placeholder(
                 tf.int32, shape=(None,), name='question_lens')
 
             self.input_placeholder = tf.placeholder(tf.float32, shape=(
                 None, self.max_input_len, self.max_sen_len, self.config.embed_size), name='inputs')
+            # self.input_placeholder = tf.placeholder(tf.float32, shape=(
+            #     None, None, None, self.config.embed_size), name='inputs')
             self.input_len_placeholder = tf.placeholder(
                 tf.int32, shape=(None,), name='input_lens')
 

@@ -510,7 +510,7 @@ class TreeSimilator:
                 i += 1
                 print(i)
 
-                if i >= 200:
+                if i >= 2000:
 
                     break
 

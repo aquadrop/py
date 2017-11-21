@@ -57,6 +57,7 @@ def prepare_data(config):
     data['train'] = train
     data['valid'] = valid
     # data['sentences'] = sentences
+
     # metadata['sentences_embedding'] = sentences_embedding
     metadata['sentences'] = sentences
     metadata['max_input_len'] = max_input_len
