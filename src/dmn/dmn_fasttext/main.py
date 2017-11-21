@@ -42,8 +42,8 @@ def prepare_data(config):
 
     # embedding
     # print('embedding')
-    # sentences_embedding, max_len = data_helper.sentence_embedding(
-    #     config, sentences,  w2idx)
+    sentences_embedding, max_len = data_helper.sentence_embedding(
+        config, sentences,  w2idx)
     # print('embedding done')
 
     # debug
@@ -213,16 +213,18 @@ def run_epoch(model, config, session, data, metadata, num_epoch=0, train_writer=
         else:
             # print(pred)
             accuracy += np.sum(pred == answers) / float(len(answers))
-
-            # for Q, A, P in zip(questions, answers, pred):
-            #     # print(A, P)
-            #     if A != P:
-            #         Q = ''.join([self.idx2w.get(idx, '')
-            #                      for idx in Q.astype(np.int32).tolist()])
-            #         Q = Q.replace('unk', '')
-            #         A = self.idx2candid[A]
-            #         P = self.idx2candid[P]
-            #         error.append((Q, A, P))
+            idx2w = metadata['idx2w']
+            idx2candid = metadata['idx2candid']
+            for Q, A, P in zip(questions, answers, pred):
+                # print(A, P)
+                if A != P:
+                    # Q = ''.join([idx2w.get(idx, '')
+                    #              for idx in Q.astype(np.int32).tolist()])
+                    Q = ''.join(Q)
+                    Q = Q.replace('unk', '')
+                    A = idx2candid[A]
+                    P = idx2candid[P]
+                    error.append((Q, A, P))
 
         total_loss.append(loss)
         if verbose and step % verbose == 0:
@@ -296,7 +298,7 @@ def train(config, restore=False):
                             model.embedding_placeholder: word_embedding})
         print('==> starting training')
         for epoch in range(config.max_epochs):
-            if not (epoch % config.interval_epochs == 0 and epoch > 1):
+            if not (epoch % 1 == 0 and epoch > 1):
                 print('Epoch {}'.format(epoch))
                 _ = run_epoch(model, config, session, train_data, metadata, epoch,
                               train_op=model.train_step, train=True)
@@ -357,7 +359,7 @@ def inference(config):
 def main(args):
     args = parse_args(args)
     config = Config()
-
+    args['train'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()
