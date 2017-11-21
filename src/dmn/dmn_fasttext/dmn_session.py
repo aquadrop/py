@@ -51,7 +51,12 @@ class DmnSession():
             return
         m = translator.en2cn(m)
         m = tokenize(m, self.char)
-        self.context.append(m)
+        q_vector = m + \
+                   [self.config.PAD for _ in range(
+                       self.max_sen_len - len(m))]
+        q_vector = [getVector(word) for word in q_vector]
+        self.context.append(q_vector)
+        self.context = self.context[-self.config.max_memory_size:]
 
     def clear_memory(self, history=0):
         if history == 0:
@@ -75,7 +80,7 @@ class DmnSession():
             questions = []
 
             q = tokenize(line, self.char)
-            q=q[:self.max_sen_len]
+            q = q[:self.max_sen_len]
             q_vector = q
             q_vector = q_vector + \
                 [self.config.PAD for _ in range(

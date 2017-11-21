@@ -24,7 +24,7 @@ sys.path.insert(0, grandfatherdir)
 from utils.query_util import tokenize
 from utils.translator import Translator
 
-import dmn.char,dmn_data_utils as dmn_data_utils
+import dmn.char.dmn_data_utils as dmn_data_utils
 from dmn.char.dmn_plus import Config, DMN_PLUS
 
 translator = Translator()

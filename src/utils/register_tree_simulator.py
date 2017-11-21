@@ -101,6 +101,7 @@ class TreeSimilator:
                         name)
                 slot_values_mapper[node.slot] = node.value
                 fields = list(node.fields.keys())
+                print(fields)
                 if 'ac.power' in fields:
                     fields.remove('ac.power')
                     fields.append('ac.power_float')
@@ -378,7 +379,7 @@ class TreeSimilator:
 
         with_multiple = False
         with_qa_location = False
-        with_map_location = True
+        with_map_location = False
         with_qa_price = False
         with_deny = False
         with_whatever = False
@@ -510,7 +511,7 @@ class TreeSimilator:
                 i += 1
                 print(i)
 
-                if i >= 2000:
+                if i >= 200:
 
                     break
 

@@ -133,7 +133,6 @@ class MainKernel:
                     #     memory = ''
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
-                return api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
@@ -166,7 +165,7 @@ class MainKernel:
                         response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
                             q, api_json, wild_card)
                         if should_clear_memory:
-                            print('restart suning session..')
+                            print('restart xinhua bookstore session..')
                             self.sess.clear_memory(history=2)
                     memory = response
                     print('tree rendered..', response)
@@ -195,8 +194,9 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
-                avails)
+            # render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
+            #     avails)
+            render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
             return render

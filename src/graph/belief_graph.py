@@ -286,7 +286,7 @@ def load_belief_graph_from_tables(files, output_file):
                             try:
                                 nodes = node_header[name]
                             except:
-                                print(line)
+                                raise ValueError(line)
                             if len(nodes) > 1 or len(nodes) == 0:
                                 raise ValueError(
                                     'non property node value should be unique')
@@ -380,6 +380,7 @@ def get_sunning():
 def get_bookstore():
     table_files = ['../../data/bookstore/root.txt',
                    '../../data/bookstore/书店注册.txt',
+                   '../../data/bookstore/扫码.txt',
                    '../../data/bookstore/扫码关注成功.txt',
                    '../../data/bookstore/扫码关注失败.txt',
                    '../../data/bookstore/点击验证成功.txt',
