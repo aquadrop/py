@@ -29,10 +29,10 @@ def prepare_data(config):
     # print('origin sentences:', sentences[:2])
 
     # embedding
-    print('embedding')
-    sentences_embedding, max_len = data_helper.sentence_embedding(
-        config, sentences,  w2idx)
-    print('embedding done')
+    # print('embedding')
+    # sentences_embedding, max_len = data_helper.sentence_embedding(
+    #     config, sentences,  w2idx)
+    # print('embedding done')
 
     # debug
     questions, inputs, q_lens, sen_lens, input_lens, input_masks, answers, relevant_labels=train
@@ -49,7 +49,7 @@ def prepare_data(config):
     data['train'] = train
     data['valid'] = valid
     # data['sentences'] = sentences
-    metadata['sentences_embedding'] = sentences_embedding
+    metadata['sentences'] = sentences
     metadata['max_input_len'] = max_input_len
     metadata['max_q_len'] = max_len
     metadata['max_sen_len'] = max_len

@@ -37,12 +37,12 @@ config = Config()
 translator = Translator()
 
 
-def ff_embedding_local(word):
-    if model.__contains__(word.strip()):
-        return model[word]
-    else:
-        print(word)
-        return model[UNK]
+# def ff_embedding_local(word):
+#     if model.__contains__(word.strip()):
+#         return model[word]
+#     else:
+#         print(word)
+#         return model[UNK]
 
 translator = Translator()
 
@@ -188,15 +188,15 @@ def load_raw_data(config):
         answers.append(answer)
         relevant_labels.append([0])
 
-    if not config.split_sentences:
-        if input_mask_mode == 'word':
-            input_masks.append(
-                np.array([index for index, w in enumerate(inp)], dtype=np.int32))
-        elif input_mask_mode == 'sentence':
-            input_masks.append(
-                np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
-        else:
-            raise Exception("invalid input_mask_mode")
+    # if not config.split_sentences:
+    #     if input_mask_mode == 'word':
+    #         input_masks.append(
+    #             np.array([index for index, w in enumerate(inp)], dtype=np.int32))
+    #     elif input_mask_mode == 'sentence':
+    #         input_masks.append(
+    #             np.array([index for index, w in enumerate(inp) if w == '.'], dtype=np.int32))
+    #     else:
+    #         raise Exception("invalid input_mask_mode")
 
     if config.split_sentences:
         # print(inputs)

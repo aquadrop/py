@@ -21,27 +21,32 @@ sys.path.insert(0, grandfatherdir)
 
 from utils.query_util import tokenize
 from utils.translator import Translator
+
+# from dmn.dmn_fasttext.config import Config
+# from dmn.dmn_fasttext.vector_helper import getVector
+# from dmn.dmn_fasttext.dmn import DMN_PLUS
+
 from config import Config
-import data_helper
-# from vector_helper import getVector
+from vector_helper import getVector
 from dmn import DMN_PLUS
 
 translator = Translator()
 
 
 class DmnSession():
-    def __init__(self, session,model,config, metadata, char=2):
+    def __init__(self, session, model, config, metadata, char=2):
         self.u = None
         self.r = None
-        self.session=session
-        self.model=model
+        self.session = session
+        self.model = model
         self.config = config
         self.idx2candid = metadata['idx2candid']
         self.w2idx = metadata['w2idx']
-        self.max_sen_len=metadata['max_sen_len']
-        self.max_input_len=metadata['max_input_len']
+        self.max_sen_len = metadata['max_sen_len']
+        self.max_input_len = metadata['max_input_len']
         # self.context = [[data_helper.ff_embedding_local(self.config.EMPTY) for _ in range(self.max_sen_len)]]
-        self.context = [[getVector(self.config.EMPTY) for _ in range(self.max_sen_len)]]
+        self.context = [[getVector(self.config.EMPTY)
+                         for _ in range(self.max_sen_len)]]
         self.char = char
 
     def append_memory(self, m):
@@ -54,7 +59,8 @@ class DmnSession():
     def clear_memory(self, history=0):
         if history == 0:
             # self.context = [[data_helper.ff_embedding_local(self.config.EMPTY) for _ in range(self.max_sen_len)]]
-            self.context = [[getVector(self.config.EMPTY) for _ in range(self.max_sen_len)]]
+            self.context = [[getVector(self.config.EMPTY)
+                             for _ in range(self.max_sen_len)]]
             # self.context = [[]]
         else:
             self.context = self.context[-history:]
@@ -63,7 +69,8 @@ class DmnSession():
         line = msg.strip().lower()
         if line == 'clear':
             # self.context = [[data_helper.ff_embedding_local(self.config.EMPTY) for _ in range(self.max_sen_len)]]
-            self.context = [[getVector(self.config.EMPTY) for _ in range(self.max_sen_len)]]
+            self.context = [[getVector(self.config.EMPTY)
+                             for _ in range(self.max_sen_len)]]
             reply_msg = ['memory cleared!']
             values = [0]
         else:
@@ -71,12 +78,19 @@ class DmnSession():
             questions = []
 
             q = tokenize(line, self.char)
+            q=q[:self.max_sen_len]
             q_vector = q
-            q_vector = q_vector + [self.config.PAD for _ in range(self.max_sen_len - len(q_vector))]
-            q_vector=[getVector(word) for word in q_vector]
+            q_vector = q_vector + \
+                [self.config.PAD for _ in range(
+                    self.max_sen_len - len(q_vector))]
+            print(q_vector)
+            q_vector = [getVector(word) for word in q_vector]
             inp_vector = self.context
-            pad_vector=[getVector(self.config.PAD) for _ in range(self.max_sen_len)]
-            inp_vector=inp_vector+[pad_vector for _ in range(self.max_input_len-len(inp_vector))]
+            pad_vector = [getVector(self.config.PAD)
+                          for _ in range(self.max_sen_len)]
+            inp_vector = inp_vector + \
+                [pad_vector for _ in range(
+                    self.max_input_len - len(inp_vector))]
 
             inputs.append(inp_vector)
             questions.append(q_vector)
@@ -97,7 +111,7 @@ class DmnSession():
             pred, top_prob = self.model.predict(self.session,
                                                 inputs, [len(self.context)], self.max_sen_len, questions, [self.max_sen_len])
 
-            print('pred:', pred)
+            print('pred:', pred, top_prob)
             # indices = output.indices.tolist()[0]
             # values = output.values.tolist()[0]
 
@@ -107,12 +121,15 @@ class DmnSession():
             # print('r:',r)
             r = translator.en2cn(r)
             r = tokenize(r, self.char)
-            r_vector=r + [self.config.PAD for _ in range(self.max_sen_len - len(r))]
+            r_vector = r + \
+                [self.config.PAD for _ in range(self.max_sen_len - len(r))]
             r_vector = [getVector(word) for word in r_vector]
             self.context.append(q_vector)
             self.context.append(r_vector)
+            if len(self.context)>self.config.max_memory_size:
+                self.context=self.context[-self.config.max_memory_size:]
 
-            return reply_msg[0]
+            return reply_msg[0], top_prob[0]
 
 
 class DmnInfer:
@@ -123,10 +140,9 @@ class DmnInfer:
         self.model = self._load_model()
         self.session = tf.Session()
 
-
     def _load_model(self):
         self.config.train_mode = False
-        model = DMN_PLUS(self.config,self.metadata)
+        model = DMN_PLUS(self.config, self.metadata)
         return model
 
     def get_session(self):
@@ -147,7 +163,8 @@ class DmnInfer:
         # graph = tf.get_default_graph()
 
         char = 2 if self.config.word else 1
-        isess = DmnSession(self.session,self.model,self.config, self.metadata, char)
+        isess = DmnSession(self.session, self.model,
+                           self.config, self.metadata, char)
         return isess
 
 
