@@ -378,7 +378,7 @@ class TreeSimilator:
 
         with_multiple = False
         with_qa_location = False
-        with_map_location = False
+        with_map_location = True
         with_qa_price = False
         with_deny = False
         with_whatever = False
