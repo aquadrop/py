@@ -3,9 +3,10 @@ import sys
 from collections import OrderedDict
 
 prefix = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.abspath(__file__))))
 
-template_path = os.path.join(prefix, 'data/gen_product/bookstore_qa.txt')
+template_path = os.path.join(
+    prefix, 'data/gen_product/bookstore_qa_template.txt')
 outpath = 'test.qa.txt'
 
 table = [
@@ -39,44 +40,33 @@ table = [
     {"facility": ["电梯"], "location": ["在屏幕平面图的右上方"],"store_id":"吴江新华书店"},
     {"facility": ["楼梯"], "location": ["在屏幕平面图的右上方"],"store_id":"吴江新华书店"}]
 
-facility_poi_prefix = ['我要去']
-facility_poi_postfix = ['怎么走', '在哪里', '在几楼', '在什么地方']
 
-other_prefix = ['我要买', '我来买', '我要', '我想要', '我想要买', '有没有']
-other_postfix = ['在哪里', '在几楼', '在什么地方']
-
-label_prefix = 'api_call_qa_location_'
+label_prefix = 'api_call_qa_location'
 
 
-def gen2(outpath=outpath):
+def gen2(template_path=template_path, outpath=outpath, mode=True):
+    with open(template_path, 'r') as f:
+        tems = f.readlines()
+    tems = [tem.strip() for tem in tems]
     res = set()
     for line in table:
         keys = list(line.keys())
-        print(keys)
-        if 'poi' in keys or 'facility' in keys:
-            prefix = facility_poi_prefix
-            postfix = facility_poi_postfix
-        else:
-            prefix = other_prefix
-            postfix = other_postfix
         for key in keys:
-            if key=='location':
+            if key == 'location':
                 continue
             values = line[key]
+            values = values if isinstance(values, list) else [values]
+            value = values[0]
 
-            values=values if isinstance(values,list) else [values]
-            print(values)
-            for v in values:
-                for pre in prefix:
-                    query = pre + v
-                    label = label_prefix + key + ':' + v
-                    res.add(query + '\t' + label + '\t' + 'placeholder')
-                for post in postfix:
-                    query = v + post
-                    label = label_prefix + key + ':' + v
-                    res.add(query + '\t' + label + '\t' + 'placeholder')
+            for t in tems:
+                query = t.replace('*', value)
+                if mode:
+                    label = label_prefix + '_' + key + ':' + value
+                else:
+                    label = label_prefix
+                res.add(query + '\t' + label + '\t' + 'placeholder')
 
-    res=list(res)
+    res = list(res)
     res.sort()
     with open(outpath, 'w') as f:
         for line in res:
