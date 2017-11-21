@@ -7,11 +7,19 @@ import argparse
 import os
 import sys
 from tqdm import tqdm
+parentdir = os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
 
-import data_helper
-from config import Config
-from dmn import DMN_PLUS
-from dmn_session import DmnSession, DmnInfer
+grandfatherdir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+
+sys.path.insert(0, grandfatherdir)
+sys.path.append(grandfatherdir)
+import dmn.dmn_fasttext.data_helper as data_helper
+from dmn.dmn_fasttext.config import Config
+from dmn.dmn_fasttext.dmn_plus import DMN_PLUS
+from dmn.dmn_fasttext.dmn_session import DmnSession, DmnInfer
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -29,10 +37,10 @@ def prepare_data(config):
     # print('origin sentences:', sentences[:2])
 
     # embedding
-    print('embedding')
-    sentences_embedding, max_len = data_helper.sentence_embedding(
-        config, sentences,  w2idx)
-    print('embedding done')
+    # print('embedding')
+    # sentences_embedding, max_len = data_helper.sentence_embedding(
+    #     config, sentences,  w2idx)
+    # print('embedding done')
 
     # debug
     questions, inputs, q_lens, sen_lens, input_lens, input_masks, answers, relevant_labels=train
@@ -49,10 +57,11 @@ def prepare_data(config):
     data['train'] = train
     data['valid'] = valid
     # data['sentences'] = sentences
-    metadata['sentences_embedding'] = sentences_embedding
+    # metadata['sentences_embedding'] = sentences_embedding
+    metadata['sentences'] = sentences
     metadata['max_input_len'] = max_input_len
-    metadata['max_q_len'] = max_len
-    metadata['max_sen_len'] = max_len
+    # metadata['max_q_len'] = max_len
+    # metadata['max_sen_len'] = max_len
     metadata['max_mask_len'] = max_mask_len
     metadata['num_supporting_facts'] = num_supporting_facts
     metadata['candidate_size'] = candidate_size
@@ -234,6 +243,17 @@ def load_data(config):
     else:
         train = None
         valid = None
+
+    sentences = metadata['sentences']
+    w2idx = metadata['w2idx']
+    # embedding
+    print('pre embedding')
+    sentences_embedding, max_len = data_helper.sentence_embedding(
+        config, sentences, w2idx)
+    print('pre embedding done')
+    metadata['max_q_len'] = max_len
+    metadata['max_sen_len'] = max_len
+    metadata['sentences_embedding'] = sentences_embedding
 
     return train, valid, metadata
 
