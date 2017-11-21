@@ -42,8 +42,8 @@ def prepare_data(config):
 
     # embedding
     # print('embedding')
-    sentences_embedding, max_len = data_helper.sentence_embedding(
-        config, sentences,  w2idx)
+    # sentences_embedding = data_helper.sentence_embedding(
+    #     config, sentences,  w2idx)
     # print('embedding done')
 
     # debug
@@ -298,7 +298,7 @@ def train(config, restore=False):
                             model.embedding_placeholder: word_embedding})
         print('==> starting training')
         for epoch in range(config.max_epochs):
-            if not (epoch % 1 == 0 and epoch > 1):
+            if not (epoch % config.interval_epochs == 0 and epoch > 1):
                 print('Epoch {}'.format(epoch))
                 _ = run_epoch(model, config, session, train_data, metadata, epoch,
                               train_op=model.train_step, train=True)
@@ -310,7 +310,7 @@ def train(config, restore=False):
                                                                     train_op=model.train_step, train=True, display=True)
                 valid_loss, valid_accuracy, valid_error = run_epoch(model, config,
                                                                     session, valid_data, metadata, display=True)
-                if train_accuracy > 0.90:
+                if train_accuracy > 0.99:
                     for e in train_error:
                         print(e)
 
@@ -359,7 +359,6 @@ def inference(config):
 def main(args):
     args = parse_args(args)
     config = Config()
-    args['train'] = 'yeah'
     if args['prep_data']:
         print('\n>> Preparing Data\n')
         begin = time.clock()

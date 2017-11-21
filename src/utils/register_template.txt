@@ -1,5 +1,5 @@
 prefix_buy|我来/我要/我想/有没有/怎么/
-prefix_buy_root|我来买书
+prefix_buy_root|AUTOMATA_WAKE_UP
 prefix_deny|我不要/不要/不要这个/不想要/不喜欢/不喜欢这个/失败了/没成功
 postfix|吧/呢/啊/有没有////
 modifier_query_cateory_location|在哪里/在哪里/在哪里/在什么地方

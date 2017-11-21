@@ -101,15 +101,16 @@ class TreeSimilator:
                         name)
                 slot_values_mapper[node.slot] = node.value
                 fields = list(node.fields.keys())
-                print(fields)
                 if 'ac.power' in fields:
                     fields.remove('ac.power')
                     fields.append('ac.power_float')
                 n = np.random.randint(
                     0, np.min([len(fields), num_rnd_external_max]) + 1)
                 # fields = list(belief_tracker.requested_slots)
-
-                picked_fields = np.random.choice(fields, n).tolist()
+                if fields:
+                    picked_fields = np.random.choice(fields, n).tolist()
+                else:
+                    picked_fields = []
                 # picked_fields = set()
                 # for i in range(n):
                 #     if np.random.uniform() < 0.25 and 'brand' in fields:
@@ -258,7 +259,7 @@ class TreeSimilator:
 
         def get_requested_field():
             requested = np.random.choice(
-                ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0.1, 0.9, 0, 0])
+                ['virtual_category', 'category', 'property', 'ambiguity_removal'], p=[0, 1, 0, 0])
             return requested
 
         def render_thesaurus(v):
@@ -379,7 +380,7 @@ class TreeSimilator:
 
         with_multiple = False
         with_qa_location = False
-        with_map_location = False
+        with_map_location = True
         with_qa_price = False
         with_deny = False
         with_whatever = False
@@ -390,6 +391,8 @@ class TreeSimilator:
         with_faq = False
         with_single = False
         qa_prob = 0.25
+        with_ad = 0.75
+        ad_cls = 'api_call_request_category:注册'
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -511,8 +514,7 @@ class TreeSimilator:
                 i += 1
                 print(i)
 
-                if i >= 200:
-
+                if i >= 20000:
                     break
 
         # lower everything
