@@ -50,7 +50,7 @@ from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 import memory.config as config
-from kernel.render import Render
+from kernel_2.render import Render
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -193,7 +193,7 @@ class MainKernel:
                     #     response = answer
                     #     memory = api
                     #     avails = []
-            # self.sess.append_memory(memory)
+            self.sess.append_memory(memory)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
                 avails)
             # render = api

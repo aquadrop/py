@@ -176,8 +176,8 @@ class Render:
     def render_api(self, api, replacements={}):
         if api not in self.major_render_mapper:
             return api
-        # if api == 'api_call_request_brand':
-        #     return self.render_brand(self.major_render_mapper[api], replacements)
+        if api == 'api_call_request_brand':
+            return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
 
     def render_brand(self, templates, replacements={}):
@@ -220,7 +220,7 @@ class Render:
                 return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
                 return self.render_api(response, {})
-            if response.startswith('api_call_request_') or response.startswith('api_call_search_'):
+            if response.startswith('api_call_request_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     params = response.replace(
                         'api_call_request_ambiguity_removal_', '').split(',')
