@@ -60,7 +60,7 @@ class Render:
         self._load_price_render(config['render_price_file'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
-        self.interactive = QA('interactive')
+        self.interactive = QA('base')
         self.faq = QA('faq')
         print('attaching rendering file...')
 
