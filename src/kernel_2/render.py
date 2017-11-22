@@ -41,7 +41,7 @@ sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
-from kernel.ad_kernel import AdKernel
+from kernel_2.ad_kernel import AdKernel
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -60,7 +60,7 @@ class Render:
         self._load_price_render(config['render_price_file'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
-        self.interactive = QA('interactive')
+        self.interactive = QA('base')
         self.faq = QA('faq')
         print('attaching rendering file...')
 
@@ -243,6 +243,7 @@ class Render:
                     return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
                                              '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
             if response.startswith('api_call_search_'):
+                return response
                 tokens = response.replace('api_call_search_', '').split(',')
 
                 and_mapper = dict()

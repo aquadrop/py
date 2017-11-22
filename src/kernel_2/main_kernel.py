@@ -40,7 +40,7 @@ sys.path.append(grandfatherdir)
 import traceback
 # for pickle
 from graph.belief_graph import Graph
-from kernel.belief_tracker import BeliefTracker
+from kernel_2.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
 from dmn.dmn_fasttext.dmn_session import DmnInfer
 from utils.cn2arab import *
@@ -111,6 +111,9 @@ class MainKernel:
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
         prob = -1
+        response = ''
+        memory = ''
+        avails = []
         if self.config['clf'] == 'gbdt':
             pass
         else:
@@ -121,24 +124,28 @@ class MainKernel:
             exploited = False
             prefix = ''
             if self.belief_tracker.shall_exploit_range():
-                exploited = self.belief_tracker.exploit_wild_card(wild_card)
-                if exploited:
-                    response, avails = self.belief_tracker.issue_api()
-                    memory = ''
-                    api = 'api_call_slot_range_exploit'
+                # exploited = self.belief_tracker.exploit_wild_card(wild_card)
+                # if exploited:
+                #     response, avails = self.belief_tracker.issue_api()
+                #     memory = ''
+                #     api = 'api_call_slot_range_exploit'
                     # if response.startswith('api_call_search'):
                     #     print('clear memory')
                     #     self.sess.clear_memory()
                     #     self.belief_tracker.clear_memory()
                     #     memory = ''
+                pass
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
+                print(api, prob)
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
                     self.sess.clear_memory()
                     return self.kernel(q, user)
                 if api.startswith('api_call_base'):
+                    memory = ''
+                    response = api
                     self.base_counter += 1
                     if self.base_counter >= self.base_clear_memory:
                         self.base_counter = 0
@@ -148,10 +155,6 @@ class MainKernel:
                         return self.kernel(q, user)
                 else:
                     self.base_counter = 0
-                print(range_rendered, api, prob)
-                response = api
-                memory = api
-                avails = []
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
@@ -256,7 +259,7 @@ if __name__ == '__main__':
               "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
-              "clf": 'dmn',  # or memory
+              "clf": 'dmn',  # or memory`
               "shuffle": False
               }
     kernel = MainKernel(config)
