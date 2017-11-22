@@ -16,12 +16,14 @@ THRESHOLD = 0.95
 REACH = 1
 
 class Qa:
-    def __init__(self, core):
+    def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
+        self.question_key = question_key
+        self.answer_key = answer_key
         self.base = BaseKernel()
 
     def get_responses(self, query, user='solr'):
-        docs = solr_qa(self.core, query, 'g')
+        docs = solr_qa(self.core, query, self.question_key)
         # print(docs)
         best_query = None
         best_answer = None
@@ -29,10 +31,8 @@ class Qa:
         for index, doc in enumerate(docs):
             if index > 10:
                 break
-            if 'g' not in doc or 'b' not in doc:
-                continue
-            b = doc['b']
-            g = doc['g']
+            b = doc[self.answer_key]
+            g = doc[self.question_key]
             # for _g in g:
             #     score = self.similarity(query, _g)
             #     if score > best_score:
@@ -97,7 +97,7 @@ def test():
 
 
 def main():
-    qa = Qa('interactive')
+    qa = Qa('base')
     best_query, best_answer, best_score = qa.get_responses('你叫什么名字')
     print(best_query, best_answer, best_score)
 

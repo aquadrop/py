@@ -62,7 +62,7 @@ table = [
     {"title":["楼梯"],"facility": ["楼梯"], "location": ["在屏幕平面图的右上方"], "store_id":"吴江新华书店"}]
 
 
-label_prefix = 'api_call_qa_location'
+label_prefix = 'api_call_query_location'
 
 
 def gen2(template_path=template_path, outpath=outpath, mode=True):
