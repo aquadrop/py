@@ -40,7 +40,7 @@ sys.path.append(grandfatherdir)
 import traceback
 # for pickle
 from graph.belief_graph import Graph
-from kernel.belief_tracker import BeliefTracker
+from kernel_2.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
 from dmn.dmn_fasttext.dmn_session import DmnInfer
 from utils.cn2arab import *
@@ -50,7 +50,7 @@ from ml.belief_clf import Multilabel_Clf
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 import memory.config as config
-from kernel.render import Render
+from kernel_2.render import Render
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -194,9 +194,9 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            # render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
-            #     avails)
-            render = api
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
+                avails)
+            # render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
             return render
@@ -256,7 +256,7 @@ if __name__ == '__main__':
               "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
-              "clf": 'dmn',  # or memory
+              "clf": 'dmn',  # or memory`
               "shuffle": False
               }
     kernel = MainKernel(config)

@@ -49,8 +49,10 @@ class Node:
         '''
         self.value = value  # value aka slot-value filling
         self.slot = slot  # slot aks slot value filling
-        self.parent_node = None
-        self.fields = fields  # is a dict, valued as prob
+        self.ins = set([slot])
+        self.parent_node = []
+        self.fields = fields  # is a dict, valued as prob.
+        self.outs = set(fields.keys())
         self.field_type = dict() # RANGE, KEY,...
         self.children = dict()  # value to chidren nodes
         self.node_type = node_type
@@ -86,22 +88,28 @@ class Node:
     def has_field(self, field):
         return field in self.fields
 
-    def add_node(self, node):
+    def add_node(self, node, edge=None, ignore_field_conflict=False):
         """
         Args:
             node: child_node to append to the current node, there will be a lot other information brought in
+            ignore_field_conflict:
+            edge: str
         Raises:
             ValueError: child_node slot must be in self.fields.
         """
         node_value = node.value
         node_field = node.slot
-        if node_field not in self.fields:
+        if not edge:
+            edge = node.slot
+        if node_field not in self.fields and not ignore_field_conflict:
             raise ValueError(
                 'error: node must have field which is included in self.fields.'
                 ' Fix the graph file before continue;', node_field, self.fields)
+        # self.outs.add(node_field)
         self.children[node_value] = node
+        node.ins.add(edge)
         node.level = self.level + 1
-        node.parent_node = self
+        node.parent_node.append(self)
 
         # supply other information
         if node_field not in self.slot_to_values_mapper:
@@ -112,11 +120,12 @@ class Node:
             self.value_to_slot_mapper[node_value] = node_field
 
     def has_ancestor_by_value(self, value):
-        node = self.parent_node
-        while node != None:
+        for node in self.parent_node:
+            # print(self.value, '***', node.value, '---', value)
             if node.value == value:
                 return True
-            node = node.parent_node
+            if node.has_ancestor_by_value(value):
+                return True
         return False
 
     def is_api_node(self):
@@ -180,41 +189,41 @@ class Node:
                 a = a.parent_node
         return posterity
 
-    def get_siblings(self, keep_slot):
-        """
-        This function might be dangerous to be used
-        Args:
-            keep_slot: True or False, return only siblings with same slot or not
-        """
-        if not self.parent_node:
-            return []
-
-        siblings = []
-        children = self.parent_node.chidren
-        for key, value in children.items():
-            if key != self.value:
-                sibling = value
-                if sibling.slot == self.slot or keep_slot == False:
-                    siblings.append(sibling)
-        return siblings
+    # def get_siblings(self, keep_slot):
+    #     """
+    #     This function might be dangerous to be used
+    #     Args:
+    #         keep_slot: True or False, return only siblings with same slot or not
+    #     """
+    #     if not self.parent_node:
+    #         return []
+    #
+    #     siblings = []
+    #     children = self.parent_node.chidren
+    #     for key, value in children.items():
+    #         if key != self.value:
+    #             sibling = value
+    #             if sibling.slot == self.slot or keep_slot == False:
+    #                 siblings.append(sibling)
+    #     return siblings
 
     def get_ancestry_values(self):
-        node = self.parent_node
-        anc_values = []
-        while node.value != "ROOT".lower():
-            anc_values.append(node.value)
-            node = node.parent_node
+        anc_values = set()
+        for node in self.parent_node:
+            while node.value != "ROOT".lower():
+                anc_values.add(node.value)
+                anc_values.add(node.get_ancestry_values())
         return anc_values
 
-    def get_sibling_names(self, value, keep_slot):
-        siblings = self.get_siblings(keep_slot)
-        sibling_names = []
-        for node in siblings:
-            sibling_names.append(node.value)
-        return sibling_names
+    # def get_sibling_names(self, value, keep_slot):
+    #     siblings = self.get_siblings(keep_slot)
+    #     sibling_names = []
+    #     for node in siblings:
+    #         sibling_names.append(node.value)
+    #     return sibling_names
 
-    def get_parent_node(self):
-        return self.parent_node
+    # def get_parent_node(self):
+    #     return self.parent_node
 
     def get_children_names_by_slot(self, slot):
         children_names = []
@@ -223,12 +232,14 @@ class Node:
                 children_names.append(key)
         return children_names
 
-    def get_children_names(self, max_num, required_only):
+    def get_children_names(self, max_num=-1, required_only=False):
         children_names = []
         for key, value in self.children.items():
-            if self.fields[key] == 1 or required_only == False:
+            if required_only == False or self.fields[key] == 1:
                 children_names.append(key)
         children_names = np.array(children_names)
+        if max_num == -1:
+            return children_names
         children_names = np.random.choice(children_names, max_num)
         return children_names
 

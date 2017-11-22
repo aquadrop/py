@@ -76,7 +76,15 @@ def test():
 
 
 if __name__ == '__main__':
+    l=['api_call_request_category',
+    'api_call_request_reg.scan_follow',
+    'api_call_request_reg.auth',
+    'api_call_request_reg.complete',
+    'api_call_search_reg.auth: 点击验证成功, reg.complete: 注册成功',
+    'api_call_search_category: 注册, reg.scan_follow: 扫码关注失败',
+    'api_call_search_reg.scan_follow: 扫码关注成功, reg.auth: 点击验证失败']
     _pickle()
     tr = Translator()
-    print(tr.en2cn('api_call_slot_'))
+    for ll in l:
+        print(tr.en2cn(ll))
     # test()

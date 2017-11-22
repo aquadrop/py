@@ -6,7 +6,7 @@ import numpy as np
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
-from kernel.belief_tracker import BeliefTracker
+from kernel_2.belief_tracker import BeliefTracker
 from graph.belief_graph import Graph
 import memory.config as m_config
 from utils.translator import Translator
@@ -101,6 +101,9 @@ class TreeSimilator:
                         name)
                 slot_values_mapper[node.slot] = node.value
                 fields = list(node.fields.keys())
+
+                # print(fields)
+
                 if 'ac.power' in fields:
                     fields.remove('ac.power')
                     fields.append('ac.power_float')
@@ -120,6 +123,8 @@ class TreeSimilator:
                 #         picked_fields.add(np.random.choice(fields))
                 for f in picked_fields:
                     value = random_property_value(f, node)
+                    if not value:
+                        continue
                     # weird
                     if value != 'range' and belief_graph.is_entity_value(value):
                         slot_values_mapper['entity'] = value
@@ -250,7 +255,9 @@ class TreeSimilator:
                 # return search_node.get_node_slot_trans(field) + 'range'
                 return 'range'
             else:
-                return np.random.choice(search_node.get_children_names_by_slot(field))
+                children_names = search_node.get_children_names()
+                randoms = np.random.choice(children_names)
+                return randoms
 
         def get_avail_brands(category):
             category_node = belief_graph.get_nodes_by_value(category)[0]
@@ -385,11 +392,11 @@ class TreeSimilator:
         with_deny = False
         with_whatever = False
         with_flow = True
-        with_base = False
+        with_base = True
         with_gbdt = False
         with_main = True
         with_faq = False
-        with_single = False
+        with_single = True
         qa_prob = 0.25
         with_ad = 0.75
         ad_cls = 'api_call_request_category:注册'
@@ -422,7 +429,10 @@ class TreeSimilator:
             candidates.add(cls.lower())
             api = render_api(self.belief_tracker.issue_api(attend_facet=False))
             line = user_reply + '\t' + cls + '\t' + api
+            print(line)
             flow = cls + '\t' + api
+            if cls == 'api_call_slot_reg.repeat_scan_follow:扫码关注失败':
+                print()
             if requested == 'category':
                 single_container.append(line)
                 # single_container.append('')
@@ -514,7 +524,9 @@ class TreeSimilator:
                 i += 1
                 print(i)
 
+
                 if i >= 20000:
+
                     break
 
         # lower everything

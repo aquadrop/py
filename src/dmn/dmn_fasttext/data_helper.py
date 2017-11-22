@@ -25,10 +25,10 @@ from dmn.dmn_fasttext.config import Config
 from gensim.models.wrappers import FastText
 from dmn.dmn_fasttext.vector_helper import getVector
 
-EMPTY='EMPTY'
-PAD='PAD'
-NONE=''
-UNK='UNK'
+# EMPTY='EMPTY'
+# PAD='PAD'
+# NONE=''
+# UNK='UNK'
 
 config = Config()
 
@@ -130,7 +130,7 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
             # clear context
             context = []
     # print(data)
-    sentences.add(EMPTY)
+    sentences.add(config.EMPTY)
     return data
 
 
@@ -182,10 +182,10 @@ def load_raw_data(config):
         inp, question, answer = data
         inp = inp[-config.max_memory_size:]
         if len(inp) == 0:
-            inp = [[EMPTY]]
+            inp = [[config.EMPTY]]
         inputs.append(inp)
         if len(question) == 0:
-            question = [EMPTY]
+            question = [config.EMPTY]
         questions.append(question)
         answers.append(answer)
         relevant_labels.append([0])
@@ -296,7 +296,7 @@ def vectorize_data(data, config, metadata):
             embedding = sentences_embedding[line]
             inp_embeddings.append(embedding)
         for _ in range(max_input_len - len(inp)):
-            inp_embeddings.append(sentences_embedding['empty'])
+            inp_embeddings.append(sentences_embedding[config.EMPTY])
         inputs_embeddings.append(inp_embeddings)
     inputs_embeddings = np.asarray(inputs_embeddings, dtype=np.float32)
 
@@ -328,23 +328,23 @@ def sentence_embedding_core(config, sentences, w2idx):
     sentences_embedding = OrderedDict()
     for sen in pad_sentences:
         sen = sen.tolist()
-        sen = list(map(lambda x: [x, PAD][x == NONE], sen))
+        sen = list(map(lambda x: [x, config.PAD][x == config.NONE], sen))
         # print(sen)
         if config.word:
             # sen_embedding = [ff_embedding_local(word) for word in sen]
             sen_embedding = [getVector(word) for word in sen]
         else:
             sen_embedding = [w2idx.get(word, 3) for word in sen]
-        sen = [i for i in sen if i!=PAD]
+        sen = [i for i in sen if i!=config.PAD]
         join_sen = ','.join(sen)
         sentences_embedding[join_sen] = sen_embedding
     if config.word:
         # inp_empty_embedding = [ff_embedding_local(PAD) for _ in range(max_len)]
-        inp_empty_embedding = [getVector(PAD) for _ in range(max_len)]
+        inp_empty_embedding = [getVector(config.PAD) for _ in range(max_len)]
     else:
         inp_empty_embedding = [3 for _ in range(max_len)]
-    sentences_embedding['empty'] = inp_empty_embedding
-
+    sentences_embedding[config.EMPTY] = inp_empty_embedding
+    sentences_embedding[config.PAD] = [getVector(config.PAD)] * max_len
     return sentences_embedding
 
 

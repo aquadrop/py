@@ -52,7 +52,7 @@ class Config(object):
 
     split_sentences = True
 
-    EMPTY = 'EMPTY'
+    EMPTY = 'PAD'#'EMPTY'
     PAD = 'PAD'
     NONE = ''
     UNK = 'UNK'

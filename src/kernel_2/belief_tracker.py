@@ -9,6 +9,9 @@ import json
 import os
 import sys
 import random
+
+import numpy as np
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -384,12 +387,13 @@ class BeliefTracker:
             else:
                 nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
             if len(nodes) == 1 and nodes[0].has_ancestor_by_value(self.search_node.value):
+                print('&&&&&')
                 node = nodes[0]
                 #
 
-                if node.parent_node != self.search_node:
+                if self.search_node not in node.parent_node:
                     # move to parent node if relation is grand
-                    self.move_to_node(node.parent_node)
+                    self.move_to_node(np.random.choice(node.parent_node))
                 ## TODO: 有问题!!
                 if not node.is_leaf():
                     self.move_to_node(node)
