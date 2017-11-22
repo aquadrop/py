@@ -7,3 +7,4 @@ lru-dict
 flask
 gensim
 tqdm
+pika==0.10.0
