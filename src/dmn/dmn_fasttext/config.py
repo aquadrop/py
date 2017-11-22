@@ -5,9 +5,9 @@ import numpy as np
 class Config(object):
     """Holds model hyperparams and data information."""
 
-    batch_size = 32
+    batch_size = 512
     embed_size = 300
-    hidden_size = 128
+    hidden_size = 300
 
     max_epochs = 3456
     interval_epochs = 5

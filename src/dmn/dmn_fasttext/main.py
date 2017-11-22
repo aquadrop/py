@@ -320,7 +320,7 @@ def train(config, restore=False):
                 print('Training accuracy: {}'.format(train_accuracy))
                 print('Vaildation accuracy: {}'.format(valid_accuracy))
 
-                if train_loss < best_train_loss:    
+                if train_loss < best_train_loss:
                     print('Saving weights and updating best_train_loss:{} -> {},\
                             best_train_accuracy:{} -> {}'.format(best_train_loss, train_loss,
                                                                  best_train_accuracy, train_accuracy))

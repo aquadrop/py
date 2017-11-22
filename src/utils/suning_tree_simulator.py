@@ -384,7 +384,9 @@ class TreeSimilator:
         with_base = False
         with_gbdt = False
         with_main = True
-        with_faq = False
+        with_faq = True
+        qa_prob = 0.25
+        N = 120000
         while 1:
             if requested == 'property':
                 slot_values_mapper = gen_ambiguity_initial()
@@ -439,7 +441,7 @@ class TreeSimilator:
             if with_qa:
                 filling_slots = self.belief_tracker.filling_slots
                 if 'category' in filling_slots:
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         category = np.random.choice([render_thesaurus(filling_slots['category']), ''])
                         if np.random.uniform() < 0.5:
                             qa = category\
@@ -459,7 +461,7 @@ class TreeSimilator:
                         if category:
                             single_container.append(line)
                             # single_container.append('')
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         brands = get_avail_brands(filling_slots['category'])
                         if 'brand' in filling_slots and 'category' in filling_slots:
                             brand = filling_slots['brand']
@@ -497,7 +499,7 @@ class TreeSimilator:
                                            + brand + ',' + 'category:' + filling_slots['category'])
 
                     # ask brand of category
-                    if np.random.uniform() < 0.9:
+                    if np.random.uniform() < qa_prob:
                         brands = get_avail_brands(filling_slots['category'])
                         if brands:
                             brand = np.random.choice(brands)
@@ -564,9 +566,7 @@ class TreeSimilator:
                 # print(line)
                 i += 1
                 print(i)
-
-                if i >= 200:
-
+                if i >= N:
                     break
 
         # lower everything
@@ -598,6 +598,13 @@ class TreeSimilator:
                     base.append(line)
                     if not line:
                         base_count += 1
+            with open(grandfatherdir + '/data/memn2n/train/tree/extra/location.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    base.append(line)
+                    if not line:
+                        pass
+                        # base_count += 1
 
         train_count = 0
         with open(output_files[1], 'w', encoding='utf-8') as f:
