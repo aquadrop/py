@@ -243,6 +243,7 @@ class Render:
                     return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
                                              '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
             if response.startswith('api_call_search_'):
+                return response
                 tokens = response.replace('api_call_search_', '').split(',')
 
                 and_mapper = dict()

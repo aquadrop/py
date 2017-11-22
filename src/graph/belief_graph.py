@@ -126,7 +126,7 @@ class Graph(Node, object):
         nodes = self.get_nodes_by_value(value)
         filtered = []
         for node in nodes:
-            if node.slot == field:
+            if field in node.ins:
                 filtered.append(node)
         return filtered
 
@@ -304,7 +304,7 @@ def load_belief_graph_from_tables(files, output_file):
                                 node_header[name] = []
                             node_header[name].append(child_node)
                             id_node[id] = child_node
-                        node.add_node(child_node)
+                        node.add_node(child_node, edge=slot, ignore_field_conflict=True)
 
     with open(output_file, "wb") as omp:
         pickle.dump(belief_graph, omp)
