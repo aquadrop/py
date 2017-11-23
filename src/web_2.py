@@ -89,7 +89,6 @@ def chat():
                     return json.dumps(result, ensure_ascii=False)
             u_i_kernel = lru_kernels[u]
             result = u_i_kernel.kernel(q=q, user=u)
-            print(result)
             result = {"question": q, "sentence": q,"result": result, "user": u}
             return json.dumps(result, ensure_ascii=False)
 
