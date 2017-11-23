@@ -204,7 +204,7 @@ class MainKernel:
                 user, 'memory', q, api, prob, render))
             result = render
             result['sentence'] = q
-            result['score'] = prob[0][0]
+            result['score'] = float(prob[0][0])
             result['class'] = api
             result['graph_rendered'] = response
             return result
