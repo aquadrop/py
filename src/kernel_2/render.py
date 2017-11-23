@@ -30,6 +30,7 @@ import sys
 import logging
 import traceback
 import time
+import hashlib
 
 import numpy as np
 
@@ -58,11 +59,23 @@ class Render:
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
+        self._load_media_render(config['render_media_file'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
         self.faq = QA('faq')
         print('attaching rendering file...')
+
+    def _load_media_render(self,file):
+        self.media_render_mapper=dict()
+        with open(file,'r') as f:
+            for line in f:
+                line=line.strip('\n')
+                values=line.split('##')
+                if len(values)==2:
+                    self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
+                else:
+                    self.media_render_mapper[values[0]]=values[0]
 
     def _load_major_render(self, file):
         self.major_render_mapper = dict()
@@ -180,6 +193,9 @@ class Render:
         #     return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
 
+    def render_media(self,api):
+        return self.media_render_mapper[api]
+
     def render_brand(self, templates, replacements={}):
         brands = []
         if 'brand' in replacements:
@@ -203,6 +219,7 @@ class Render:
 
     def render(self, q, response, avails=dict(), prefix=''):
         try:
+            # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
                     or response.startswith('reserved_'):
                 # self.sess.clear_memory()
@@ -353,6 +370,7 @@ if __name__ == "__main__":
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
+              "render_media_file":os.path.join(grandfatherdir, 'model/render/render_media.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
               "clf": 'memory'  # or memory
@@ -361,3 +379,5 @@ if __name__ == "__main__":
     print(render.render_recommend('空调'))
     print(render.render('你好', 'api_call_request_ambiguity_removal_手机,苹果'))
     print(render.render_price({'brand':'西门子', 'category':'空调'}, '2000-3000'))
+    print(render.render_media('api_call_request_category'))
+    print(render.render_media('吴江新华书店咖啡馆'))

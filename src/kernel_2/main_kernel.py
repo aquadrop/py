@@ -198,12 +198,13 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix) + '@@#avail_vals:' + str(
-                avails)
+            media=self.render.render_media(response)
+            avail_vals=str(avails)
+            render = self.render.render(q, response, self.belief_tracker.avails, prefix)
             # render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
-            return render
+            return render,media,avail_vals
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -258,6 +259,7 @@ if __name__ == '__main__':
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
+              "render_media_file":os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory`
@@ -266,5 +268,5 @@ if __name__ == '__main__':
     kernel = MainKernel(config)
     while True:
         ipt = input("input:")
-        resp = kernel.kernel(ipt)
+        resp,media,a = kernel.kernel(ipt)
         print(resp)
