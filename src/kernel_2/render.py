@@ -220,7 +220,7 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
-        result = {"answer":"", "media":"null", "avail_vals":"", 'from':"memory", "sim":0}
+        result = {"answer":"", "media":"null", 'from':"memory", "sim":0}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
