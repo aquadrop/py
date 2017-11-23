@@ -137,14 +137,14 @@ class MainKernel:
                 pass
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
-                print(api, prob)
+                print(api, prob[0][0], prob)
                 response = api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
                     self.sess.clear_memory()
                     return self.kernel(q, user)
-                if api.startswith('api_call_base'):
+                if api.startswith('api_call_base') or api.startswith('api_call_query_location'):
                     memory = ''
                     response = api
                     self.base_counter += 1
@@ -198,13 +198,16 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            media=self.render.render_media(response)
-            avail_vals=str(avails)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
             # render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
-            return render,media,avail_vals
+            result = render
+            result['sentence'] = q
+            result['score'] = prob[0][0]
+            result['class'] = api
+            result['graph_rendered'] = response
+            return result
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -268,5 +271,5 @@ if __name__ == '__main__':
     kernel = MainKernel(config)
     while True:
         ipt = input("input:")
-        resp,media,a = kernel.kernel(ipt)
+        resp = kernel.kernel(ipt)
         print(resp)

@@ -116,7 +116,7 @@ class DmnSession():
                                                 inputs, [len(self.context)], self.max_sen_len, questions,
                                                 [q_len])
 
-            print('pred:', pred, top_prob)
+            # print('pred:', pred, top_prob)
             # indices = output.indices.tolist()[0]
             # values = output.values.tolist()[0]
 
@@ -160,12 +160,6 @@ class DmnInfer:
         # print('\n>> restoring checkpoint from',
         #       ckpt.model_checkpoint_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
-        return model
-
-    def get_session(self):
-        # saver = tf.train.import_meta_graph(
-        #     self.config.ckpt_path + 'dmn.weights.meta')
-        # graph = tf.get_default_graph()
         return model
 
     def get_session(self):

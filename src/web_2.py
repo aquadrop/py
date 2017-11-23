@@ -88,18 +88,18 @@ def chat():
                               "result": {"sentence": q,"answer": "maximum user reached hence rejecting request"}, "user": u}
                     return json.dumps(result, ensure_ascii=False)
             u_i_kernel = lru_kernels[u]
-            r,m,a = u_i_kernel.kernel(q=q, user=u)
-            result = {"question": q, "sentence": q,"result": {"sentence": q,"answer": r,"media":m,"avail_vals":a}, "user": u}
+            result = u_i_kernel.kernel(q=q, user=u)
+            result = {"question": q, "sentence": q,"result": result, "user": u}
             return json.dumps(result, ensure_ascii=False)
 
         else:
-            r, m ,a= kernel.kernel(q=q)
-            result = {"question": q, "sentence": q,"result": {"sentence": q,"answer": r,"media":m,"avail_vals":a}, "user": "solr"}
+            result= kernel.kernel(q=q)
+            result = {"question": q, "sentence": q,"result": result, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         traceback.print_exc()
-        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
+        result = {"question": q, "result": {"answer": "kernel exception", "error": traceback.format_exc()}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
 if __name__ == "__main__":

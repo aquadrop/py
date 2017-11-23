@@ -71,7 +71,7 @@ class Render:
         with open(file,'r') as f:
             for line in f:
                 line=line.strip('\n')
-                values=line.split('##')
+                values=line.split('#')
                 if len(values)==2:
                     self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
                 else:
@@ -193,7 +193,9 @@ class Render:
         #     return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
 
-    def render_media(self,api):
+    def render_media(self, api):
+        if api not in self.media_render_mapper:
+            return 'null'
         return self.media_render_mapper[api]
 
     def render_brand(self, templates, replacements={}):
@@ -218,6 +220,7 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
+        result = {"answer":"", "media":"null", "avail_vals":""}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
@@ -225,40 +228,38 @@ class Render:
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(
                     query=q)
-                return answer
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_faq'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
                 ad = self.ad_kernel.anchor_faq_ad(answer)
-                return answer + ' ' + ad
+                answer = answer + ' ' + ad
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_query_discount'):
-                return self.render_api(response)
+                answer = self.render_api(response)
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_query_general'):
-                return self.render_api(response)
+                answer = self.render_api(response)
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return self.render_api(response, {})
+                answer = self.render_api(response, {})
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_request_') or response.startswith('api_call_search_'):
-                if response.startswith('api_call_request_ambiguity_removal_'):
-                    params = response.replace(
-                        'api_call_request_ambiguity_removal_', '').split(',')
-                    # rendered = '你要哪一个呢,' + params
-                    # return rendered + "@@" + response
-                    return self.render_ambiguity(params)
-                # params = response.replace('api_call_request_', '')
-                # params = self.belief_tracker.belief_graph.slots_trans[params]
-                # rendered = '什么' + params
-                # return rendered + "@@" + response
-
                 if prefix:
-                    return prefix + self.render_api(response, avails)
-                return self.render_api(response, avails)
-            if response.startswith('api_call_rhetorical_'):
-                entity = response.replace('api_call_rhetorical_', '')
-                if entity in avails and len(avails[entity]) > 0:
-                    return '我们有' + ",".join(avails[entity])
-                else:
-                    return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
-                                             '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
+                    answer = prefix + self.render_api(response, avails)
+                    result['answer'] = answer
+                    result['avail_vals'] = avails
+                    return result
+                result['media'] = self.render_media(response)
+                answer = self.render_api(response, avails)
+                result['answer'] = answer
+                result['avail_vals'] = avails
+                return result
             # if response.startswith('api_call_search_'):
             #     return response
             #     tokens = response.replace('api_call_search_', '').split(',')
@@ -291,38 +292,6 @@ class Render:
             #             return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
             #         return response
 
-            if response.startswith('api_call_query_price_'):
-                params = response.replace('api_call_query_price_' ,'')
-                if not params:
-                    return '价位在3000-18000'
-                else:
-                    mapper = dict()
-                    for kv in params.split(','):
-                        key, value = kv.split(':')
-                        mapper[key] = value
-
-                facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
-                response = self.render_price(mapper=mapper, price=','.join(facet[0]))
-                # response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
-                return response
-
-            if response.startswith('api_call_query_brand_'):
-                params = response.replace('api_call_query_brand_' ,'')
-                if not params:
-                    raise ValueError('api_call_query must have params provided...')
-                else:
-                    mapper = dict()
-                    for kv in params.split(','):
-                        key, value = kv.split(':')
-                        mapper[key] = value
-
-                facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
-                response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
-                if 'category' in mapper:
-                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
-                    response = response + ' ' + ad
-                return response
-
             if response.startswith('api_call_query_location_'):
                 params = response.replace('api_call_query_location_', '')
                 if not params:
@@ -339,8 +308,13 @@ class Render:
                                              core='bookstore_map')
                 location = ','.join(facet[0])
                 category = ','.join(mapper.values())
+                image_key = ''
                 try:
-                    title = facet[2][0]['title']
+                    if 'category' or 'virtual_category' in mapper:
+                        title = category
+                    else:
+                        title = facet[2][0]['title']
+                    image_key = facet[2][0]['image_key']
                 except:
                     title = category
                 response = self.render_location(category, location)
@@ -348,15 +322,16 @@ class Render:
                 if 'category' in mapper:
                     ad = self.ad_kernel.anchor_category_ad(mapper['category'])
                     response = response + ' ' + ad
-                return response
-
+                result = {'answer': response, 'media': image_key, 'avail_vals':""}
+                return result
             return response
         except:
             print(traceback.format_exc())
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
-            return answer
+            result['answer'] = answer
+            return result
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
