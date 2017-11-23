@@ -176,8 +176,8 @@ class Render:
     def render_api(self, api, replacements={}):
         if api not in self.major_render_mapper:
             return api
-        if api == 'api_call_request_brand':
-            return self.render_brand(self.major_render_mapper[api], replacements)
+        # if api == 'api_call_request_brand':
+        #     return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
 
     def render_brand(self, templates, replacements={}):

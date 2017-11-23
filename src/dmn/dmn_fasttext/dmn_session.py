@@ -158,9 +158,9 @@ class DmnInfer:
 
         # restore checkpoint
         ckpt = tf.train.get_checkpoint_state(self.config.ckpt_path)
-        if ckpt and ckpt.model_checkpoint_path:
-            print('\n>> restoring checkpoint from',
-                  ckpt.model_checkpoint_path)
+        # if ckpt and ckpt.model_checkpoint_path:
+            # print('\n>> restoring checkpoint from',
+            #       ckpt.model_checkpoint_path)
         saver.restore(self.session, ckpt.model_checkpoint_path)
 
         # saver = tf.train.import_meta_graph(
