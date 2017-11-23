@@ -42,6 +42,7 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "render_recommend_file": os.path.join(parentdir, 'model/render_2/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(parentdir, 'model/render_2/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(parentdir, 'model/render_2/render_price.txt'),
+                "render_media_file":os.path.join(parentdir, 'model/render_2/render_media.txt'),
               "faq_ad": os.path.join(parentdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(parentdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory
@@ -83,17 +84,17 @@ def chat():
                     ek = kernel_backups.get_nowait()
                     lru_kernels[u] = ek
                 else:
-                    result = {"question": q,
-                              "result": {"answer": "maximum user reached hence rejecting request"}, "user": u}
+                    result = {"question": q,"sentence": q,
+                              "result": {"sentence": q,"answer": "maximum user reached hence rejecting request"}, "user": u}
                     return json.dumps(result, ensure_ascii=False)
             u_i_kernel = lru_kernels[u]
-            r = u_i_kernel.kernel(q=q, user=u)
-            result = {"question": q, "result": {"answer": r}, "user": u}
+            r,m,a = u_i_kernel.kernel(q=q, user=u)
+            result = {"question": q, "sentence": q,"result": {"sentence": q,"answer": r,"media":m,"avail_vals":a}, "user": u}
             return json.dumps(result, ensure_ascii=False)
 
         else:
-            r = kernel.kernel(q=q)
-            result = {"question": q, "result": {"answer": r}, "user": "solr"}
+            r, m ,a= kernel.kernel(q=q)
+            result = {"question": q, "sentence": q,"result": {"sentence": q,"answer": r,"media":m,"avail_vals":a}, "user": "solr"}
             return json.dumps(result, ensure_ascii=False)
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
@@ -107,12 +108,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--qsize', choices={'1', '20', '200'},
-                        default='200', help='q_size initializes number of the starting instances...')
+                        default='20', help='q_size initializes number of the starting instances...')
     args = parser.parse_args()
 
     QSIZE = int(args.qsize)
 
-    for i in tqdm(range(QSIZE)):
+    for i in range(QSIZE):
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
     print('web started...')

@@ -145,6 +145,7 @@ class DmnInfer:
         self.model = self._load_model()
 
     def _load_model(self):
+        self.session = tf.Session()
         self.config.train_mode = False
         self.session = tf.Session()
         model = DMN_PLUS(self.config, self.metadata)
@@ -165,6 +166,24 @@ class DmnInfer:
         # saver = tf.train.import_meta_graph(
         #     self.config.ckpt_path + 'dmn.weights.meta')
         # graph = tf.get_default_graph()
+        return model
+
+    def get_session(self):
+        # init = tf.global_variables_initializer()
+        # saver = tf.train.Saver()
+        #
+        # self.session.run(init)
+        #
+        # # restore checkpoint
+        # ckpt = tf.train.get_checkpoint_state(self.config.ckpt_path)
+        # # if ckpt and ckpt.model_checkpoint_path:
+        #     # print('\n>> restoring checkpoint from',
+        #     #       ckpt.model_checkpoint_path)
+        # saver.restore(self.session, ckpt.model_checkpoint_path)
+        #
+        # # saver = tf.train.import_meta_graph(
+        # #     self.config.ckpt_path + 'dmn.weights.meta')
+        # # graph = tf.get_default_graph()
 
         char = 2 if self.config.word else 1
         isess = DmnSession(self.session, self.model,
