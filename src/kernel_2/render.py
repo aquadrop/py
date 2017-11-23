@@ -72,10 +72,10 @@ class Render:
             for line in f:
                 line=line.strip('\n')
                 values=line.split('#')
-                if len(values)==2:
+                if not values[1]:
                     self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
                 else:
-                    self.media_render_mapper[values[0]]=values[0]
+                    self.media_render_mapper[values[0]]=values[1]
 
     def _load_major_render(self, file):
         self.major_render_mapper = dict()

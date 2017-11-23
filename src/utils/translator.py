@@ -82,7 +82,7 @@ if __name__ == '__main__':
     'api_call_request_reg.complete',
     'api_call_search_reg.auth: 点击验证成功, reg.complete: 注册成功',
     'api_call_search_category: 注册, reg.scan_follow: 扫码关注失败',
-    'api_call_search_reg.scan_follow: 扫码关注成功, reg.auth: 点击验证失败']
+    'api_call_request_reg.repeat_auth: 扫码关注成功, reg.auth: 点击验证失败']
     _pickle()
     tr = Translator()
     for ll in l:

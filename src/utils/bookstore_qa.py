@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 from collections import OrderedDict
 
 prefix = os.path.dirname(os.path.dirname(
@@ -71,6 +72,7 @@ def gen2(template_path=template_path, outpath=outpath, mode=True):
     tems = [tem.strip() for tem in tems]
     res = set()
     keys_count = 0
+    syn = _load_template()
     for line in table:
         keys = list(line.keys())
         for key in keys:
@@ -83,12 +85,21 @@ def gen2(template_path=template_path, outpath=outpath, mode=True):
 
             for t in tems:
                 for v in values:
-                    query = t.replace(REPLACE, v)
-                    if mode:
-                        label = label_prefix + '_' + key + ':' + value
+                    if v in syn:
+                        for sv in syn[v]:
+                            query = t.replace(REPLACE, sv)
+                            if mode:
+                                label = label_prefix + '_' + key + ':' + value
+                            else:
+                                label = label_prefix
+                            res.add(query + '\t' + label + '\t' + 'placeholder')
                     else:
-                        label = label_prefix
-                    res.add(query + '\t' + label + '\t' + 'placeholder')
+                        query = t.replace(REPLACE, v)
+                        if mode:
+                            label = label_prefix + '_' + key + ':' + value
+                        else:
+                            label = label_prefix
+                        res.add(query + '\t' + label + '\t' + 'placeholder')
 
     res = list(res)
     print(len(res), keys_count)
@@ -146,6 +157,17 @@ def gen(outpath=outpath, path=template_path):
 
 def main():
     gen2()
+
+def _load_template():
+    template_file = 'register_template.txt'
+    thesaurus = dict()
+    with open(template_file, 'r') as tf:
+        for line in tf:
+            line = line.strip('\n')
+            parsers = line.split('|')
+            if parsers[0] == 'thesaurus':
+                thesaurus[parsers[1]] = parsers[2].split('/')[:] + [parsers[1]]
+    return thesaurus
 
 
 if __name__ == '__main__':
