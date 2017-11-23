@@ -31,6 +31,8 @@ logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + 
 
 app = Flask(__name__)
 
+_VERSION_ = '0.2.0'
+
 config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'off',
               "metadata_dir": os.path.join(parentdir, 'model/dmn/dmn_processed/metadata_word.pkl'),
@@ -89,17 +91,17 @@ def chat():
                     return json.dumps(result, ensure_ascii=False)
             u_i_kernel = lru_kernels[u]
             result = u_i_kernel.kernel(q=q, user=u)
-            result = {"question": q, "sentence": q,"result": result, "user": u}
-            return json.dumps(result, ensure_ascii=False)
+            output = {"question": q, "sentence": q,"result": result, "user": u, "version":_VERSION_}
+            return json.dumps(output, ensure_ascii=False)
 
         else:
             result= kernel.kernel(q=q)
-            result = {"question": q, "sentence": q,"result": result, "user": "solr"}
-            return json.dumps(result, ensure_ascii=False)
+            output = {"question": q, "sentence": q, "result": result, "user": 'solr', "version": _VERSION_}
+            return json.dumps(output, ensure_ascii=False)
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         traceback.print_exc()
-        result = {"question": q, "result": {"answer": "kernel exception", "error": traceback.format_exc()}, "user": "solr"}
+        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
 if __name__ == "__main__":

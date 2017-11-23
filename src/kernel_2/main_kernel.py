@@ -61,7 +61,6 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
-
 class MainKernel:
     static_memory = None
     static_dmn = None
