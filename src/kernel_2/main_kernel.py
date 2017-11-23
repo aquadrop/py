@@ -105,7 +105,8 @@ class MainKernel:
         else:
             self.render = MainKernel.static_render
 
-    def kernel(self, q, user='solr', recursive=False):
+    def kernel(self, q, user='solr', recursive=True):
+        start = time.time()
         if not q:
             return 'api_call_error'
         range_rendered, wild_card = self.range_render(q)
@@ -143,7 +144,8 @@ class MainKernel:
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
                     self.sess.clear_memory()
-                    return self.kernel(q, user)
+                    if recursive:
+                        return self.kernel(q, user, False)
                 if api.startswith('api_call_base') or api.startswith('api_call_query_location'):
                     memory = ''
                     response = api
@@ -153,7 +155,8 @@ class MainKernel:
                         print('clear memory due to base...')
                         self.belief_tracker.clear_memory()
                         self.sess.clear_memory()
-                        return self.kernel(q, user)
+                        if recursive:
+                            return self.kernel(q, user, False)
                 else:
                     self.base_counter = 0
                 if api.startswith('api_call_slot'):
@@ -205,8 +208,9 @@ class MainKernel:
             result = render
             result['sentence'] = q
             result['score'] = float(prob[0][0])
-            result['class'] = api
-            result['graph_rendered'] = response
+            result['class'] = api + '->' + response + '/' + 'avail_vals:{}'.format(str(self.belief_tracker.avails))
+            result['emotion'] = 'null'
+            result['timeout'] = time.time() - start
             return result
 
     def gbdt_reply(self, q, requested=None):

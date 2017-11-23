@@ -220,7 +220,7 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
-        result = {"answer":"", "media":"null", "avail_vals":""}
+        result = {"answer":"", "media":"null", "avail_vals":"", 'from':"memory", "sim":0}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
@@ -229,6 +229,8 @@ class Render:
                 matched, answer, score = self.interactive.get_responses(
                     query=q)
                 result['answer'] = answer
+                result['from'] = 'base'
+                result['sim'] = score
                 return result
             if response.startswith('api_call_faq'):
                 matched, answer, score = self.faq.get_responses(
@@ -253,12 +255,12 @@ class Render:
                 if prefix:
                     answer = prefix + self.render_api(response, avails)
                     result['answer'] = answer
-                    result['avail_vals'] = avails
+                    #result['avail_vals'] = avails
                     return result
                 result['media'] = self.render_media(response)
                 answer = self.render_api(response, avails)
                 result['answer'] = answer
-                result['avail_vals'] = avails
+                #result['avail_vals'] = avails
                 return result
             # if response.startswith('api_call_search_'):
             #     return response
