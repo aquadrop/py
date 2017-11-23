@@ -90,7 +90,7 @@ def solr_min_value(params, target_field):
         min_val = docs[0][target_field]
     return min_val
 
-def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
+def solr_facet(mappers, facet_field, is_range, prefix='facet_', postfix='_str', core='category'):
 
     def render_range(a, gap):
         if len(a) == 0:
@@ -127,16 +127,18 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
         return render
 
     if not is_range:
+        facet_field = prefix + facet_field + postfix
         params = {
             'q': '*:*',
             'facet': True,
-            'facet.field': prefix + facet_field,
+            'facet.field': facet_field,
             "facet.mincount": 1
         }
         params['fq'] = compose_fq(mappers)
-        res = solr.query('category', params)
-        facets = res.get_facet_keys_as_list(prefix + facet_field)
-        return facets, len(facets)
+        res = solr.query(core, params)
+        facets = res.get_facet_keys_as_list(facet_field)
+        docs = res.docs
+        return facets, len(facets), docs
     else:
         fq = compose_fq(mappers)
         minmax_params = {
@@ -167,12 +169,13 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_'):
         #     start = 1
         #     gap = 0.5
         #     end = 10
-        res = solr.query('category', params)
+        res = solr.query(core, params)
+        docs =  res.docs
         ranges = res.get_facets_ranges()[facet_field].keys()
         ranges = [float("{0:.1f}".format(float(r))) for r in ranges]
         # now render the result
         facet = render_range(ranges, gap)
-        return facet, len(ranges)
+        return facet, len(ranges), docs
 
 
 if __name__ == "__main__":

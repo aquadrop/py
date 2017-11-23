@@ -138,6 +138,7 @@ class MainKernel:
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
                 print(api, prob)
+                response = api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()

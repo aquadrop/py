@@ -141,7 +141,7 @@ class Render:
                 if category in applicables:
                     template = self.location_templates[index]
                     break
-        rendered = template.replace('<category>', category).replace('<location>', location)
+        rendered = template.replace('[category]', category).replace('[location]', location)
         return rendered
 
     def render_ambiguity(self, ambiguity_slots):
@@ -308,17 +308,26 @@ class Render:
 
             if response.startswith('api_call_query_location_'):
                 params = response.replace('api_call_query_location_', '')
-                if not params or 'category' not in params:
+                if not params:
                     return '我们这里按照商品种类分布,您可以咨询我商品的方位信息'
                 else:
                     mapper = dict()
                     for kv in params.split(','):
                         key, value = kv.split(':')
                         mapper[key] = value
-                facet = solr_util.solr_facet(mappers=mapper, facet_field='location', is_range=False)
+                facet = solr_util.solr_facet(mappers=mapper,
+                                             facet_field='location',
+                                             is_range=False, prefix='',
+                                             postfix='_str',
+                                             core='bookstore_map')
                 location = ','.join(facet[0])
-                category = mapper['category']
+                category = ','.join(mapper.values())
+                try:
+                    title = facet[2][0]['title']
+                except:
+                    title = category
                 response = self.render_location(category, location)
+                response.replace(category, title)
                 if 'category' in mapper:
                     ad = self.ad_kernel.anchor_category_ad(mapper['category'])
                     response = response + ' ' + ad
