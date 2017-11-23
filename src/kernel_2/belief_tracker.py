@@ -779,9 +779,10 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            return solr_util.solr_facet(mappers=mapper,\
+            facets, lens, _ = solr_util.solr_facet(mappers=mapper,\
                                         facet_field=facet_field,\
                                         is_range=False, prefix='facet_')
+            return facets, lens
         else:
             mapper = dict()
             for key, value in self.filling_slots.items():
@@ -794,9 +795,10 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            return solr_util.solr_facet(mappers=mapper,
-                                        facet_field=facet_field,
-                                        is_range=True, prefix='facet_')
+            facets, lens, _ = solr_util.solr_facet(mappers=mapper, \
+                                                   facet_field=facet_field, \
+                                                   is_range=False, prefix='facet_')
+            return facets, lens
 
     def issue_class(self):
         if self.machine_state == self.TRAVEL_STATE:
