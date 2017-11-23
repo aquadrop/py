@@ -32,7 +32,7 @@ logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + 
 app = Flask(__name__)
 
 config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
+              "solr.facet": 'off',
               "metadata_dir": os.path.join(parentdir, 'model/dmn/dmn_processed/metadata_word.pkl'),
               "data_dir": os.path.join(parentdir, 'model/dmn/dmn_processed/data_word.pkl'),
               "ckpt_dir": os.path.join(parentdir, 'model/dmn/ckpt_word'),
@@ -97,6 +97,7 @@ def chat():
             return json.dumps(result, ensure_ascii=False)
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+        traceback.print_exc()
         result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 

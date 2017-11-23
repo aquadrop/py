@@ -764,7 +764,7 @@ class BeliefTracker:
     def solr_facet(self, prefix='facet_'):
         if self.config['solr.facet'] != 'on':
             return ['facet is off'], 0
-        node = self.search_node
+        node = self.search_node[0]
         facet_field = self.requested_slots[0]
 
         if self.is_key_type(facet_field):
