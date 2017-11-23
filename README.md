@@ -87,3 +87,24 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 * Hat tip to anyone who's code was used
 * Inspiration
 * etc
+
+```
+{
+  "sentence": "如何下载",
+  "result": {
+    "sentence": "如何下载",
+    "score": 28.69175910949707,
+    "timeout": -1,
+    "answer": "请您扫描二维码，输入手机号和验证码，点击确认下载，苹果手机请到AppStore下载，安卓手机根据提示，点击用浏览器打开完成下载。",
+    "sim": 0.9999999999999999,
+    "from": "ML",
+    "pre": "",
+    "emotion": "null",
+    "media": "下载",
+    "class": "下载"
+  },
+  "user": "nlp.bank_psbc.request.user.string",
+  "version": "0.1.0",
+  "question": "如何下载"
+}
+```

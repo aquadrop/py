@@ -220,7 +220,7 @@ class Render:
                 return self.render_api(response)
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
                 return self.render_api(response, {})
-            if response.startswith('api_call_request_'):
+            if response.startswith('api_call_request_') or response.startswith('api_call_search_'):
                 if response.startswith('api_call_request_ambiguity_removal_'):
                     params = response.replace(
                         'api_call_request_ambiguity_removal_', '').split(',')
@@ -242,37 +242,37 @@ class Render:
                 else:
                     return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
                                              '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
-            if response.startswith('api_call_search_'):
-                return response
-                tokens = response.replace('api_call_search_', '').split(',')
-
-                and_mapper = dict()
-                or_mapper = dict()
-                for t in tokens:
-                    key, value = t.split(':')
-                    if key == 'price':
-                        or_mapper[key] = value
-                    else:
-                        and_mapper[key] = value
-                docs = solr_util.query(and_mapper, or_mapper)
-                if len(docs) > 0:
-                    doc = docs[0]
-                    return self.render_recommend(doc['title'][0])
-                else:
-                    # use loose search, brand and category is mandatory
-                    and_mapper.clear()
-                    or_mapper.clear()
-                    for t in tokens:
-                        key, value = t.split(':')
-                        if key in ['category', 'brand']:
-                            and_mapper[key] = value
-                        else:
-                            or_mapper[key] = value
-                    docs = solr_util.query(and_mapper, or_mapper)
-                    if len(docs) > 0:
-                        doc = docs[0]
-                        return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
-                    return response
+            # if response.startswith('api_call_search_'):
+            #     return response
+            #     tokens = response.replace('api_call_search_', '').split(',')
+            #
+            #     and_mapper = dict()
+            #     or_mapper = dict()
+            #     for t in tokens:
+            #         key, value = t.split(':')
+            #         if key == 'price':
+            #             or_mapper[key] = value
+            #         else:
+            #             and_mapper[key] = value
+            #     docs = solr_util.query(and_mapper, or_mapper)
+            #     if len(docs) > 0:
+            #         doc = docs[0]
+            #         return self.render_recommend(doc['title'][0])
+            #     else:
+            #         # use loose search, brand and category is mandatory
+            #         and_mapper.clear()
+            #         or_mapper.clear()
+            #         for t in tokens:
+            #             key, value = t.split(':')
+            #             if key in ['category', 'brand']:
+            #                 and_mapper[key] = value
+            #             else:
+            #                 or_mapper[key] = value
+            #         docs = solr_util.query(and_mapper, or_mapper)
+            #         if len(docs) > 0:
+            #             doc = docs[0]
+            #             return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
+            #         return response
 
             if response.startswith('api_call_query_price_'):
                 params = response.replace('api_call_query_price_' ,'')
@@ -327,7 +327,7 @@ class Render:
                 except:
                     title = category
                 response = self.render_location(category, location)
-                response.replace(category, title)
+                response = response.replace(category, title)
                 if 'category' in mapper:
                     ad = self.ad_kernel.anchor_category_ad(mapper['category'])
                     response = response + ' ' + ad
