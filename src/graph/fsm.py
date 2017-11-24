@@ -5,19 +5,20 @@ import random
 
 class FSM(object):
 
-    def __init__(self, name, max_loop_num, states, triggers_map_user, triggers_map_bot, transitions=None):
+    def __init__(self, name, max_loop_num, states, triggers_map_user, triggers_map_bot, conditions_map, transitions=None):
         self.name = name
         self.max_loop_num = max_loop_num
         self.current_loop_num = 0
         self.init_state = states[0]
-        self.terminate_state = states[-1]
+        self.terminate_state = states[-2:]
         self._init_states(states)
         self._init_transitions(transitions)
         self.triggers_map_user = triggers_map_user
         self.triggers_map_bot = triggers_map_bot
+        self._register_conditions(conditions_map)
         self.machine = Machine(model=self, states=self.states,
                                transitions=self.transitions, initial=self.init_state)
-        self.last_state = self.state
+        self.last_state = None
 
     def _init_states(self, states):
         self.states = states
@@ -29,11 +30,18 @@ class FSM(object):
         return self.state == self.init_state
 
     def is_terminate_state(self):
-        return self.state == self.terminate_state
+        return self.state in self.terminate_state
+
+    def _register_conditions(self, conditions_map):
+        self.conditions_map = dict()
+        for k, v in conditions_map.items():
+            self.__dict__[k] = v
+            self.conditions_map[k] = v
 
     def get_current_state_num(self):
         if self.state == self.last_state:
             self.current_loop_num += 1
+            self.last_state = self.state
         else:
             self.current_loop_num = 0
         return self.current_loop_num
@@ -48,11 +56,10 @@ class FSM(object):
             if not trigger.startswith('to_')]
 
         current_loop_num = self.get_current_state_num()
-        if current_loop_num <= self.max_loop_num:
-            trigger = random.choice(available_triggers)
-        else:
-            pass
-        self.__dict__[trigger]()
+        # print('current_loop_num: ', current_loop_num)
+
+        trigger = random.choice(available_triggers)
+        self.__dict__[trigger](current_loop_num, self.max_loop_num)
 
         return trigger
 
@@ -61,19 +68,21 @@ class FSM(object):
             if self.is_terminate_state():
                 print('**************')
                 self.goto_init_state()
-            # print(self.state)
+            print(self.state)
             trigger = self.goto_next_state()
+            # print(self.triggers_map_user[trigger] +
+            #       ' ' + self.triggers_map_bot[trigger])
 
 
-def is_register():
-    return False
-
-
-def is_scan_success():
+def is_register(current_loop_num, max_loop_num):
     return True
 
 
-def is_auth_success():
+def is_scan_success(current_loop_num, max_loop_num):
+    return True
+
+
+def is_auth_success(current_loop_num, max_loop_num):
     return True
 
 
@@ -100,7 +109,7 @@ def main():
         'register': '注册',
         'scan_success': '扫码成功',
         'scan_fail': '扫码失败',
-        'times_scan_fail': '扫码还是失败'
+        'times_scan_fail': '扫码还是失败',
         'auth_success': '验证成功',
         'auth_fail': '验证失败',
         'times_auth_fail': '验证还是失败'
@@ -115,18 +124,19 @@ def main():
         'times_auth_fail': '别搞了,你失败了'
     }
 
+    conditions_map = {
+        'is_register': is_register,
+        'is_scan_success': is_scan_success,
+        'is_auth_success': is_auth_success,
+        'is_times_scan_fail': is_times_scan_fail,
+        'is_times_auth_fail': is_times_auth_fail
+    }
+
     bs = FSM(name, max_loop_num, states,
-             triggers_map_user, triggers_map_bot)
-    bs.__dict__['is_register'] = is_register
-    bs.__dict__['is_scan_success'] = is_scan_success
-    bs.__dict__['is_auth_success'] = is_auth_success
-    bs.__dict__['is_times_scan_fail'] = is_times_scan_fail
-    bs.__dict__['is_times_auth_fail'] = is_times_auth_fail
+             triggers_map_user, triggers_map_bot, conditions_map)
 
     bs.machine.add_transition(
         'register', 'root', 'scan', conditions='is_register')
-    # bs.machine.add_transition(
-    #     'register', 'root', 'root', conditions='is_register')
     bs.machine.add_transition(
         'scan_success', 'scan', 'auth', conditions='is_scan_success')
     bs.machine.add_transition(
@@ -140,9 +150,10 @@ def main():
     bs.machine.add_transition(
         'times_auth_fail', 'auth', 'fail', conditions='is_times_auth_fail')
 
-    print(bs.state)
-    bs.register()
-    print(bs.state)
+    # print(bs.state)
+    # bs.register()
+    # print(bs.state)
+    bs.travel_cycle()
 
 
 if __name__ == '__main__':
