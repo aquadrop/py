@@ -22,7 +22,7 @@ def _pickle():
     slots_trans['rhetorical_'] = '反问'
     slots_trans['placeholder'] = '占位'
     slots_trans['ambiguity_removal'] = '消除歧义'
-    slots_trans['slot_'] = '买'
+    slots_trans['slot_'] = ''
     slots_trans['virtual_'] = '虚'
     slots_trans['api_call_'] = ''
     slots_trans['sunning'] = '苏宁'
