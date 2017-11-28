@@ -138,6 +138,9 @@ class MainKernel:
             if not exploited:
                 api, prob = self.sess.reply(range_rendered)
                 print(api, prob[0][0], prob)
+                score = float(prob[0][0])
+                if score < 0.3:
+                    api = 'api_call_base'
                 response = api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
@@ -149,7 +152,7 @@ class MainKernel:
                     memory = ''
                     response = api
                     self.base_counter += 1
-                    if self.base_counter >= self.base_clear_memory:
+                    if self.base_counter >= self.base_clear_memory and api.startswith('api_call_base'):
                         self.base_counter = 0
                         print('clear memory due to base...')
                         self.belief_tracker.clear_memory()
@@ -200,11 +203,14 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
+            result = {"answer": "", "media": "null", 'from': "memory", "sim": 0}
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            for key, value in render.items():
+                result[key] = value
             # render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
-            result = render
+            # result = render
             result['sentence'] = q
             result['score'] = float(prob[0][0])
             result['class'] = api + '->' + response + '/' + 'avail_vals:{}'.format(str(self.belief_tracker.avails))

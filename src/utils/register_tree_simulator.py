@@ -428,7 +428,7 @@ class TreeSimilator:
             cls = render_cls(slot_values_mapper)
             candidates.add(cls.lower())
             api = render_api(self.belief_tracker.issue_api(attend_facet=False))
-            line = user_reply + '\t' + translator.en2cn(cls) + '\t' + translator.en2cn(api)
+            line = user_reply + '\t' + cls + '\t' + api
             # print(line)
             flow = cls + '\t' + api
             # if cls == 'api_call_slot_reg.repeat_scan_follow:扫码关注失败':
