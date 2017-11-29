@@ -213,7 +213,7 @@ class MainKernel:
             # result = render
             result['sentence'] = q
             result['score'] = float(prob[0][0])
-            result['class'] = api + '->' + response + '/' + 'avail_vals:{}'.format(str(self.belief_tracker.avails))
+            result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
             result['emotion'] = 'null'
             result['timeout'] = time.time() - start
             return result
