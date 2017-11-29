@@ -63,7 +63,7 @@ class Render:
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
-        self.faq = QA('faq')
+        self.faq = QA('base')
         print('attaching rendering file...')
 
     def _load_media_render(self,file):
@@ -232,12 +232,18 @@ class Render:
                 result['from'] = 'base'
                 result['sim'] = score
                 return result
-            if response.startswith('api_call_faq'):
+            if response.startswith('api_call_faq_general'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
                 ad = self.ad_kernel.anchor_faq_ad(answer)
                 answer = answer + ' ' + ad
                 result['answer'] = answer
+                return result
+            if response.startswith('api_call_faq_info'):
+                result['media'] = self.render_media(response)
+                answer = self.render_api(response, avails)
+                result['answer'] = answer
+                # result['avail_vals'] = avails
                 return result
             if response.startswith('api_call_query_discount'):
                 answer = self.render_api(response)

@@ -51,6 +51,7 @@ import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 import memory.config as config
 from kernel_2.render import Render
+from kernel_2.rule_base_plugin import RuleBasePlugin
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -65,12 +66,14 @@ class MainKernel:
     static_memory = None
     static_dmn = None
     static_render = None
+    static_rule_plugin = None
 
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
         # self.render = Render(self.belief_tracker, config)
         self._load_render(config)
+        self._load_rule_plugin(config)
         self.base_counter = 0
         self.base_clear_memory = 2
         if config['clf'] == 'memory':
@@ -89,6 +92,13 @@ class MainKernel:
             MainKernel.static_memory = self.memory
         else:
             self.memory = MainKernel.static_memory
+
+    def _load_rule_plugin(self, config):
+        if not MainKernel.static_rule_plugin:
+            self.rule_plugin = RuleBasePlugin(config)
+            MainKernel.static_rule_plugin = self.rule_plugin
+        else:
+            self.rule_plugin = MainKernel.static_rule_plugin
 
     def _load_dmn(self, config):
         if not MainKernel.static_dmn:
@@ -136,10 +146,11 @@ class MainKernel:
                     #     memory = ''
                 pass
             if not exploited:
-                api, prob = self.sess.reply(range_rendered)
-                print(api, prob[0][0], prob)
+                _api, prob = self.sess.reply(range_rendered)
+                api = self.rule_plugin.fix(q, _api)
+                print(_api, api, prob[0][0], prob)
                 score = float(prob[0][0])
-                if score < 0.3:
+                if score < 0.5:
                     api = 'api_call_base'
                 response = api
                 if api.startswith('reserved_'):
@@ -176,6 +187,8 @@ class MainKernel:
                         if should_clear_memory:
                             print('restart xinhua bookstore session..')
                             self.sess.clear_memory(history=2)
+                        if response.startswith('api_call_search'):
+                            self.sess.clear_memory()
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -203,6 +216,7 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
+            self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
             result = {"answer": "", "media": "null", 'from': "memory", "sim": 0}
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
             for key, value in render.items():
@@ -275,7 +289,8 @@ if __name__ == '__main__':
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory`
-              "shuffle": False
+              "shuffle": False,
+              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt')
               }
     kernel = MainKernel(config)
     while True:

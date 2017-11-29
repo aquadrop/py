@@ -50,12 +50,13 @@ STOP_WORDS = set(["！", "？", "，", "。", "，", '*', ',', '_', ':', ' ', ',
 
 STOP_WORDS_0 = set(["！", "？", "，", "。", "，", '*', ":", '_', '.', ' ', ',',
                     '\t', '?', '(', ')', '!', '~', '“', '”', '《', '》', '+', '-', '=', "%", "……",
-                    "啊", "呢", "吗", '呀', '哒','吧'])
+                    "啊", "呢", '呀']) # 吗
 
-
+MAX_CHAR = 30
 def tokenize(sent, char=config.TOKENIZE_CHAR):
     sent = sent.lower().strip()
     tokens = list()
+    sent = sent[0:MAX_CHAR]
     if char == 0:
         for s in STOP_WORDS_0:
             sent = sent.replace(s, '')
@@ -165,7 +166,9 @@ def supersede(query):
     return query
 
 
-def rule_base_num_retreive(query):
+def rule_base_num_retreive(query, switch=False):
+    if not switch:
+        return query, {}
 
     query = supersede(query)
 
@@ -276,6 +279,6 @@ if __name__ == "__main__":
     # print(' '.join(jieba_cut('华为num元手机phone.mmem')))
     # print(rule_base_num_retreive('50寸电视'))
     # print(rule_base_num_retreive('哪点事三人3000,高4米iphone6s, 大一匹'))
-    # print(tokenize('电冰箱', char=2))
+    print(tokenize('一楼呢', char=2))
     # print(rule_base_num_retreive(''))
     build_dmn_vocab()

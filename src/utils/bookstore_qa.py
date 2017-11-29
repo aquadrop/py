@@ -7,6 +7,7 @@ prefix = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
 
 template_path = 'bookstore_qa_template.txt'
+faq_floor_template = 'bookstore_faq_template.txt'
 outpath = prefix + '/data/memn2n/train/map/map.txt'
 REPLACE = '[]'
 table = [
@@ -64,7 +65,32 @@ table = [
 
 
 label_prefix = 'api_call_query_location'
+faq_prefix = 'api_call_faq_info:'
+entities = ["一楼","二楼","三楼","四楼"]
+tel_info = "客服电话是多少？/客服电话？/客服电话多少啊？/给我报一下客服电话？/给我说一下客服电话？/客服电话是多少啊？/我想问一下客服电话？/我想问下你们客服的电话？/人工服务的电话/人工服务电话？/人工服务的电话多少啊？/我要你们人工服务的电话？/我想拨打你们的人工服务电话，是多少啊？/我想打人工服务，号码多少啊？/我要找客服，电话是多少啊？/我要打给客服，告诉我电话号码？/我需要人工服务，号码是多少？/问一下客服的电话？/问一下客服的号码？/问一下人工服务的号码？/人工服务的电话号码？/客服电话是什么/能告诉我客服电话是多少吗/能告诉我客服电话是什么吗/能跟我说下客服电话是多少嘛/能不能告诉我客服电话/能不能跟我说下客服电话/能跟我说下客服电话是什么吗/能跟我说下客服电话/告诉我客服电话/跟我说下客服电话/跟我讲一下客服电话/能跟我讲一下客服电话吗/能告诉我客服电话吗/能不能告诉我客服电话/能不能跟我讲一下客服电话吗/我要找客服电话/我想让你告诉我客服电话/我想知道客服电话/告诉我客服电话，可以吗/告诉我客服电话，行不行/跟我说一下客服电话行吗/告诉我客服电话行吗/麻烦你跟我说一下客服电话/麻烦你告诉我客服电话/我想让你跟我说一下客服电话/我想让你告诉我客服电话/你知道客服电话吗/跟我说一下客服电话，可行/你是否能告诉我客服电话/你是否知道客服电话/客服电话，谢谢/你能把客服电话告诉我吗/你知不知道客服电话，你能把你知道的客服电话告诉我吗/我想让你跟我说一下客服电话/我现在需要客服电话/我急需客服电话/你能马上告诉我客服电话吗/我在寻找客服电话，你知道吗/我不知道客服电话，你能告诉我吗/我有事要打客服电话，你知道号码吗/能告诉我客服的电话号码吗/客服的电话号码是多少呢/客服的电话号码/告诉我客服的电话号码/跟我说一下客服的电话号码，可以吗/客服的电话号码你知道是多少吗"
+store_location_info = "你们店的地址是多少？/你们店在哪里？/你们的地址？/店址?/你们这个店在哪？/店在哪啊？/这个店在哪里啊？/你们的书店在哪里啊？/书店的地址是什么啊？/我想问下店址？/告诉我书店地址？/这个书店在哪里啊？/书店在哪？"
 
+def gen_faq(template_path=faq_floor_template, outpath=outpath):
+    with open(template_path, 'r') as f:
+        tems = f.readlines()
+    tems = [tem.strip() for tem in tems]
+    lines = []
+    for entity in entities:
+        for template in tems:
+            question = template.replace('[]', entity)
+            cls = faq_prefix + entity
+            placeholder = 'placeholder'
+            line = question + '\t' + cls + '\t' + placeholder
+            lines.append(line)
+
+    tel_info_lines = [question + '\t' + (faq_prefix + '客服电话') + '\t' + placeholder for question in tel_info.split('/')]
+    lines.extend(tel_info_lines)
+
+    store_location_lines = [question + '\t' + (label_prefix + '_poi:' + '吴江新华书店') + '\t' + placeholder for question in store_location_info.split('/')]
+    lines.extend(store_location_lines)
+    with open(outpath, 'a') as f:
+        for line in lines:
+            f.writelines(line + '\n\n')
 
 def gen2(template_path=template_path, outpath=outpath, mode=True):
     with open(template_path, 'r') as f:
@@ -157,6 +183,7 @@ def gen(outpath=outpath, path=template_path):
 
 def main():
     gen2()
+    gen_faq()
 
 def _load_template():
     template_file = 'register_template.txt'

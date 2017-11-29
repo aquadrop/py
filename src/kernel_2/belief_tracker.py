@@ -114,6 +114,8 @@ class BeliefTracker:
             self.exploit_wild_card(wild_card=wild_card)
         print(self.requested_slots)
         api, avails = self.issue_api()
+        if api.startswith('api_call_search'):
+            should_clear_memory = True
         return api, avails, should_clear_memory
 
     def defaulting_call(self, query, wild_card=None):
