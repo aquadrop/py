@@ -48,7 +48,8 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "faq_ad": os.path.join(parentdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(parentdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory
-              "shuffle":False
+              "shuffle":False,
+              "key_word_file": os.path.join(parentdir, 'model/render_2/key_word.txt')
               }
 
 kernel = MainKernel(config)
