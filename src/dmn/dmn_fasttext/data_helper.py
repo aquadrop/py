@@ -125,8 +125,8 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 context.append(u)
                 # r = r if placeholder == 'placeholder' else r + salt
                 context.append(r)
-                # if salt != 'placeholder':
-                #     context.append(salt)
+                if not placeholder:
+                    context.append(salt)
         else:
             # clear context
             context = []
@@ -165,7 +165,7 @@ def load_raw_data(config):
         candidates_f=config.candid_path)
     candidate_size = len(candidates)
 
-    char = 2 if config.word else 1
+    char = 2 if config.word else 0
     sentences = set()
     train_data, test_data, val_data = load_dialog(sentences,
                                                   data_dir=config.data_dir,

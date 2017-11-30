@@ -159,7 +159,8 @@ class MainKernel:
                     self.sess.clear_memory()
                     if recursive:
                         return self.kernel(q, user, False)
-                if api.startswith('api_call_base') or api.startswith('api_call_query_location'):
+                if api.startswith('api_call_base') \
+                        or api.startswith('api_call_query_location') or api.startswith('api_call_faq'):
                     memory = ''
                     response = api
                     self.base_counter += 1
