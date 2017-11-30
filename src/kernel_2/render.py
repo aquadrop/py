@@ -220,7 +220,7 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
-        result = {"answer":"", "media":"null", 'from':"memory", "sim":0}
+        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
@@ -318,7 +318,7 @@ class Render:
                 category = ','.join(mapper.values())
                 image_key = ''
                 try:
-                    if 'category' or 'virtual_category' in mapper:
+                    if 'category' in mapper or 'virtual_category' in mapper:
                         title = category
                     else:
                         title = facet[2][0]['title']

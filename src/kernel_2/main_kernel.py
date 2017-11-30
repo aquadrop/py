@@ -230,7 +230,8 @@ class MainKernel:
             result['score'] = float(prob[0][0])
             result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
             result['emotion'] = 'null'
-            result['timeout'] = -1#time.time() - start
+            if 'media'in result and result['media'] and result['media'] is not 'null':
+                result['timeout'] = 15
             return result
 
     def gbdt_reply(self, q, requested=None):
