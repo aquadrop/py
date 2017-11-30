@@ -527,7 +527,7 @@ class TreeSimilator:
                 print(i)
 
 
-                if i >= 10000:
+                if i >= 60000:
 
                     break
 
