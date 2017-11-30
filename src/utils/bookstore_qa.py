@@ -78,7 +78,7 @@ def gen_faq(template_path=faq_floor_template, outpath=outpath):
     for entity in entities:
         for template in tems:
             question = template.replace('[]', entity)
-            cls = faq_prefix + '楼层'
+            cls = faq_prefix + 'floor'
             placeholder = 'placeholder'
             line = question + '\t' + cls + '\t' + placeholder
             lines.append(line)

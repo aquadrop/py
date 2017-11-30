@@ -60,13 +60,27 @@ class Render:
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
         self._load_media_render(config['render_media_file'])
+        self._load_emotion_render(config['emotion_file'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
         self.faq = QA('base')
         print('attaching rendering file...')
 
-    def _load_media_render(self,file):
+    def _load_emotion_render(self, file):
+        self.emotion = []
+        self.emotion_prob = 0.8
+        with open (file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.emotion.append(line)
+
+    def render_emotion(self):
+        if np.random.uniform() < self.emotion_prob:
+            return np.random.choice(self.emotion)
+        return 'null'
+
+    def _load_media_render(self, file):
         self.media_render_mapper=dict()
         with open(file,'r') as f:
             for line in f:
@@ -231,6 +245,7 @@ class Render:
                 result['answer'] = answer
                 result['from'] = 'base'
                 result['sim'] = score
+                result['emotion'] = self.render_emotion()
                 return result
             if response.startswith('api_call_faq_general'):
                 matched, answer, score = self.faq.get_responses(

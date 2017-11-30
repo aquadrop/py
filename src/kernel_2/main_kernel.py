@@ -229,7 +229,6 @@ class MainKernel:
             result['sentence'] = q
             result['score'] = float(prob[0][0])
             result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
-            result['emotion'] = 'null'
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15
             return result
@@ -292,7 +291,8 @@ if __name__ == '__main__':
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory`
               "shuffle": False,
-              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt')
+              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt'),
+              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt')
               }
     kernel = MainKernel(config)
     while True:
