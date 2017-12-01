@@ -50,7 +50,8 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "clf": 'dmn',  # or memory
               "shuffle":False,
               "key_word_file": os.path.join(parentdir, 'model/render_2/key_word.txt'),
-              "emotion_file": os.path.join(parentdir, 'model/render_2/emotion.txt')
+              "emotion_file": os.path.join(parentdir, 'model/render_2/emotion.txt'),
+              "noise_keyword_file": os.path.join(parentdir, 'model/render_2/noise.txt'),
               }
 
 kernel = MainKernel(config)

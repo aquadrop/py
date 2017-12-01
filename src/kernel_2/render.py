@@ -52,6 +52,7 @@ class Render:
 
     prefix = ['这样啊.', '没问题.', '好吧']
     ANY = 'any'
+    AD_PROB = 0.7
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
@@ -61,6 +62,7 @@ class Render:
         self._load_price_render(config['render_price_file'])
         self._load_media_render(config['render_media_file'])
         self._load_emotion_render(config['emotion_file'])
+        self._load_ad(config['ad_anchor'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
@@ -74,6 +76,18 @@ class Render:
             for line in f:
                 line = line.strip('\n')
                 self.emotion.append(line)
+
+    def _load_ad(self, file):
+        self.ad = []
+        with open (file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.ad.append(line)
+
+    def render_ad(self):
+        if np.random.uniform() < self.AD_PROB:
+            return "," + np.random.choice(self.ad)
+        return ''
 
     def render_emotion(self):
         if np.random.uniform() < self.emotion_prob:
@@ -343,8 +357,9 @@ class Render:
                 response = self.render_location(category, location)
                 response = response.replace(category, title)
                 if 'category' in mapper:
-                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
-                    response = response + ' ' + ad
+                    response = response
+                ad = self.render_ad()
+                response = response + ad
                 result = {'answer': response, 'media': image_key, 'avail_vals':""}
                 return result
             return response
@@ -371,6 +386,7 @@ if __name__ == "__main__":
               "render_media_file":os.path.join(grandfatherdir, 'model/render/render_media.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
+              "ad": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               "clf": 'memory'  # or memory
               }
     render = Render(config)

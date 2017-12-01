@@ -116,8 +116,11 @@ class MainKernel:
 
     def kernel(self, q, user='solr', recursive=True):
         start = time.time()
+        q = self.rule_plugin.filter(q)
+        result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
-            return 'api_call_error'
+            result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
+            return result
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
         prob = -1
@@ -218,7 +221,6 @@ class MainKernel:
                     #     avails = []
             self.sess.append_memory(memory)
             self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
-            result = {"answer": "", "media": "null", 'from': "memory", "sim": 0}
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
             for key, value in render.items():
                 result[key] = value
@@ -292,7 +294,9 @@ if __name__ == '__main__':
               "clf": 'dmn',  # or memory`
               "shuffle": False,
               "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt'),
-              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt')
+              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt'),
+              "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
+              "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               }
     kernel = MainKernel(config)
     while True:

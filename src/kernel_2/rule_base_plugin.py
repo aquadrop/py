@@ -53,6 +53,7 @@ class RuleBasePlugin:
         self.api_list = ['api_call_faq_info']
         self.should_clear_list = ['api_call_request_reg.complete']
         self._load_key_word_file(config['key_word_file'])
+        self._load_noise_filter(config['noise_keyword_file'])
 
     def _load_key_word_file(self, key_word_file):
         self.key_words = []
@@ -61,11 +62,23 @@ class RuleBasePlugin:
                 line = line.strip('\n')
                 self.key_words.append(line)
 
+    def _load_noise_filter(self, noise_file):
+        self.noise_keywords = set()
+        with open(noise_file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.noise_keywords.add(line)
+
     def request_clear_memory(self, api, sess, belief_tracker):
         if api.startswith('api_call_search') or api in self.should_clear_list:
             sess.clear_memory(0)
             belief_tracker.clear_memory()
             print('rule base cleared..')
+
+    def filter(self, q):
+        if q in self.noise_keywords:
+            return ''
+        return q
 
     def fix(self, q, api):
         should_fix = False
