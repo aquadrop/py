@@ -30,7 +30,11 @@ import sys
 import logging
 import traceback
 import time
+import datetime
 import hashlib
+import locale
+
+locale.setlocale(locale.LC_ALL)
 
 import numpy as np
 
@@ -51,6 +55,7 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 class Render:
 
     prefix = ['这样啊.', '没问题.', '好吧']
+    TIME_CN_FORMAT = '{0:%Y年%m月%d日%H点%M分%S秒}'
     ANY = 'any'
     AD_PROB = 0.7
     def __init__(self, config):
@@ -274,6 +279,11 @@ class Render:
                 result['answer'] = answer
                 # result['avail_vals'] = avails
                 return result
+            if response.startswith('api_call_faq_time'):
+                answer = self.TIME_CN_FORMAT.format(datetime.datetime.now())
+                result['answer'] = answer
+                # result['avail_vals'] = avails
+                return result
             if response.startswith('api_call_query_discount'):
                 answer = self.render_api(response)
                 result['answer'] = answer
@@ -373,21 +383,25 @@ class Render:
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
-              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "solr.facet": 'off',
+              "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
-              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
-              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
-              "render_media_file":os.path.join(grandfatherdir, 'model/render/render_media.txt'),
-              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
-              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
-              "ad": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
-              "clf": 'memory'  # or memory
+              "render_api_file": os.path.join(grandfatherdir, 'model/render_2/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render_2/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
+              "render_media_file": os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
+              "clf": 'dmn',  # or memory`
+              "shuffle": False,
+              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt'),
+              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt'),
+              "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
+              "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               }
     render = Render(config)
     print(render.render_recommend('空调'))
@@ -395,3 +409,4 @@ if __name__ == "__main__":
     print(render.render_price({'brand':'西门子', 'category':'空调'}, '2000-3000'))
     print(render.render_media('api_call_request_category'))
     print(render.render_media('吴江新华书店咖啡馆'))
+    print(render.render('', 'api_call_faq_time'))
