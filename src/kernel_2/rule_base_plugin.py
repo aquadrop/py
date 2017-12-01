@@ -76,7 +76,7 @@ class RuleBasePlugin:
             print('rule base cleared..')
 
     def filter(self, q):
-        if q in self.noise_keywords:
+        if q in self.noise_keywords or len(q) <= 1:
             return ''
         return q
 
