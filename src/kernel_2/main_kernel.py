@@ -222,6 +222,7 @@ class MainKernel:
             self.sess.append_memory(memory)
             self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            render['answer'] = self.rule_plugin.replace(render['answer'])
             for key, value in render.items():
                 result[key] = value
             # render = api
@@ -297,6 +298,7 @@ if __name__ == '__main__':
               "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt'),
               "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
               "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
+              "machine_profile": os.path.join(grandfatherdir, 'model/render_2/machine_profile_replacement.txt'),
               }
     kernel = MainKernel(config)
     while True:
