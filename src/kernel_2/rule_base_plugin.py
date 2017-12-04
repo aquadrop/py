@@ -54,6 +54,7 @@ class RuleBasePlugin:
         self.should_clear_list = ['api_call_request_reg.complete']
         self._load_key_word_file(config['key_word_file'])
         self._load_noise_filter(config['noise_keyword_file'])
+        self._load_post_filter(config['machine_profile'])
 
     def _load_key_word_file(self, key_word_file):
         self.key_words = []
@@ -68,6 +69,26 @@ class RuleBasePlugin:
             for line in f:
                 line = line.strip('\n')
                 self.noise_keywords.add(line)
+
+    def _load_post_filter(self, replace_file):
+        self.replacement = dict()
+        with open(replace_file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                a, b = line.split('#')
+                self.replacement[a] = b
+
+    def replace(self, q):
+        """
+        dangerous to use; easy to misuse
+        :param q:
+        :return:
+        """
+        for key, value in self.replacement.items():
+            print(key, value, q)
+            q = q.replace(key, value)
+
+        return q
 
     def request_clear_memory(self, api, sess, belief_tracker):
         if api.startswith('api_call_search') or api in self.should_clear_list:
