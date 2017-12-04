@@ -111,8 +111,6 @@ class FSM(object):
 
         return {'states': res_states, 'triggers': res_triggers}
 
-    def issue_trigger(trigger):
-
     def debug(self):
         triggers = ['register', 'scan_fail', 'scan_fail', 'times_scan_fail']
         for tr in triggers:

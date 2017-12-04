@@ -38,7 +38,8 @@ class Bookstore(object):
         self.success_triggers = ['scan_success', 'auth_success']
         self.fail_triggers = ['scan_fail', 'auth_fail']
         self.times_fail_triggers = ['times_scan_fail', 'times_auth_fail']
-        self.fail_triggers_map = ['scan_fail':'times_scan_fail', 'auth_fail':'times_auth_fail']
+        self.fail_triggers_map = {
+            'scan_fail': 'times_scan_fail', 'auth_fail': 'times_auth_fail'}
 
     def init_fsm(self):
         self.fsm = FSM(self.config)

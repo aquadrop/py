@@ -15,8 +15,8 @@ from fsm_render import triggers_map_bot
 
 
 class FSMKernel(object):
-    self.static_dmn = None
-    self.static_fsm_graph = None
+    static_dmn = None
+    static_fsm_graph = None
 
     def __init__(self, config):
         self.fsm_graph_path = config['fsm_path']
@@ -48,21 +48,21 @@ class FSMKernel(object):
         if not FSMKernel.static_dmn:
             try:
                 print('attaching dmn...100%')
-               self.dmn = DmnInfer()
+                self.dmn = DmnInfer()
                 FSMKernel.static_dmn = self.dmn
             except:
                 traceback.print_exc()
         else:
             self.dmn = FSMKernel.static_dmn
 
-    def render(self,trigger):
+    def render(self, trigger):
         return triggers_map_bot[trigger]
 
     def kernel(self, q, user='solr'):
         if not q:
             return 'api_call_error'
         # api, prob = self.sess.reply(q)
-        api=self.fake_dmn(q)
+        api = self.fake_dmn[q]
 
         if api.startswith('reserved_'):
             return 'api_call_reserved'
@@ -72,17 +72,18 @@ class FSMKernel(object):
             return 'api_call_qa'
         trigger = api
         trigger = self.fsm_graph.issue_trigger(trigger)
-        response=self.render(trigger)
-        return trigger,response
+        response = self.render(trigger)
+        return trigger, response
 
 
 def main():
-    config=dict()
-    config['fsm_path']='model/graph/fsm_graph.pkl'
-    fsmkernel=FSMKernel(config)
+    prefix = grandfatherdir
+    config = dict()
+    config['fsm_path'] = os.path.join(prefix, 'model/graph/fsm_graph.pkl')
+    fsmkernel = FSMKernel(config)
     while True:
         ipt = input("input:")
-        trigger,response = fsmkernel.kernel(ipt)
+        trigger, response = fsmkernel.kernel(ipt)
         print(resp)
 
 
