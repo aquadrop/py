@@ -11,6 +11,7 @@ sys.path.append(grandfatherdir)
 
 from graph.fsm import FSM
 from dmn.dmn_fasttext.dmn_session import DmnInfer
+from fsm_render import triggers_map_bot
 
 
 class FSMKernel(object):
@@ -22,6 +23,14 @@ class FSMKernel(object):
         self._init_fsm_graph()
         self._init_dmn()
         self.sess = self.dmn.get_session()
+
+        self.fake_dmn = {
+            '注册': 'register',
+            '扫好了': 'scan_success',
+            '扫码失败': 'scan_fail',
+            '验证好了': 'auth_success',
+            '验证失败': 'auth_fail'
+        }
 
     def _init_fsm_graph(self):
         if not FSMKernel.static_fsm_graph:
@@ -46,10 +55,14 @@ class FSMKernel(object):
         else:
             self.dmn = FSMKernel.static_dmn
 
+    def render(self,trigger):
+        return triggers_map_bot[trigger]
+
     def kernel(self, q, user='solr'):
         if not q:
             return 'api_call_error'
-        api, prob = self.sess.reply(q)
+        # api, prob = self.sess.reply(q)
+        api=self.fake_dmn(q)
 
         if api.startswith('reserved_'):
             return 'api_call_reserved'
@@ -59,11 +72,18 @@ class FSMKernel(object):
             return 'api_call_qa'
         trigger = api
         trigger = self.fsm_graph.issue_trigger(trigger)
-        return trigger
+        response=self.render(trigger)
+        return trigger,response
 
 
 def main():
-    pass
+    config=dict()
+    config['fsm_path']='model/graph/fsm_graph.pkl'
+    fsmkernel=FSMKernel(config)
+    while True:
+        ipt = input("input:")
+        trigger,response = fsmkernel.kernel(ipt)
+        print(resp)
 
 
 if __name__ == '__main__':

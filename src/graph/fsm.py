@@ -51,10 +51,7 @@ class FSM(object):
         available_triggers = self.machine.get_triggers(self.state)
         current_loop_num = self.get_current_loop_num()
         if trigger in available_triggers:
-            if current_loop_num >= self.max_loop_num:
-
-            else:
-
+            self.__dict__[trigger](current_loop_num, self.max_loop_num)
         else:
             print('Can not goto next state with trigger {}'.format(trigger))
 

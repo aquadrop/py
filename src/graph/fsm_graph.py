@@ -34,7 +34,11 @@ class Bookstore(object):
 
         }
         self.init_fsm()
+        self.terminate_states = ['success', 'fail']
+        self.success_triggers = ['scan_success', 'auth_success']
         self.fail_triggers = ['scan_fail', 'auth_fail']
+        self.times_fail_triggers = ['times_scan_fail', 'times_auth_fail']
+        self.fail_triggers_map = ['scan_fail':'times_scan_fail', 'auth_fail':'times_auth_fail']
 
     def init_fsm(self):
         self.fsm = FSM(self.config)
@@ -87,15 +91,22 @@ class Bookstore(object):
             return False
 
     def issue_trigger(trigger):
-        last_state = self.fsm.last_state
-        current_state = self.fsm.state
-
         if trigger in self.fail_triggers:
-            pass
+            current_loop_num = self.get_current_loop_num()
+            if current_loop_num >= self.config['max_loop_num']:
+                self.fsm.goto_init_state()
+                return self.fail_triggers_map[trigger]
+            else:
+                return trigger
         if trigger == 'register':
             self.fsm.goto_init_state()
             self.fsm.goto_next_state()
             return trigger
+        if trigger in self.success_triggers:
+            self.fsm.goto_next_state()
+            current_state = self.fsm.state
+            if current_state in self.terminate_states:
+                self.fsm.goto_init_state()
 
 
 def main():
