@@ -1,101 +1,111 @@
 import os
 import sys
-import json
+import pickle
 
 from collections import OrderedDict
+from fsm import FSM
 
 
-class LogicNode(object):
-    def __init__(self, state):
-        self.state = state
-        self.children = list()
-        self.values = list()
+class Bookstore(object):
+    def __init__(self):
+        self.config = dict()
+        self.config['name'] = 'xinhua'
+        self.config['max_loop_num'] = 2
+        self.config['terminate_num'] = 2
+        self.config['states'] = ['root', 'scan', 'auth', 'success', 'fail']
+        self.config['transitions'] = None
+        self.config['conditions_map'] = {
+            'is_register': self.is_register,
+            'is_scan_success': self.is_scan_success,
+            'is_auth_success': self.is_auth_success,
+            'is_scan_fail': self.is_scan_fail,
+            'is_auth_fail': self.is_auth_fail,
+            'is_times_scan_fail': self.is_times_scan_fail,
+            'is_times_auth_fail': self.is_times_auth_fail
+        }
+        self.config['triggers_conditions_map'] = {
+            'register': 'is_register',
+            'scan_success': 'is_scan_success',
+            'scan_fail': 'is_scan_fail',
+            'auth_success': 'is_auth_success',
+            'auth_fail': 'is_auth_fail',
+            'times_scan_fail': 'is_times_scan_fail',
+            'times_auth_fail': 'is_times_auth_fail'
 
-    def get_values(self):
-        return self.values
+        }
+        self.init_fsm()
+        self.fail_triggers = ['scan_fail', 'auth_fail']
 
-    def get_state(self):
-        return self.state
+    def init_fsm(self):
+        self.fsm = FSM(self.config)
+        self.fsm.machine.add_transition(
+            'register', 'root', 'scan', conditions='is_register')
+        self.fsm.machine.add_transition(
+            'scan_success', 'scan', 'auth', conditions='is_scan_success')
+        self.fsm.machine.add_transition(
+            'scan_fail', 'scan', 'scan', conditions='is_scan_fail')
+        self.fsm.machine.add_transition(
+            'auth_success', 'auth', 'success', conditions='is_auth_success')
+        self.fsm.machine.add_transition(
+            'auth_fail', 'auth', 'auth', conditions='is_auth_fail')
+        self.fsm.machine.add_transition(
+            'times_scan_fail', 'scan', 'fail', conditions='is_times_scan_fail')
+        self.fsm.machine.add_transition(
+            'times_auth_fail', 'auth', 'fail', conditions='is_times_auth_fail')
 
-    def get_child(self):
-        return self.children
+    def is_register(current_loop_num, max_loop_num):
+        return True
 
-    def set_values(self, values):
-        self.values = values
+    def is_scan_success(current_loop_num, max_loop_num):
+        return True
 
-    def set_children(self, children):
-        self.children = children
+    def is_auth_fail(current_loop_num, max_loop_num):
+        if current_loop_num < max_loop_num:
+            return True
+        else:
+            return False
 
+    def is_scan_fail(current_loop_num, max_loop_num):
+        if current_loop_num < max_loop_num:
+            return True
+        else:
+            return False
 
-class LogicEdge(object):
-    def __init__(self, head, tail):
-        self.head = head
-        self.tail = tail
-        self.state = self.head + '-' + self.tail
-        self.values = list()
+    def is_auth_success(current_loop_num, max_loop_num):
+        return True
 
-    def get_values(self):
-        return self.values
+    def is_times_scan_fail(current_loop_num, max_loop_num):
+        if current_loop_num >= max_loop_num:
+            return True
+        else:
+            return False
 
-    def get_state(self):
-        return self.state
+    def is_times_auth_fail(current_loop_num, max_loop_num):
+        if current_loop_num >= max_loop_num:
+            return True
+        else:
+            return False
 
-    def get_head(self):
-        return self.head
+    def issue_trigger(trigger):
+        last_state = self.fsm.last_state
+        current_state = self.fsm.state
 
-    def get_tail(self):
-        return self.tail
-
-    def set_values(self, values):
-        self.values = values
-
-
-def build_graph(path):
-    with open(path, 'r') as f:
-        graph = json.load(f)
-
-    logic_nodes = dict()
-    logic_edges = dict()
-    states = graph.keys()
-
-    for state in states:
-        logic_node = LogicNode(state)
-        children = graph[state]
-        logic_node.set_children(children)
-        logic_nodes[state] = logic_node
-
-        logic_edge = [LogicEdge(state, child) for child in children]
-        for e in logic_edge:
-            logic_edge_state = e.get_state()
-            logic_edges[logic_edge_state] = e
-
-    return graph, logic_nodes, logic_edges
+        if trigger in self.fail_triggers:
+            pass
+        if trigger == 'register':
+            self.fsm.goto_init_state()
+            self.fsm.goto_next_state()
+            return trigger
 
 
 def main():
+    fsm = Bookstore()
     prefix = os.path.dirname(os.path.dirname(
         os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(prefix, 'data/bookstore/logic_graph.txt')
-    graph, logic_nodes, logic_edges = build_graph(path)
+    path = os.path.join(prefix, 'model/graph/fsm_graph.pkl')
 
-    print(graph)
-    print(logic_nodes)
-    print(logic_edges)
-
-
-def test():
-    test = {
-        'root': ['scan'],
-        'scan': ['auth', 'scan'],
-        'auth': ['auth', 'complete'],
-        'complete': []
-    }
-    prefix = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(prefix, 'data/bookstore/test.txt')
-    print(path)
-    with open(path, 'w') as f:
-        json.dump(test, f)
+    with open(path, 'wb') as f:
+        pickle.dump(fsm, f)
 
 
 if __name__ == '__main__':

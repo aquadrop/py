@@ -29,6 +29,7 @@ from utils.cn2arab import *
 import utils.query_util as query_util
 import utils.solr_util as solr_util
 
+
 class BeliefTracker:
     # static
     static_gbdt = None
@@ -108,7 +109,8 @@ class BeliefTracker:
                 should_clear_memory = True
         self.rule_base_filter(query, query_mapper)
         self.exploit_once = True
-        self.color_graph(query=query, slot_values_mapper=query_mapper, range_render=True)
+        self.color_graph(
+            query=query, slot_values_mapper=query_mapper, range_render=True)
         # self.use_wild_card(wild_card)
         if wild_card and self.exploit_once:
             self.exploit_wild_card(wild_card=wild_card)
@@ -139,7 +141,8 @@ class BeliefTracker:
         if not slot:
             if 'category' in self.filling_slots:
                 value = self.filling_slots['category']
-                self.move_to_node(self.belief_graph.get_nodes_by_value(value)[0])
+                self.move_to_node(
+                    self.belief_graph.get_nodes_by_value(value)[0])
                 self.machine_state = self.API_REQUEST_STATE
             else:
                 self.clear_memory()
@@ -155,6 +158,7 @@ class BeliefTracker:
         return api, avails
 
     STOP_WORDS = ['的']
+
     def rule_base_filter(self, query, query_mapper):
         if 'brand' in query_mapper:
             shall_pass = False
@@ -385,7 +389,8 @@ class BeliefTracker:
             if key == 'entity':
                 nodes = self.belief_graph.get_nodes_by_value(value)
             else:
-                nodes = self.belief_graph.get_nodes_by_value_and_field(value, key)
+                nodes = self.belief_graph.get_nodes_by_value_and_field(
+                    value, key)
             if len(nodes) == 1 and nodes[0].has_ancestor_by_value(self.search_node.value):
                 print('&&&&&')
                 node = nodes[0]
@@ -394,7 +399,7 @@ class BeliefTracker:
                 if self.search_node not in node.parent_node:
                     # move to parent node if relation is grand
                     self.move_to_node(np.random.choice(node.parent_node))
-                ## TODO: 有问题!!
+                # TODO: 有问题!!
                 if not node.is_leaf():
                     self.move_to_node(node)
                 else:
@@ -417,8 +422,10 @@ class BeliefTracker:
                     if len(parent_values) > 1:
                         for node in filtered:
                             if node.parent_node.value not in self.ambiguity_slots:
-                                self.ambiguity_slots[node.parent_node.value] = []
-                            self.ambiguity_slots[node.parent_node.value].append(node)
+                                self.ambiguity_slots[node.parent_node.value] = [
+                                ]
+                            self.ambiguity_slots[node.parent_node.value].append(
+                                node)
                     else:
                         for node in filtered:
                             self.ambiguity_slots[node.slot] = [node]
@@ -478,7 +485,8 @@ class BeliefTracker:
         if not flag:
             if self.shall_exploit_range():
                 if 'number' in wild_card:
-                    self.fill_slot(self.get_requested_field(), wild_card['number'])
+                    self.fill_slot(self.get_requested_field(),
+                                   wild_card['number'])
                     flag = True
                     del wild_card['number']
         # fill and change state
@@ -664,8 +672,10 @@ class BeliefTracker:
                     if len(parent_node_value) > 1:
                         for node in filtered_nodes:
                             if node.parent_node.value not in self.ambiguity_slots:
-                                self.ambiguity_slots[node.parent_node.value] = []
-                            self.ambiguity_slots[node.parent_node.value].append(node)
+                                self.ambiguity_slots[node.parent_node.value] = [
+                                ]
+                            self.ambiguity_slots[node.parent_node.value].append(
+                                node)
                     # nice, differentiating at slots, not parent_nodes
                     else:
                         for node in filtered_nodes:
@@ -779,9 +789,9 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            facets, lens, _ = solr_util.solr_facet(mappers=mapper,\
-                                        facet_field=facet_field,\
-                                        is_range=False, prefix='facet_')
+            facets, lens, _ = solr_util.solr_facet(mappers=mapper,
+                                                   facet_field=facet_field,
+                                                   is_range=False, prefix='facet_')
             return facets, lens
         else:
             mapper = dict()
@@ -795,8 +805,8 @@ class BeliefTracker:
                 # fill.append(node.slot + ":" + node.value)
                 mapper[node.slot] = node.value
                 node = node.parent_node
-            facets, lens, _ = solr_util.solr_facet(mappers=mapper, \
-                                                   facet_field=facet_field, \
+            facets, lens, _ = solr_util.solr_facet(mappers=mapper,
+                                                   facet_field=facet_field,
                                                    is_range=False, prefix='facet_')
             return facets, lens
 
@@ -1010,6 +1020,7 @@ def test():
                 print('error:', e, end='\n\n', file=logfile)
                 break
 
+
 def test_facet():
     graph_dir = os.path.join(grandfatherdir, "model/graph/belief_graph.pkl")
     config = dict()
@@ -1019,8 +1030,9 @@ def test_facet():
     bt = BeliefTracker(config)
     bt.search_node = bt.belief_graph.get_nodes_by_value('空调')[0]
     bt.requested_slots = ['ac.power_float']
-    bt.filling_slots = {"brand":"美的","price":"[2700 TO 3300]"}
+    bt.filling_slots = {"brand": "美的", "price": "[2700 TO 3300]"}
     print(bt.solr_facet())
+
 
 if __name__ == "__main__":
     test_facet()
