@@ -222,6 +222,11 @@ class MainKernel:
             self.sess.append_memory(memory)
             self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            print('render:',render)
+            if str(render['answer']).startswith('api_call_'):
+                response='api_call_base'
+                render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            print('render:', render)
             for key, value in render.items():
                 result[key] = value
             # render = api
