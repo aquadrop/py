@@ -29,6 +29,8 @@ import pickle
 import os
 import sys
 import uuid
+import json
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
@@ -282,6 +284,8 @@ def load_belief_graph_from_tables(files, output_file):
                         continue
                     names = slot_value.split(',')
                     for name in names:
+                        if not name:
+                            continue
                         if 'category' in slot:
                             try:
                                 nodes = node_header[name]
@@ -306,6 +310,7 @@ def load_belief_graph_from_tables(files, output_file):
                             id_node[id] = child_node
                         node.add_node(child_node, edge=slot, ignore_field_conflict=True)
 
+    # print(json.dumps(belief_graph))
     with open(output_file, "wb") as omp:
         pickle.dump(belief_graph, omp)
 

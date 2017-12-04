@@ -116,6 +116,8 @@ class BeliefTracker:
             self.exploit_wild_card(wild_card=wild_card)
         print(self.requested_slots)
         api, avails = self.issue_api()
+        if api.startswith('api_call_search'):
+            should_clear_memory = True
         return api, avails, should_clear_memory
 
     def defaulting_call(self, query, wild_card=None):
@@ -392,7 +394,6 @@ class BeliefTracker:
                 nodes = self.belief_graph.get_nodes_by_value_and_field(
                     value, key)
             if len(nodes) == 1 and nodes[0].has_ancestor_by_value(self.search_node.value):
-                print('&&&&&')
                 node = nodes[0]
                 #
 
@@ -774,7 +775,7 @@ class BeliefTracker:
     def solr_facet(self, prefix='facet_'):
         if self.config['solr.facet'] != 'on':
             return ['facet is off'], 0
-        node = self.search_node
+        node = self.search_node[0]
         facet_field = self.requested_slots[0]
 
         if self.is_key_type(facet_field):

@@ -30,7 +30,11 @@ import sys
 import logging
 import traceback
 import time
+import datetime
 import hashlib
+import locale
+
+locale.setlocale(locale.LC_ALL)
 
 import numpy as np
 
@@ -51,7 +55,9 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 class Render:
 
     prefix = ['这样啊.', '没问题.', '好吧']
+    TIME_CN_FORMAT = '{0:%Y年%m月%d日%H点%M分%S秒}'
     ANY = 'any'
+    AD_PROB = 0.7
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
@@ -60,22 +66,49 @@ class Render:
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
         self._load_media_render(config['render_media_file'])
+        self._load_emotion_render(config['emotion_file'])
+        self._load_ad(config['ad_anchor'])
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
-        self.faq = QA('faq')
+        self.faq = QA('base')
         print('attaching rendering file...')
 
-    def _load_media_render(self,file):
+    def _load_emotion_render(self, file):
+        self.emotion = []
+        self.emotion_prob = 0.8
+        with open (file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.emotion.append(line)
+
+    def _load_ad(self, file):
+        self.ad = []
+        with open (file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                self.ad.append(line)
+
+    def render_ad(self):
+        if np.random.uniform() < self.AD_PROB:
+            return "," + np.random.choice(self.ad)
+        return ''
+
+    def render_emotion(self):
+        if np.random.uniform() < self.emotion_prob:
+            return np.random.choice(self.emotion)
+        return 'null'
+
+    def _load_media_render(self, file):
         self.media_render_mapper=dict()
         with open(file,'r') as f:
             for line in f:
                 line=line.strip('\n')
-                values=line.split('##')
-                if len(values)==2:
+                values=line.split('#')
+                if not values[1]:
                     self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
                 else:
-                    self.media_render_mapper[values[0]]=values[0]
+                    self.media_render_mapper[values[0]]=values[1]
 
     def _load_major_render(self, file):
         self.major_render_mapper = dict()
@@ -193,7 +226,9 @@ class Render:
         #     return self.render_brand(self.major_render_mapper[api], replacements)
         return np.random.choice(self.major_render_mapper[api])
 
-    def render_media(self,api):
+    def render_media(self, api):
+        if api not in self.media_render_mapper:
+            return 'null'
         return self.media_render_mapper[api]
 
     def render_brand(self, templates, replacements={}):
@@ -218,6 +253,7 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
+        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
@@ -225,103 +261,83 @@ class Render:
                 # self.sess.clear_memory()
                 matched, answer, score = self.interactive.get_responses(
                     query=q)
-                return answer
-            if response.startswith('api_call_faq'):
+                result['answer'] = answer
+                result['from'] = 'base'
+                result['sim'] = score
+                result['emotion'] = self.render_emotion()
+                return result
+            if response.startswith('api_call_faq_general'):
                 matched, answer, score = self.faq.get_responses(
                     query=q)
                 ad = self.ad_kernel.anchor_faq_ad(answer)
-                return answer + ' ' + ad
+                answer = answer + ' ' + ad
+                result['answer'] = answer
+                return result
+            if response.startswith('api_call_faq_info'):
+                result['media'] = self.render_media(response)
+                answer = self.render_api(response, avails)
+                result['answer'] = answer
+                # result['avail_vals'] = avails
+                return result
+            if response.startswith('api_call_faq_time'):
+                answer = self.TIME_CN_FORMAT.format(datetime.datetime.now())
+                result['answer'] = answer
+                # result['avail_vals'] = avails
+                return result
             if response.startswith('api_call_query_discount'):
-                return self.render_api(response)
+                answer = self.render_api(response)
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_query_general'):
-                return self.render_api(response)
+                answer = self.render_api(response)
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_slot_virtual_category') or response == 'api_greeting_search_normal':
-                return self.render_api(response, {})
+                answer = self.render_api(response, {})
+                result['answer'] = answer
+                return result
             if response.startswith('api_call_request_') or response.startswith('api_call_search_'):
-                if response.startswith('api_call_request_ambiguity_removal_'):
-                    params = response.replace(
-                        'api_call_request_ambiguity_removal_', '').split(',')
-                    # rendered = '你要哪一个呢,' + params
-                    # return rendered + "@@" + response
-                    return self.render_ambiguity(params)
-                # params = response.replace('api_call_request_', '')
-                # params = self.belief_tracker.belief_graph.slots_trans[params]
-                # rendered = '什么' + params
-                # return rendered + "@@" + response
-
                 if prefix:
-                    return prefix + self.render_api(response, avails)
-                return self.render_api(response, avails)
-            if response.startswith('api_call_rhetorical_'):
-                entity = response.replace('api_call_rhetorical_', '')
-                if entity in avails and len(avails[entity]) > 0:
-                    return '我们有' + ",".join(avails[entity])
-                else:
-                    return np.random.choice(['您好,我们这里卖各种空调电视电脑冰箱等,价格不等,您可以来看看呢',
-                                             '您好啊,这里有各种冰箱空调电视等,价格在3000-18000,您可以来看看呢'])
-            if response.startswith('api_call_search_'):
-                return response
-                tokens = response.replace('api_call_search_', '').split(',')
-
-                and_mapper = dict()
-                or_mapper = dict()
-                for t in tokens:
-                    key, value = t.split(':')
-                    if key == 'price':
-                        or_mapper[key] = value
-                    else:
-                        and_mapper[key] = value
-                docs = solr_util.query(and_mapper, or_mapper)
-                if len(docs) > 0:
-                    doc = docs[0]
-                    return self.render_recommend(doc['title'][0])
-                else:
-                    # use loose search, brand and category is mandatory
-                    and_mapper.clear()
-                    or_mapper.clear()
-                    for t in tokens:
-                        key, value = t.split(':')
-                        if key in ['category', 'brand']:
-                            and_mapper[key] = value
-                        else:
-                            or_mapper[key] = value
-                    docs = solr_util.query(and_mapper, or_mapper)
-                    if len(docs) > 0:
-                        doc = docs[0]
-                        return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
-                    return response
-
-            if response.startswith('api_call_query_price_'):
-                params = response.replace('api_call_query_price_' ,'')
-                if not params:
-                    return '价位在3000-18000'
-                else:
-                    mapper = dict()
-                    for kv in params.split(','):
-                        key, value = kv.split(':')
-                        mapper[key] = value
-
-                facet = solr_util.solr_facet(mappers=mapper, facet_field='price', is_range=True)
-                response = self.render_price(mapper=mapper, price=','.join(facet[0]))
-                # response = self.render_mapper(mapper) + '目前价位在' + ','.join(facet[0])
-                return response
-
-            if response.startswith('api_call_query_brand_'):
-                params = response.replace('api_call_query_brand_' ,'')
-                if not params:
-                    raise ValueError('api_call_query must have params provided...')
-                else:
-                    mapper = dict()
-                    for kv in params.split(','):
-                        key, value = kv.split(':')
-                        mapper[key] = value
-
-                facet = solr_util.solr_facet(mappers=mapper, facet_field='brand', is_range=False)
-                response = self.render_mapper(mapper) + '有' + ','.join(facet[0])
-                if 'category' in mapper:
-                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
-                    response = response + ' ' + ad
-                return response
+                    answer = prefix + self.render_api(response, avails)
+                    result['answer'] = answer
+                    #result['avail_vals'] = avails
+                    return result
+                result['media'] = self.render_media(response)
+                answer = self.render_api(response, avails)
+                result['answer'] = answer
+                #result['avail_vals'] = avails
+                return result
+            # if response.startswith('api_call_search_'):
+            #     return response
+            #     tokens = response.replace('api_call_search_', '').split(',')
+            #
+            #     and_mapper = dict()
+            #     or_mapper = dict()
+            #     for t in tokens:
+            #         key, value = t.split(':')
+            #         if key == 'price':
+            #             or_mapper[key] = value
+            #         else:
+            #             and_mapper[key] = value
+            #     docs = solr_util.query(and_mapper, or_mapper)
+            #     if len(docs) > 0:
+            #         doc = docs[0]
+            #         return self.render_recommend(doc['title'][0])
+            #     else:
+            #         # use loose search, brand and category is mandatory
+            #         and_mapper.clear()
+            #         or_mapper.clear()
+            #         for t in tokens:
+            #             key, value = t.split(':')
+            #             if key in ['category', 'brand']:
+            #                 and_mapper[key] = value
+            #             else:
+            #                 or_mapper[key] = value
+            #         docs = solr_util.query(and_mapper, or_mapper)
+            #         if len(docs) > 0:
+            #             doc = docs[0]
+            #             return '没有找到完全符合您要求的商品.' + self.render_recommend(doc['title'][0])
+            #         return response
 
             if response.startswith('api_call_query_location_'):
                 params = response.replace('api_call_query_location_', '')
@@ -339,41 +355,53 @@ class Render:
                                              core='bookstore_map')
                 location = ','.join(facet[0])
                 category = ','.join(mapper.values())
+                image_key = ''
                 try:
-                    title = facet[2][0]['title']
+                    if 'category' in mapper or 'virtual_category' in mapper:
+                        title = category
+                    else:
+                        title = facet[2][0]['title']
+                    image_key = facet[2][0]['image_key']
                 except:
                     title = category
                 response = self.render_location(category, location)
-                response.replace(category, title)
+                response = response.replace(category, title)
                 if 'category' in mapper:
-                    ad = self.ad_kernel.anchor_category_ad(mapper['category'])
-                    response = response + ' ' + ad
-                return response
-
+                    response = response
+                ad = self.render_ad()
+                response = response + ad
+                result = {'answer': response, 'media': image_key, 'avail_vals':""}
+                return result
             return response
         except:
             print(traceback.format_exc())
             matched, answer, score = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
-            return answer
+            result['answer'] = answer
+            return result
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
-              "solr.facet": 'on',
-              "metadata_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/metadata.pkl'),
-              "data_dir": os.path.join(grandfatherdir, 'data/memn2n/processed/data.pkl'),
+              "solr.facet": 'off',
+              "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
+              "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
               "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
-              "render_api_file": os.path.join(grandfatherdir, 'model/render/render_api.txt'),
-              "render_location_file": os.path.join(grandfatherdir, 'model/render/render_location.txt'),
-              "render_recommend_file": os.path.join(grandfatherdir, 'model/render/render_recommend.txt'),
-              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render/render_ambiguity_removal.txt'),
-              "render_price_file": os.path.join(grandfatherdir, 'model/render/render_price.txt'),
-              "render_media_file":os.path.join(grandfatherdir, 'model/render/render_media.txt'),
-              "faq_ad": os.path.join(grandfatherdir, 'model/ad/faq_ad.txt'),
-              "location_ad": os.path.join(grandfatherdir, 'model/ad/category_ad_anchor.txt'),
-              "clf": 'memory'  # or memory
+              "render_api_file": os.path.join(grandfatherdir, 'model/render_2/render_api.txt'),
+              "render_location_file": os.path.join(grandfatherdir, 'model/render_2/render_location.txt'),
+              "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
+              "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
+              "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
+              "render_media_file": os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
+              "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
+              "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
+              "clf": 'dmn',  # or memory`
+              "shuffle": False,
+              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt'),
+              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt'),
+              "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
+              "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               }
     render = Render(config)
     print(render.render_recommend('空调'))
@@ -381,3 +409,4 @@ if __name__ == "__main__":
     print(render.render_price({'brand':'西门子', 'category':'空调'}, '2000-3000'))
     print(render.render_media('api_call_request_category'))
     print(render.render_media('吴江新华书店咖啡馆'))
+    print(render.render('', 'api_call_faq_time'))

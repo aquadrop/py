@@ -22,7 +22,7 @@ def _pickle():
     slots_trans['rhetorical_'] = '反问'
     slots_trans['placeholder'] = '占位'
     slots_trans['ambiguity_removal'] = '消除歧义'
-    slots_trans['slot_'] = '买'
+    slots_trans['slot_'] = ''
     slots_trans['virtual_'] = '虚'
     slots_trans['api_call_'] = ''
     slots_trans['sunning'] = '苏宁'
@@ -76,13 +76,8 @@ def test():
 
 
 if __name__ == '__main__':
-    l=['api_call_request_category',
-    'api_call_request_reg.scan_follow',
-    'api_call_request_reg.auth',
-    'api_call_request_reg.complete',
-    'api_call_search_reg.auth: 点击验证成功, reg.complete: 注册成功',
-    'api_call_search_category: 注册, reg.scan_follow: 扫码关注失败',
-    'api_call_search_reg.scan_follow: 扫码关注成功, reg.auth: 点击验证失败']
+    l=[
+       "api_call_slot_reg.repeat_auth:点击验证成功"]
     _pickle()
     tr = Translator()
     for ll in l:

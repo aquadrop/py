@@ -51,6 +51,7 @@ import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 import memory.config as config
 from kernel_2.render import Render
+from kernel_2.rule_base_plugin import RuleBasePlugin
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -61,17 +62,18 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = config.CUDA_DEVICE
 
-
 class MainKernel:
     static_memory = None
     static_dmn = None
     static_render = None
+    static_rule_plugin = None
 
     def __init__(self, config):
         self.config = config
         self.belief_tracker = BeliefTracker(config)
         # self.render = Render(self.belief_tracker, config)
         self._load_render(config)
+        self._load_rule_plugin(config)
         self.base_counter = 0
         self.base_clear_memory = 2
         if config['clf'] == 'memory':
@@ -91,6 +93,13 @@ class MainKernel:
         else:
             self.memory = MainKernel.static_memory
 
+    def _load_rule_plugin(self, config):
+        if not MainKernel.static_rule_plugin:
+            self.rule_plugin = RuleBasePlugin(config)
+            MainKernel.static_rule_plugin = self.rule_plugin
+        else:
+            self.rule_plugin = MainKernel.static_rule_plugin
+
     def _load_dmn(self, config):
         if not MainKernel.static_dmn:
             self.dmn = DmnInfer()
@@ -105,9 +114,13 @@ class MainKernel:
         else:
             self.render = MainKernel.static_render
 
-    def kernel(self, q, user='solr', recursive=False):
+    def kernel(self, q, user='solr', recursive=True):
+        start = time.time()
+        q = self.rule_plugin.filter(q)
+        result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
-            return 'api_call_error'
+            result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
+            return result
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
         prob = -1
@@ -136,24 +149,31 @@ class MainKernel:
                     #     memory = ''
                 pass
             if not exploited:
-                api, prob = self.sess.reply(range_rendered)
-                print(api, prob)
+                _api, prob = self.sess.reply(range_rendered)
+                api = self.rule_plugin.fix(q, _api)
+                print(_api, api, prob[0][0], prob)
+                score = float(prob[0][0])
+                if score < 0.5:
+                    api = 'api_call_base'
                 response = api
                 if api.startswith('reserved_'):
                     print('miss placing cls...')
                     self.belief_tracker.clear_memory()
                     self.sess.clear_memory()
-                    return self.kernel(q, user)
-                if api.startswith('api_call_base'):
+                    if recursive:
+                        return self.kernel(q, user, False)
+                if api.startswith('api_call_base') \
+                        or api.startswith('api_call_query_location') or api.startswith('api_call_faq'):
                     memory = ''
                     response = api
                     self.base_counter += 1
-                    if self.base_counter >= self.base_clear_memory:
+                    if self.base_counter >= self.base_clear_memory and api.startswith('api_call_base'):
                         self.base_counter = 0
                         print('clear memory due to base...')
                         self.belief_tracker.clear_memory()
                         self.sess.clear_memory()
-                        return self.kernel(q, user)
+                        if recursive:
+                            return self.kernel(q, user, False)
                 else:
                     self.base_counter = 0
                 if api.startswith('api_call_slot'):
@@ -171,6 +191,8 @@ class MainKernel:
                         if should_clear_memory:
                             print('restart xinhua bookstore session..')
                             self.sess.clear_memory(history=2)
+                        if response.startswith('api_call_search'):
+                            self.sess.clear_memory()
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -198,13 +220,25 @@ class MainKernel:
                     #     memory = api
                     #     avails = []
             self.sess.append_memory(memory)
-            media=self.render.render_media(response)
-            avail_vals=str(avails)
+            self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            if str(render['answer']).startswith('api_call_'):
+                response='api_call_base'
+                render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+
+            render['answer'] = self.rule_plugin.replace(render['answer'])
+            for key, value in render.items():
+                result[key] = value
             # render = api
             logging.info("C@user:{}##model:{}##query:{}##class:{}##prob:{}##render:{}".format(
                 user, 'memory', q, api, prob, render))
-            return render,media,avail_vals
+            # result = render
+            result['sentence'] = q
+            result['score'] = float(prob[0][0])
+            result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
+            if 'media'in result and result['media'] and result['media'] is not 'null':
+                result['timeout'] = 15
+            return result
 
     def gbdt_reply(self, q, requested=None):
         if requested:
@@ -263,10 +297,15 @@ if __name__ == '__main__':
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory`
-              "shuffle": False
+              "shuffle": False,
+              "key_word_file": os.path.join(grandfatherdir, 'model/render_2/key_word.txt'),
+              "emotion_file": os.path.join(grandfatherdir, 'model/render_2/emotion.txt'),
+              "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
+              "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
+              "machine_profile": os.path.join(grandfatherdir, 'model/render_2/machine_profile_replacement.txt'),
               }
     kernel = MainKernel(config)
     while True:
         ipt = input("input:")
-        resp,media,a = kernel.kernel(ipt)
+        resp = kernel.kernel(ipt)
         print(resp)

@@ -46,7 +46,7 @@ current_date = time.strftime("%Y.%m.%d")
 
 class AdKernel:
 
-    AD_THRES = 1
+    AD_THRES = 0
     def __init__(self, config):
         self._load_faq_ad_anchor(config['faq_ad'])
         self._load_category_ad_anchor(config['location_ad'])

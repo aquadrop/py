@@ -428,11 +428,13 @@ class TreeSimilator:
             cls = render_cls(slot_values_mapper)
             candidates.add(cls.lower())
             api = render_api(self.belief_tracker.issue_api(attend_facet=False))
-            line = user_reply + '\t' + cls + '\t' + api
-            print(line)
-            flow = cls + '\t' + api
-            if cls == 'api_call_slot_reg.repeat_scan_follow:扫码关注失败':
+            if not user_reply:
                 print()
+            line = user_reply + '\t' + cls + '\t' + api
+            # print(line)
+            flow = cls + '\t' + api
+            # if cls == 'api_call_slot_reg.repeat_scan_follow:扫码关注失败':
+            #     print()
             if requested == 'category':
                 single_container.append(line)
                 # single_container.append('')
@@ -544,6 +546,13 @@ class TreeSimilator:
         base = []
         if with_base:
             with open(grandfatherdir + '/data/memn2n/train/base/interactive_memory.txt', encoding='utf-8') as cf:
+                for line in cf:
+                    line = line.strip('\n')
+                    base.append(line)
+                    if not line:
+                        base_count += 1
+            with open(grandfatherdir + '/data/memn2n/train/base/base_bookstore.txt',
+                      encoding='utf-8') as cf:
                 for line in cf:
                     line = line.strip('\n')
                     base.append(line)

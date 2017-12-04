@@ -96,12 +96,13 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 try:
                     u, r, salt = line.split('\t')
                 except:
-                    print(line)
+                    print('error and exit', line)
                     exit(-1)
                 if config.multi_label:
                     a = [candid_dic[single_r] for single_r in r.split(",")]
                 else:
                     if r not in candid_dic:
+                        print('warning candidate is not listed..', r)
                         continue
                     a = candid_dic[r]
                 u = tokenize(u, char=char)
@@ -124,8 +125,8 @@ def parse_dialogs_per_response(sentences, lines, candid_dic, char=1):
                 context.append(u)
                 # r = r if placeholder == 'placeholder' else r + salt
                 context.append(r)
-                # if salt != 'placeholder':
-                #     context.append(salt)
+                if not placeholder:
+                    context.append(salt)
         else:
             # clear context
             context = []
@@ -164,7 +165,7 @@ def load_raw_data(config):
         candidates_f=config.candid_path)
     candidate_size = len(candidates)
 
-    char = 2 if config.word else 1
+    char = 2 if config.word else 0
     sentences = set()
     train_data, test_data, val_data = load_dialog(sentences,
                                                   data_dir=config.data_dir,
