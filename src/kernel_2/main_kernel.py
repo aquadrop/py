@@ -30,6 +30,7 @@ import os
 import sys
 import logging
 import time
+import json
 from datetime import datetime
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,6 +41,7 @@ sys.path.append(grandfatherdir)
 import traceback
 # for pickle
 from graph.belief_graph import Graph
+from graph.fsm_graph import FSMGraph
 from kernel_2.belief_tracker import BeliefTracker
 from memory.memn2n_session import MemInfer
 from dmn.dmn_fasttext.dmn_session import DmnInfer
@@ -70,10 +72,11 @@ class MainKernel:
 
     def __init__(self, config):
         self.config = config
-        self.belief_tracker = BeliefTracker(config)
+        # self.belief_tracker = BeliefTracker(config)
         # self.render = Render(self.belief_tracker, config)
         self._load_render(config)
         self._load_rule_plugin(config)
+        self._load_belief_tracker(config)
         self.base_counter = 0
         self.base_clear_memory = 2
         if config['clf'] == 'memory':
@@ -114,6 +117,23 @@ class MainKernel:
         else:
             self.render = MainKernel.static_render
 
+    def _load_belief_tracker(self, config):
+        if config['belief_tracker'] == 'fsm':
+            self.belief_tracker = FSMGraph()
+            self._load_transition(config)
+        else:
+            self.belief_tracker = BeliefTracker(config)
+
+    def _load_transition(self,config):
+        api_transition_path=config['api_transition']
+        response_transition_path=config['response_transition']
+        with open(api_transition_path,'r') as f:
+            self.api_transition=json.load(f)
+        with open(response_transition_path,'r') as f:
+            self.response_transition=json.load(f)
+
+        print(type(self.api_transition),self.api_transition)
+
     def kernel(self, q, user='solr', recursive=True):
         start = time.time()
         q = self.rule_plugin.filter(q)
@@ -136,7 +156,7 @@ class MainKernel:
                 return 'memory cleared@@[]'
             exploited = False
             prefix = ''
-            if self.belief_tracker.shall_exploit_range():
+            # if self.belief_tracker.shall_exploit_range():
                 # exploited = self.belief_tracker.exploit_wild_card(wild_card)
                 # if exploited:
                 #     response, avails = self.belief_tracker.issue_api()
@@ -147,7 +167,7 @@ class MainKernel:
                     #     self.sess.clear_memory()
                     #     self.belief_tracker.clear_memory()
                     #     memory = ''
-                pass
+                # pass
             if not exploited:
                 _api, prob = self.sess.reply(range_rendered)
                 api = self.rule_plugin.fix(q, _api)
@@ -185,14 +205,27 @@ class MainKernel:
                             q, wild_card)
                         prefix = self.render.random_prefix()
                     else:
-                        api_json = self.api_call_slot_json_render(api)
-                        response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
-                            q, api_json, wild_card)
-                        if should_clear_memory:
-                            print('restart xinhua bookstore session..')
-                            self.sess.clear_memory(history=2)
-                        if response.startswith('api_call_search'):
-                            self.sess.clear_memory()
+                        if config['belief_tracker']=='fsm':
+                            api_fsm=self.api_transition[api]
+                            print('api_fsm:{}'.format(api_fsm))
+                            api_fsm, jump = self.belief_tracker.issue_trigger(api_fsm)
+                            print('api_fsm:{},jump:{}'.format(api_fsm,jump))
+                            if jump:
+                                response = self.response_transition[api_fsm]
+                            else:
+                                response = ''
+
+                        else:
+                            api_json = self.api_call_slot_json_render(api)
+                            print('api_json:{}'.format(api_json))
+                            response, avails, should_clear_memory = self.belief_tracker.memory_kernel(
+                                q, api_json, wild_card)
+                            # print('response',response)
+                            if should_clear_memory:
+                                print('restart xinhua bookstore session..')
+                                self.sess.clear_memory(history=2)
+                            if response.startswith('api_call_search'):
+                                self.sess.clear_memory()
                     memory = response
                     print('tree rendered..', response)
                     if response.startswith('api_call_search'):
@@ -221,7 +254,9 @@ class MainKernel:
                     #     avails = []
             self.sess.append_memory(memory)
             self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
-            render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            # render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            print('response:{}'.format(response))
+            render = self.render.render(q, response, dict(), prefix)
             if str(render['answer']).startswith('api_call_'):
                 response='api_call_base'
                 render = self.render.render(q, response, self.belief_tracker.avails, prefix)
@@ -268,6 +303,8 @@ class MainKernel:
         return api_json
 
 
+
+
 if __name__ == '__main__':
     # metadata_dir = os.path.join(
     #     grandfatherdir, 'data/memn2n/processed/metadata.pkl')
@@ -287,13 +324,13 @@ if __name__ == '__main__':
               "metadata_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/metadata.pkl'),
               "data_dir": os.path.join(grandfatherdir, 'model/memn2n/processed/data.pkl'),
               "ckpt_dir": os.path.join(grandfatherdir, 'model/memn2n/ckpt'),
-              "gbdt_model_path": grandfatherdir + '/model/ml/belief_clf.pkl',
+              "render_media_file": os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
               "render_api_file": os.path.join(grandfatherdir, 'model/render_2/render_api.txt'),
               "render_location_file": os.path.join(grandfatherdir, 'model/render_2/render_location.txt'),
               "render_recommend_file": os.path.join(grandfatherdir, 'model/render_2/render_recommend.txt'),
               "render_ambiguity_file": os.path.join(grandfatherdir, 'model/render_2/render_ambiguity_removal.txt'),
               "render_price_file": os.path.join(grandfatherdir, 'model/render_2/render_price.txt'),
-              "render_media_file":os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
+              "render_media_file": os.path.join(grandfatherdir, 'model/render_2/render_media.txt'),
               "faq_ad": os.path.join(grandfatherdir, 'model/ad_2/faq_ad_anchor.txt'),
               "location_ad": os.path.join(grandfatherdir, 'model/ad_2/category_ad_anchor.txt'),
               "clf": 'dmn',  # or memory`
@@ -303,6 +340,9 @@ if __name__ == '__main__':
               "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
               "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               "machine_profile": os.path.join(grandfatherdir, 'model/render_2/machine_profile_replacement.txt'),
+              "api_transition":os.path.join(grandfatherdir, 'model/transition/api_transition.txt'),
+              "response_transition":os.path.join(grandfatherdir, 'model/transition/response_transition.txt'),
+              "belief_tracker":"fsm"#fsm
               }
     kernel = MainKernel(config)
     while True:

@@ -47,13 +47,17 @@ class FSM(object):
     def goto_init_state(self):
         self.to_root()
 
-    def goto_next_state(self, trigger):
+    def check_jump(self,trigger):
         available_triggers = self.machine.get_triggers(self.state)
-        current_loop_num = self.get_current_loop_num()
         if trigger in available_triggers:
-            self.__dict__[trigger](current_loop_num, self.max_loop_num)
+            return True
         else:
-            print('Can not goto next state with trigger {}'.format(trigger))
+            return False
+
+    def goto_next_state(self, trigger):
+        # print(available_triggers)
+        current_loop_num = self.get_current_loop_num()
+        self.__dict__[trigger](current_loop_num, self.max_loop_num)
 
     def goto_next_state_random(self):
         available_triggers = self.machine.get_triggers(self.state)

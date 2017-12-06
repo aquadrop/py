@@ -10,7 +10,8 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 from graph.fsm import FSM
-from dmn.dmn_fasttext.dmn_session import DmnInfer
+from graph.fsm_graph import FSMGraph
+# from dmn.dmn_fasttext.dmn_session import DmnInfer
 from fsm_render import triggers_map_bot
 
 
@@ -18,42 +19,42 @@ class FSMKernel(object):
     static_dmn = None
     static_fsm_graph = None
 
-    def __init__(self, config):
-        self.fsm_graph_path = config['fsm_path']
+    def __init__(self):
         self._init_fsm_graph()
-        self._init_dmn()
-        self.sess = self.dmn.get_session()
+        # self._init_dmn()
+        # self.sess = self.dmn.get_session()
 
         self.fake_dmn = {
             '注册': 'register',
-            '扫好了': 'scan_success',
+            '扫码成功': 'scan_success',
             '扫码失败': 'scan_fail',
-            '验证好了': 'auth_success',
+            '验证成功': 'auth_success',
             '验证失败': 'auth_fail'
         }
 
     def _init_fsm_graph(self):
         if not FSMKernel.static_fsm_graph:
             try:
-                print('attaching fsm_graph...100%')
-                with open(self.fsm_graph_path, 'rb') as f:
-                    self.fsm_graph = pickle.load(f)
+                print('attaching fsm graph...100%')
+                # with open(self.fsm_graph_path, 'rb') as f:
+                # self.fsm_graph = pickle.load(f)
+                self.fsm_graph = FSMGraph()
                 FSMKernel.static_fsm_graph = self.fsm_graph
             except:
                 traceback.print_exc()
         else:
             self.fsm_graph = FSMKernel.static_fsm_graph
 
-    def _init_dmn(self):
-        if not FSMKernel.static_dmn:
-            try:
-                print('attaching dmn...100%')
-                self.dmn = DmnInfer()
-                FSMKernel.static_dmn = self.dmn
-            except:
-                traceback.print_exc()
-        else:
-            self.dmn = FSMKernel.static_dmn
+    # def _init_dmn(self):
+    #     if not FSMKernel.static_dmn:
+    #         try:
+    #             print('attaching dmn...100%')
+    #             self.dmn = DmnInfer()
+    #             FSMKernel.static_dmn = self.dmn
+    #         except:
+    #             traceback.print_exc()
+    #     else:
+    #         self.dmn = FSMKernel.static_dmn
 
     def render(self, trigger):
         return triggers_map_bot[trigger]
@@ -71,20 +72,20 @@ class FSMKernel(object):
         if api.startswith('api_call_qa'):
             return 'api_call_qa'
         trigger = api
-        trigger = self.fsm_graph.issue_trigger(trigger)
-        response = self.render(trigger)
+        trigger, jump = self.fsm_graph.issue_trigger(trigger)
+        if jump:
+            response = self.render(trigger)
+        else:
+            response = 'Please finish previous steps.'
         return trigger, response
 
 
 def main():
-    prefix = grandfatherdir
-    config = dict()
-    config['fsm_path'] = os.path.join(prefix, 'model/graph/fsm_graph.pkl')
-    fsmkernel = FSMKernel(config)
+    fsmkernel = FSMKernel()
     while True:
         ipt = input("input:")
         trigger, response = fsmkernel.kernel(ipt)
-        print(resp)
+        print('trigger:{},response:{}'.format(trigger, response))
 
 
 if __name__ == '__main__':

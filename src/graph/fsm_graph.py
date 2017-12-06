@@ -3,10 +3,10 @@ import sys
 import pickle
 
 from collections import OrderedDict
-from fsm import FSM
+from graph.fsm import FSM
 
 
-class Bookstore(object):
+class FSMGraph(object):
     def __init__(self):
         self.config = dict()
         self.config['name'] = 'xinhua'
@@ -58,66 +58,71 @@ class Bookstore(object):
         self.fsm.machine.add_transition(
             'times_auth_fail', 'auth', 'fail', conditions='is_times_auth_fail')
 
-    def is_register(current_loop_num, max_loop_num):
+    def is_register(self, current_loop_num, max_loop_num):
         return True
 
-    def is_scan_success(current_loop_num, max_loop_num):
+    def is_scan_success(self, current_loop_num, max_loop_num):
         return True
 
-    def is_auth_fail(current_loop_num, max_loop_num):
+    def is_auth_fail(self, current_loop_num, max_loop_num):
         if current_loop_num < max_loop_num:
             return True
         else:
             return False
 
-    def is_scan_fail(current_loop_num, max_loop_num):
+    def is_scan_fail(self, current_loop_num, max_loop_num):
         if current_loop_num < max_loop_num:
             return True
         else:
             return False
 
-    def is_auth_success(current_loop_num, max_loop_num):
+    def is_auth_success(self, current_loop_num, max_loop_num):
         return True
 
-    def is_times_scan_fail(current_loop_num, max_loop_num):
+    def is_times_scan_fail(self, current_loop_num, max_loop_num):
         if current_loop_num >= max_loop_num:
             return True
         else:
             return False
 
-    def is_times_auth_fail(current_loop_num, max_loop_num):
+    def is_times_auth_fail(self, current_loop_num, max_loop_num):
         if current_loop_num >= max_loop_num:
             return True
         else:
             return False
 
-    def issue_trigger(trigger):
-        if trigger in self.fail_triggers:
-            current_loop_num = self.get_current_loop_num()
-            if current_loop_num >= self.config['max_loop_num']:
-                self.fsm.goto_init_state()
-                return self.fail_triggers_map[trigger]
-            else:
-                return trigger
+    def clear_memory(self):
+        self.fsm.goto_init_state()
+        self.fsm.current_loop_num = 0
+
+    def issue_trigger(self, trigger):
         if trigger == 'register':
             self.fsm.goto_init_state()
-            self.fsm.goto_next_state()
-            return trigger
+            self.fsm.goto_next_state(trigger)
+            return trigger, True
+
+        jump = self.fsm.check_jump(trigger)
+        if not jump:
+            return trigger, False
+
+        if trigger in self.fail_triggers:
+            current_loop_num = self.fsm.get_current_loop_num()
+            if current_loop_num >= self.config['max_loop_num']:
+                self.fsm.goto_init_state()
+                return self.fail_triggers_map[trigger], True
+            else:
+                return trigger, True
+
         if trigger in self.success_triggers:
-            self.fsm.goto_next_state()
+            self.fsm.goto_next_state(trigger)
             current_state = self.fsm.state
             if current_state in self.terminate_states:
                 self.fsm.goto_init_state()
+            return trigger, True
 
 
 def main():
-    fsm = Bookstore()
-    prefix = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(prefix, 'model/graph/fsm_graph.pkl')
-
-    with open(path, 'wb') as f:
-        pickle.dump(fsm, f)
+    pass
 
 
 if __name__ == '__main__':
