@@ -24,7 +24,7 @@ class Qa:
 
     def get_responses(self, query, user='solr'):
         docs = solr_qa(self.core, query, self.question_key)
-        # print(docs)
+        print(docs)
         best_query = None
         best_answer = None
         best_score = -1
