@@ -63,7 +63,7 @@ class Qa:
 
         if best_score < THRESHOLD:
             print('redirecting to third party', best_score)
-            answer = '\n您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
+            answer = '\n您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
                      '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
                      '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
             return query, answer, best_score
