@@ -10,6 +10,8 @@ import requests
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
+from SolrClient import SolrClient
+
 from utils.query_util import tokenize
 from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
@@ -24,14 +26,14 @@ class Qa:
         self.question_key = question_key #指代solr数据库doc里的key——‘question’
         self.answer_key = answer_key #指代solr数据库doc里的key——‘answer’
         self.base = BaseKernel()
-        self.solr_addr = solr_addr
+        self.solr = SolrClient(solr_addr)
 
     def get_responses(self, query, user='solr'):
         '''
             程序功能：传入问句query
             return  solr数据库中最大相似度的问句、最大相似度的回答以及最大相似度
         '''
-        docs = solr_qa(self.core, query, self.solr_addr, self.question_key )
+        docs = solr_qa(self.core, query, solr=self.solr, field=self.question_key)
         print(docs)
         best_query = None
         best_answer = None

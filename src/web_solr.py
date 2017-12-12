@@ -46,7 +46,7 @@ import sys,os
 dir_path = os.path.dirname(os.path.abspath(__file__))
 parentdir = os.path.dirname(dir_path)
 sys.path.insert(0, '{}/qa'.format(dir_path))
-from qa.iqa import Qa
+from qa.wxqa import Qa
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + current_date + '.log')
                     ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
@@ -82,7 +82,7 @@ def chat():
         return json.dumps(result, ensure_ascii=False) #dict转化成str
 
     except Exception:
-        logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+        logging.error("C@user:{}##error_details:{}".format("solr", traceback.format_exc()))
         traceback.print_exc()
         result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
@@ -103,4 +103,4 @@ if __name__ == "__main__":
     #     k = MainKernel(config)
     #     kernel_backups.put_nowait(k)
     print('web started...')
-    app.run(host='0.0.0.0', port=21303, threaded=True)
+    app.run(host='0.0.0.0', port=21305, threaded=True)
