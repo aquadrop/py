@@ -80,6 +80,7 @@ def info():
 @app.route('/e/chat', methods=['GET', 'POST'])
 def chat():
     try:
+        # q_time=time.time()
         args = request.args
         q = args['q']
         q = urllib.parse.unquote(q)
@@ -96,11 +97,13 @@ def chat():
                     return json.dumps(result, ensure_ascii=False)
             u_i_kernel = lru_kernels[u]
             result = u_i_kernel.kernel(q=q, user=u)
+            # a_time=time.time()
             output = {"question": q, "sentence": q,"result": result, "user": u, "version":_VERSION_}
             return json.dumps(output, ensure_ascii=False)
 
         else:
             result= kernel.kernel(q=q)
+            # a_time = time.time()
             output = {"question": q, "sentence": q, "result": result, "user": 'solr', "version": _VERSION_}
             return json.dumps(output, ensure_ascii=False)
     except Exception:
