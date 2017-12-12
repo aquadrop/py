@@ -46,10 +46,10 @@ import sys,os
 dir_path = os.path.dirname(os.path.abspath(__file__))
 parentdir = os.path.dirname(dir_path)
 sys.path.insert(0, '{}/qa'.format(dir_path))
-from qa.iqa import Qa
-current_date = time.strftime("%Y.%m.%d")
-logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + current_date + '.log')
-                    ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
+from qa.wxqa import Qa
+# current_date = time.strftime("%Y.%m.%d")
+# logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + current_date + '.log')
+#                     ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 app = Flask(__name__)
 qa = Qa('zx_weixin_qa',solr_addr = 'http://10.89.100.14:8999/solr')
@@ -64,7 +64,7 @@ def info():
 
 @app.route('/e/chat', methods=['GET', 'POST'])
 def chat():
-    try:
+    # try:
         args = request.args
         q = args['q']
         print ('q = ', q)
@@ -81,11 +81,11 @@ def chat():
         result = {"question": q, "sentence": q, "result": result, "user": u}
         return json.dumps(result, ensure_ascii=False) #dict转化成str
 
-    except Exception:
-        logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
-        traceback.print_exc()
-        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
-        return json.dumps(result, ensure_ascii=False)
+    # except Exception:
+    #     logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
+    #     traceback.print_exc()
+    #     result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
+    #     return json.dumps(result, ensure_ascii=False)
 
 
 if __name__ == "__main__":

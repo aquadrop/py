@@ -18,11 +18,11 @@ from qa.base import BaseKernel
 from amq.sim import BenebotSim
 bt = BenebotSim()
 
-THRESHOLD = 0.95
+THRESHOLD = 0.90
 REACH = 1
-
+#'http://localhost:11403/solr'
 class Qa:
-    def __init__(self, core, question_key='question', answer_key='answers', solr_addr = 'http://localhost:11403/solr'):
+    def __init__(self, core, question_key='question', answer_key='answers', solr_addr = 'http://10.89.100.14:8999/solr'):
         self.core = core
         self.question_key = question_key #指代solr数据库doc里的key——‘question’
         self.answer_key = answer_key #指代solr数据库doc里的key——‘answer’
@@ -35,7 +35,7 @@ class Qa:
             return  solr数据库中最大相似度的问句、最大相似度的回答以及最大相似度
         '''
         docs = solr_qa(self.core, query, self.solr_addr, self.question_key )
-        print(docs)
+        # print(docs)
         best_query = None
         best_answer = None
         best_score = -1
@@ -122,7 +122,7 @@ def ceshi():
 
 def main():
     qa = Qa('zx_weixin_qa')
-    best_query, best_answer, best_score = qa.get_responses('科沃')
+    best_query, best_answer, best_score = qa.get_responses('科沃斯旺宝')
     print(best_query, best_answer, best_score)
 
 
