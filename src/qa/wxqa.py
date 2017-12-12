@@ -15,6 +15,9 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
+from amq.sim import BenebotSim
+bt = BenebotSim()
+
 THRESHOLD = 0.95
 REACH = 1
 
@@ -52,7 +55,8 @@ class Qa:
             #         best_answer = b
             #         if score >= REACH:
             #             break
-            score, _g = self.m_similarity(query, g)
+            # score, _g = self.m_similarity(query, g)
+            score,_g = self.bt_similarity(query, g)
             if score > best_score:
                 best_score = score
                 best_query = _g
@@ -102,6 +106,12 @@ class Qa:
 
         return score, _g
 
+    def bt_similarity(self, query1, query2):
+        result = bt.getSim(query1, query2, True)
+        score = result['sim']
+
+        _g = query2
+        return score,_g
 
 def ceshi():
     query1 = '我的名字是小明'

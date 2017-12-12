@@ -18,7 +18,7 @@ class IMessageQueue():
         self.tag = tag
         self.user_name = 'rabbitmq'
         self.user_pwd = 'rabbitmq@0'
-        self.ip = nlp_property.NLP_FRAMEWORK_IP
+        self.ip = amq.nlp_property.NLP_FRAMEWORK_IP
         self.port = 5672
 
         self.queue_name = queue_name
