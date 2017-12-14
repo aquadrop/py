@@ -16,15 +16,15 @@ THRESHOLD = 0.95
 REACH = 1
 
 class Qa:
-    def __init__(self, core, question_key='question', answer_key='answer',solr_addr = 'http://10.89.100.14:8999/solr'):
+    def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
-        self.solr_addr = solr_addr
+        # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
-        docs = solr_qa(self.core, query, self.solr_addr, self.question_key )
+        docs = solr_qa(self.core, query, field=self.question_key )
 
         # docs = solr_qa(self.core, query, self.question_key)
         print(docs)

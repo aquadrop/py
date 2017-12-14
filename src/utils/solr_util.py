@@ -67,7 +67,7 @@ def solr_qa(core, query, solr=solr, field=None):
         params = {'q': query, 'q.op': 'or', 'rows':20}
     else:
         params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
-    responses = solr_client.query(core, params)
+    responses = solr.query(core, params)
     docs = responses.docs
     return docs
 
