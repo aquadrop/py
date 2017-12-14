@@ -1,13 +1,9 @@
 import numpy as np
 import sys
-# reload(sys)
-# sys.setdefaultencoding('utf8')
-sys.path.insert(0, '../utils')
 import os
 import requests
 
-#get parent dir path: memory_py
-parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))#get parent dir path: memory_py
 sys.path.insert(0, parentdir)
 
 from utils.query_util import tokenize
@@ -109,7 +105,6 @@ class Qa:
     def bt_similarity(self, query1, query2):
         result = bt.getSim(query1, query2, True)
         score = result['sim']
-
         _g = query2
         return score,_g
 
