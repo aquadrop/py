@@ -62,9 +62,7 @@ def query(must_mappers, option_mapper={}):
     return docs
 
 
-def solr_qa( core, query, solr_addr = 'http://10.89.100.14:8999/solr',field=None):
-    ###
-    solr_client = SolrClient(solr_addr)
+def solr_qa(core, query, solr=solr, field=None):
     if not field:
         params = {'q': query, 'q.op': 'or', 'rows':20}
     else:

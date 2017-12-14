@@ -6,6 +6,8 @@ import requests
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))#get parent dir path: memory_py
 sys.path.insert(0, parentdir)
 
+from SolrClient import SolrClient
+
 from utils.query_util import tokenize
 from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
@@ -23,15 +25,14 @@ class Qa:
         self.question_key = question_key #指代solr数据库doc里的key——‘question’
         self.answer_key = answer_key #指代solr数据库doc里的key——‘answer’
         self.base = BaseKernel()
-        self.solr_addr = solr_addr
+        self.solr = SolrClient(solr_addr)
 
     def get_responses(self, query, user='solr'):
         '''
             程序功能：传入问句query
             return  solr数据库中最大相似度的问句、最大相似度的回答以及最大相似度
         '''
-        docs = solr_qa(self.core, query, self.solr_addr, self.question_key )
-        # print(docs)
+        docs = solr_qa(self.core, query, solr=self.solr, field=self.question_key)
         best_query = None
         best_answer = None
         best_score = -1
@@ -63,7 +64,7 @@ class Qa:
 
         if best_score < THRESHOLD:
             print('redirecting to third party', best_score)
-            answer = '\n您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
+            answer = '\n您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
                      '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
                      '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
             return query, answer, best_score
