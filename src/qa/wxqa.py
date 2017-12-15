@@ -52,8 +52,8 @@ class Qa:
             #         best_answer = b
             #         if score >= REACH:
             #             break
-            # score, _g = self.m_similarity(query, g)
-            score,_g = self.bt_similarity(query, g)
+            score, _g = self.m_similarity(query, g)
+            # score,_g = self.bt_similarity(query, g)
             if score > best_score:
                 best_score = score
                 best_query = _g
