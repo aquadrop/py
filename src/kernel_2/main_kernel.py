@@ -115,6 +115,7 @@ class MainKernel:
             self.render = MainKernel.static_render
 
     def kernel(self, q, user='solr', recursive=True):
+        q_time=time.time()
         start = time.time()
         q = self.rule_plugin.filter(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
@@ -222,6 +223,10 @@ class MainKernel:
             self.sess.append_memory(memory)
             self.rule_plugin.request_clear_memory(response, self.sess, self.belief_tracker)
             render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+            if str(render['answer']).startswith('api_call_'):
+                response='api_call_base'
+                render = self.render.render(q, response, self.belief_tracker.avails, prefix)
+
             render['answer'] = self.rule_plugin.replace(render['answer'])
             for key, value in render.items():
                 result[key] = value
@@ -232,6 +237,9 @@ class MainKernel:
             result['sentence'] = q
             result['score'] = float(prob[0][0])
             result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
+            a_time=time.time()
+            result['qtime'] = q_time
+            result['atime'] = a_time
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15
             return result
