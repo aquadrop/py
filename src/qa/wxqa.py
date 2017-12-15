@@ -105,7 +105,7 @@ class Qa:
 
     def bt_similarity(self, query1, query2):
         result = bt.getSim(query1, query2, True)
-        score = result['sim']
+        score = result.get('sim')
         _g = query2
         return score,_g
 
@@ -118,7 +118,7 @@ def ceshi():
 
 def main():
     qa = Qa('zx_weixin_qa')
-    best_query, best_answer, best_score = qa.get_responses('科沃斯旺宝')
+    best_query, best_answer, best_score = qa.get_responses('科沃斯旺宝服务。')
     print(best_query, best_answer, best_score)
 
 

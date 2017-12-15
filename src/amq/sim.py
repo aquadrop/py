@@ -30,4 +30,4 @@ if __name__ == '__main__':
         s1 = input('input: ')
         s2 = input('input: ')
         result = bt.getSim(s1, s2, True)
-        print(result)
+        print(result.get('sim'))
