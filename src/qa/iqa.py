@@ -27,7 +27,7 @@ class Qa:
         docs = solr_qa(self.core, query, field=self.question_key )
 
         # docs = solr_qa(self.core, query, self.question_key)
-        print(docs)
+        # print(docs)
         best_query = None
         best_answer = None
         best_score = -1

@@ -22,8 +22,8 @@ from SolrClient import SolrClient
 
 import sys
 
-# solr = SolrClient('http://localhost:11403/solr')
-solr = SolrClient('http://10.89.100.14:8999/solr')
+solr = SolrClient('http://localhost:11403/solr')
+# solr = SolrClient('http://10.89.100.14:8999/solr')
 
 def compose_fq(mapper, option_fields=['price']):
     option_mapper = dict()
