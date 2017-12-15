@@ -14,9 +14,12 @@ def ff_embedding(word):
     return vector
 
 def mlt_ff_embedding(q1, q2):
+    # print('q1:',q1)
+    # print('q2:',q2)
     ff_url = FASTTEXT_URL_M.format(q1, q2)
+    # print(requests.get(url=ff_url))
     r = requests.get(url=ff_url).json()
-    # print(r)
+    # print('json:',r)
     sim = r['maxcossim']
     simq = r['simstring']
     return float(sim), simq.replace(',', '')
@@ -25,7 +28,11 @@ def mlt_ff_embedding(q1, q2):
 #     return model[word]
 
 if __name__ == '__main__':
-    query = ''
-    while query != 'exit':
-        query = input('>> ')
-        print(ff_embedding_local(query.strip()))
+    # query = ''
+    # while query != 'exit':
+    #     query = input('>> ')
+    #     print(ff_embedding_local(query.strip()))
+
+    q1='我能,用,支付宝,付款,吗'
+    q2="xxxxx"
+    print(mlt_ff_embedding(q1,q2))
