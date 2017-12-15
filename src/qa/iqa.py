@@ -21,9 +21,12 @@ class Qa:
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
+        # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
-        docs = solr_qa(self.core, query, self.question_key)
+        docs = solr_qa(self.core, query, field=self.question_key )
+
+        # docs = solr_qa(self.core, query, self.question_key)
         print(docs)
         best_query = None
         best_answer = None

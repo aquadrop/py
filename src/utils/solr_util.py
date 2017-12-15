@@ -1,3 +1,4 @@
+
 """
 Solr Util
 """
@@ -8,6 +9,7 @@ import json
 
 import os
 import sys
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +22,8 @@ from SolrClient import SolrClient
 
 import sys
 
-solr = SolrClient('http://localhost:11403/solr')
+# solr = SolrClient('http://localhost:11403/solr')
+solr = SolrClient('http://10.89.100.14:8999/solr')
 
 def compose_fq(mapper, option_fields=['price']):
     option_mapper = dict()

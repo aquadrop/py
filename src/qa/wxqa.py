@@ -1,13 +1,9 @@
 import numpy as np
 import sys
-# reload(sys)
-# sys.setdefaultencoding('utf8')
-sys.path.insert(0, '../utils')
 import os
 import requests
 
-#get parent dir path: memory_py
-parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))#get parent dir path: memory_py
 sys.path.insert(0, parentdir)
 
 from SolrClient import SolrClient
@@ -17,11 +13,14 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
-THRESHOLD = 0.95
-REACH = 1
+from amq.sim import BenebotSim
+bt = BenebotSim()
 
+THRESHOLD = 0.90
+REACH = 1
+#'http://localhost:11403/solr'
 class Qa:
-    def __init__(self, core, question_key='question', answer_key='answers', solr_addr = 'http://localhost:11403/solr'):
+    def __init__(self, core, question_key='question', answer_key='answers', solr_addr = 'http://10.89.100.14:8999/solr'):
         self.core = core
         self.question_key = question_key #指代solr数据库doc里的key——‘question’
         self.answer_key = answer_key #指代solr数据库doc里的key——‘answer’
@@ -34,7 +33,6 @@ class Qa:
             return  solr数据库中最大相似度的问句、最大相似度的回答以及最大相似度
         '''
         docs = solr_qa(self.core, query, solr=self.solr, field=self.question_key)
-        print(docs)
         best_query = None
         best_answer = None
         best_score = -1
@@ -54,7 +52,8 @@ class Qa:
             #         best_answer = b
             #         if score >= REACH:
             #             break
-            score, _g = self.m_similarity(query, g)
+            # score, _g = self.m_similarity(query, g)
+            score,_g = self.bt_similarity(query, g)
             if score > best_score:
                 best_score = score
                 best_query = _g
@@ -104,6 +103,11 @@ class Qa:
 
         return score, _g
 
+    def bt_similarity(self, query1, query2):
+        result = bt.getSim(query1, query2, True)
+        score = result['sim']
+        _g = query2
+        return score,_g
 
 def ceshi():
     query1 = '我的名字是小明'
@@ -114,7 +118,7 @@ def ceshi():
 
 def main():
     qa = Qa('zx_weixin_qa')
-    best_query, best_answer, best_score = qa.get_responses('科沃')
+    best_query, best_answer, best_score = qa.get_responses('科沃斯旺宝')
     print(best_query, best_answer, best_score)
 
 
