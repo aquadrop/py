@@ -33,6 +33,7 @@ import time
 import datetime
 import hashlib
 import locale
+import re
 
 locale.setlocale(locale.LC_ALL)
 
@@ -369,6 +370,12 @@ class Render:
                 if 'category' in mapper:
                     response = response
                 ad = self.render_ad()
+
+                pattern = r'.*[图书|书].*'
+                res=re.findall(pattern, response)
+                if len(res):
+                    response='您可以点击小新主界面下方的购书按钮,按照小新脸上的提示就可以了.'
+
                 response = response + ad
                 result = {'answer': response, 'media': image_key, 'avail_vals':""}
                 return result
