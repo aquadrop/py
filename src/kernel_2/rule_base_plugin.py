@@ -128,6 +128,9 @@ class RuleBasePlugin:
                 return key
         return None
 
+    def rewrite(self,q):
+        pass
+
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
               "solr.facet": 'on',
