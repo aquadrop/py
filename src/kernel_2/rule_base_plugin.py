@@ -31,6 +31,7 @@ import logging
 import traceback
 import time
 import hashlib
+import re
 
 import numpy as np
 
@@ -129,7 +130,18 @@ class RuleBasePlugin:
         return None
 
     def rewrite(self,q):
-        pass
+        pattern1=r'.*[查|找|搜].*[书].*'
+        pattern2=r'.*[买|购].*[书].*'
+        res1=re.findall(pattern1,q)
+        res2 = re.findall(pattern2, q)
+        if len(res1):
+            qq="查书"
+        elif len(res2):
+            qq="买书"
+        else:
+            qq=q
+
+        return qq
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",
