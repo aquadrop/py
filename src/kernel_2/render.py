@@ -58,7 +58,7 @@ class Render:
     prefix = ['这样啊.', '没问题.', '好吧']
     TIME_CN_FORMAT = '{0:%Y年%m月%d日%H点%M分%S秒}'
     ANY = 'any'
-    AD_PROB = 0.7
+    AD_PROB = 0.2
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
