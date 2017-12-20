@@ -50,6 +50,7 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 class RuleBasePlugin:
+
     def __init__(self, config):
         self.api_list = ['api_call_faq_info']
         self.should_clear_list = ['api_call_request_reg.complete']
@@ -132,16 +133,28 @@ class RuleBasePlugin:
     def rewrite(self,q):
         pattern1=r'.*[查|找|搜].*[书].*'
         pattern2=r'.*[买|购].*[书].*'
+        pattern3=r'.*[年级|初一|初二|初三|高一|高二|高三|小学|初中|高中]'
         res1=re.findall(pattern1,q)
         res2 = re.findall(pattern2, q)
+        res3=re.findall(pattern3,q)
         if len(res1):
-            qq="查书"
+            qq=q+"在哪里"
         elif len(res2):
             qq="买书"
+        elif len(res3):
+            qq=q+'教辅'
         else:
             qq=q
 
         return qq
+
+    def check_buy(self,q):
+        pattern=r'.*[买|卖|购].*'
+        res=re.findall(pattern,q)
+        if len(res):
+            return True
+        else:
+            return False
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",

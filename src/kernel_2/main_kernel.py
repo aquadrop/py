@@ -118,9 +118,9 @@ class MainKernel:
         q_time=time.time()
         start = time.time()
         q = self.rule_plugin.filter(q)
-        print(q)
-        q=self.rule_plugin.rewrite(q)
-        print(q)
+        # print(q)
+        # q=self.rule_plugin.rewrite(q)
+        # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
             result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
