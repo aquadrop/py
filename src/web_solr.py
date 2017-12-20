@@ -52,6 +52,7 @@ logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + 
                     ,format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 app = Flask(__name__)
+#print(app)
 qa = Qa('zx_weixin_qa',solr_addr = 'http://10.89.100.14:8999/solr')
 
 
