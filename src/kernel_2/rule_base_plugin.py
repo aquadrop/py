@@ -131,21 +131,13 @@ class RuleBasePlugin:
         return None
 
     def rewrite(self,q):
-        pattern1=r'.*[查|找|搜].*[书].*'
-        pattern2=r'.*[买|购].*[书].*'
-        pattern3=r'.*[年级|初一|初二|初三|高一|高二|高三|小学|初中|高中]'
-        res1=re.findall(pattern1,q)
-        res2 = re.findall(pattern2, q)
-        res3=re.findall(pattern3,q)
+        pattern=r'.*[查|找|搜].*[书].*'
+        res1=re.findall(pattern,q)
+        print(res1)
         if len(res1):
             qq=q+"在哪里"
-        elif len(res2):
-            qq="买书"
-        elif len(res3):
-            qq=q+'教辅'
         else:
             qq=q
-
         return qq
 
     def check_buy(self,q):
