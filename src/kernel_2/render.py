@@ -33,6 +33,7 @@ import time
 import datetime
 import hashlib
 import locale
+import re
 
 locale.setlocale(locale.LC_ALL)
 
@@ -47,6 +48,7 @@ sys.path.append(grandfatherdir)
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 from kernel_2.ad_kernel import AdKernel
+from kernel_2.rule_base_plugin import RuleBasePlugin
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -58,6 +60,8 @@ class Render:
     TIME_CN_FORMAT = '{0:%Y年%m月%d日%H点%M分%S秒}'
     ANY = 'any'
     AD_PROB = 0.2
+    static_rule_plugin = None
+
     def __init__(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
@@ -68,6 +72,7 @@ class Render:
         self._load_media_render(config['render_media_file'])
         self._load_emotion_render(config['emotion_file'])
         self._load_ad(config['ad_anchor'])
+        self._load_rule_plugin(config)
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
@@ -88,6 +93,13 @@ class Render:
             for line in f:
                 line = line.strip('\n')
                 self.ad.append(line)
+
+    def _load_rule_plugin(self, config):
+        if not Render.static_rule_plugin:
+            self.rule_plugin = RuleBasePlugin(config)
+            Render.static_rule_plugin = self.rule_plugin
+        else:
+            self.rule_plugin = Render.static_rule_plugin
 
     def render_ad(self):
         if np.random.uniform() < self.AD_PROB:
@@ -369,6 +381,13 @@ class Render:
                 if 'category' in mapper:
                     response = response
                 ad = self.render_ad()
+
+                if params.startswith('category:图书') or params.startswith('book.category:'):
+                    if self.rule_plugin.check_buy(q):
+                        response+='您可以点击小新主界面下方的购书按钮,按照小新脸上的提示操作就可以了.'
+                    else:
+                        response += '您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
+
                 response = response + ad
                 result = {'answer': response, 'media': image_key, 'avail_vals':""}
                 return result
