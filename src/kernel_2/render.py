@@ -384,7 +384,7 @@ class Render:
 
                 if params.startswith('category:图书') or params.startswith('book.category:'):
                     if self.rule_plugin.check_buy(q):
-                        response+='您可以点击小新主界面下方的购书按钮,按照小新脸上的提示操作就可以了.'
+                        response+='您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
                     else:
                         response += '您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
 
