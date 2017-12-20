@@ -35,6 +35,9 @@ import urllib
 import time
 import logging
 from datetime import datetime
+import re
+import string
+
 
 from flask import Flask
 from flask import request
@@ -55,6 +58,12 @@ app = Flask(__name__)
 #print(app)
 qa = Qa('zx_weixin_qa',solr_addr = 'http://10.89.100.14:8999/solr')
 
+def del_words(question):
+    '''Delete stop words in arq(question) '''
+    del_pat = re.compile(r'[{}]+'.format(string.punctuation))
+    q = del_pat.sub('', question)
+    return q
+
 
 @app.route('/e/info', methods=['GET', 'POST'])
 def info():
@@ -68,8 +77,10 @@ def chat():
     try:
         args = request.args
         q = args['q']
-        print ('q = ', q)
         u = 'solr'
+        q = del_words(q)
+        print ('q = ', q)
+
         best_query, best_answer, best_score =qa.get_responses(query=q, user=u)
         # result['sentence'] = q
         # result['score'] = float(prob[0][0])
