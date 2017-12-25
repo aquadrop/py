@@ -34,6 +34,8 @@ app = Flask(__name__)
 
 _VERSION_ = '0.2.0'
 
+base = BaseKernel()
+
 config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'off',
               "metadata_dir": os.path.join(parentdir, 'model/dmn/dmn_processed/metadata_word.pkl'),
@@ -110,7 +112,8 @@ def chat():
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         traceback.print_exc()
-        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
+        answer = base.kernel(q)
+        result = {"question": q, "result": {"answer": answer, 'media':'null'}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
 if __name__ == "__main__":
