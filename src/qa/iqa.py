@@ -12,15 +12,14 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
-THRESHOLD = 0.95
-REACH = 1
-
 class Qa:
     def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
+        self.THRESHOLD = 0.95
+        self.REACH = 1
         # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
@@ -31,6 +30,7 @@ class Qa:
         best_query = None
         best_answer = None
         best_score = -1
+        best_doc = {'uid': "third_party"}
         for index, doc in enumerate(docs):
             if index > 10:
                 break
@@ -49,16 +49,19 @@ class Qa:
                 best_score = score
                 best_query = _g
                 best_answer = b
+                best_doc = doc
+                if 'uid' not in best_doc:
+                    best_doc['uid'] = 'uid_not_defined'
             # if score >= REACH:
             #     break
             # print(score)
 
-        if best_score < THRESHOLD:
+        if best_score < self.THRESHOLD:
             print('redirecting to third party', best_score)
             return query, self.base.kernel(query), best_score
             # return query, 'api_call_base', best_score
         else:
-            return best_query, np.random.choice(best_answer), best_score
+            return best_query, np.random.choice(best_answer), best_score, best_doc
 
     def embed(self, tokens):
         embeddings = [ff_embedding(word) for word in tokens]

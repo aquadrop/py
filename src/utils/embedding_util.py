@@ -3,6 +3,7 @@ from gensim.models.wrappers import FastText
 
 FASTTEXT_URL = 'http://localhost:11425/fasttext/w2v?q='
 FASTTEXT_URL_M = 'http://localhost:11425/fasttext/maxsim?q1={0}&q2={1}'
+FASTTEXT_URL_M_POST = 'http://localhost:11425/fasttext/maxsim'
 # print('load model')
 # model = FastText.load_fasttext_format('/opt/fasttext/model/test.bin')
 
@@ -16,9 +17,9 @@ def ff_embedding(word):
 def mlt_ff_embedding(q1, q2):
     # print('q1:',q1)
     # print('q2:',q2)
-    ff_url = FASTTEXT_URL_M.format(q1, q2)
+    # ff_url = FASTTEXT_URL_M.format(q1, q2)
     # print(requests.get(url=ff_url))
-    r = requests.get(url=ff_url).json()
+    r = requests.post(url=FASTTEXT_URL_M_POST, data={"q1":q1, "q2":q2}).json()
     # print('json:',r)
     sim = r['maxcossim']
     simq = r['simstring']
