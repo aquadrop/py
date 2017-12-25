@@ -15,8 +15,13 @@ from qa.base import BaseKernel
 from lru import LRU
 from threading import Thread
 
+from amq.sim import BenebotSim
+from dmn.dmn_fasttext.vector_helper import computeSentenceSim
 
 class Qa:
+
+    static_bt = None
+
     def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
         self.question_key = question_key
@@ -25,6 +30,13 @@ class Qa:
         self.THRESHOLD = 0.95
         self.REACH = 1
         self.cache = LRU(300)
+
+        # if Qa.static_bt:
+        #     self.bt = Qa.static_bt
+        # else:
+        #     self.bt = BenebotSim()
+        #     Qa.static_bt = self.bt
+
         # self.schedule()
         thread = Thread(target=self.schedule)
         thread.start()
@@ -60,6 +72,7 @@ class Qa:
             #         if score >= REACH:
             #             break
             score, _g = self.m_similarity(query, g)
+            # score, _g = self.w2v_local_similarity(query, g)
             if score > best_score:
                 best_score = score
                 best_query = _g
@@ -79,7 +92,8 @@ class Qa:
             return query, answer, best_score, best_doc
             # return query, 'api_call_base', best_score
         else:
-            cached = {"query": query, "answer": best_answer, "score": best_score, "doc": best_doc}
+            cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
+            print(cached)
             self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
 
@@ -113,6 +127,19 @@ class Qa:
         score, _g = mlt_ff_embedding(tokens1, tokens2)
 
         return score, _g
+
+    def w2v_local_similarity(self, query1, query2):
+        tokens1 = tokenize(query1, 3)
+        tokens2 = [tokenize(t, 3) for t in query2]
+
+        max_sim = -10
+        _g = query2[0]
+        for words2 in tokens2:
+            sim = computeSentenceSim(tokens1, words2)
+            if sim > max_sim:
+                max_sim = sim
+                _g = words2
+        return float(max_sim), _g
 
     def clear_cache(self):
         self.cache.clear()
