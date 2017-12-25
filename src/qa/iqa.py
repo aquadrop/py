@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import os
 import requests
-
+import schedule, time
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -23,6 +23,7 @@ class Qa:
         self.THRESHOLD = 0.95
         self.REACH = 1
         self.cache = LRU(300)
+        # self.schedule()
         # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
@@ -108,6 +109,14 @@ class Qa:
 
         return score, _g
 
+    def clear_cache(self):
+        self.cache.clear()
+
+    def schedule(self):
+        schedule.every().day.at("01:00").do(self.clear_cache)
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  # wait one minute
 
 def test():
     query1 = '我的名字是小明'

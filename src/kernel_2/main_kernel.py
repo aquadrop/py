@@ -244,7 +244,10 @@ class MainKernel:
             result['qtime'] = q_time
             result['atime'] = a_time
             result['nlp_latent'] = a_time - q_time
-            result['uid'] = render['uid']
+            try:
+                result['uid'] = render['uid']
+            except:
+                result['uid'] = 'uid_undefined'
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15
             return result
