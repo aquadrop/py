@@ -243,6 +243,7 @@ class MainKernel:
             a_time=time.time()
             result['qtime'] = q_time
             result['atime'] = a_time
+            result['nlp_latent'] = a_time - q_time
             result['uid'] = render['uid']
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15

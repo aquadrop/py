@@ -15,6 +15,7 @@ from tqdm import tqdm
 # pickle
 from graph.belief_graph import Graph
 from kernel_2.main_kernel import MainKernel
+from qa.base import BaseKernel
 
 import sys
 import os

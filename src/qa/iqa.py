@@ -12,6 +12,8 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
+from lru import LRU
+
 class Qa:
     def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
@@ -20,9 +22,16 @@ class Qa:
         self.base = BaseKernel()
         self.THRESHOLD = 0.95
         self.REACH = 1
+        self.cache = LRU(300)
         # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
+        if query in self.cache:
+            best_query = self.cache[query]['query']
+            best_answer = np.random.choice(self.cache[query]['answer'])
+            best_score = self.cache[query]['score']
+            best_doc = self.cache[query]['doc']
+            return best_query, best_answer, best_score, best_doc
         docs = solr_qa(self.core, query, field=self.question_key )
 
         # docs = solr_qa(self.core, query, self.question_key)
@@ -58,9 +67,14 @@ class Qa:
 
         if best_score < self.THRESHOLD:
             print('redirecting to third party', best_score)
-            return query, self.base.kernel(query), best_score
+            answer = self.base.kernel(query)
+            cached = {"query": query, "answer": [answer], "score": best_score, "doc":best_doc}
+            self.cache[query] = cached
+            return query, answer, best_score, best_doc
             # return query, 'api_call_base', best_score
         else:
+            cached = {"query": query, "answer": best_answer, "score": best_score, "doc": best_doc}
+            self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
 
     def embed(self, tokens):
