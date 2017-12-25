@@ -13,6 +13,8 @@ from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
 from lru import LRU
+from threading import Thread
+
 
 class Qa:
     def __init__(self, core, question_key='question', answer_key='answer'):
@@ -24,6 +26,9 @@ class Qa:
         self.REACH = 1
         self.cache = LRU(300)
         # self.schedule()
+        thread = Thread(target=self.schedule)
+        thread.start()
+        # thread.join()
         # self.solr_addr = solr_addr
 
     def get_responses(self, query, user='solr'):
@@ -70,7 +75,7 @@ class Qa:
             print('redirecting to third party', best_score)
             answer = self.base.kernel(query)
             cached = {"query": query, "answer": [answer], "score": best_score, "doc":best_doc}
-            self.cache[query] = cached
+            # self.cache[query] = cached
             return query, answer, best_score, best_doc
             # return query, 'api_call_base', best_score
         else:
@@ -116,7 +121,7 @@ class Qa:
         schedule.every().day.at("01:00").do(self.clear_cache)
         while True:
             schedule.run_pending()
-            time.sleep(60)  # wait one minute
+            time.sleep(60)
 
 def test():
     query1 = '我的名字是小明'
