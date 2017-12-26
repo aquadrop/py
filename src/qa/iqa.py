@@ -21,15 +21,15 @@ from dmn.dmn_fasttext.vector_helper import computeSentenceSim
 class Qa:
 
     static_bt = None
+    cache = LRU(300)
+    THRESHOLD = 0.90
 
     def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
-        self.THRESHOLD = 0.95
         self.REACH = 1
-        self.cache = LRU(300)
 
         # if Qa.static_bt:
         #     self.bt = Qa.static_bt
@@ -93,7 +93,6 @@ class Qa:
             # return query, 'api_call_base', best_score
         else:
             cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
-            print(cached)
             self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
 
