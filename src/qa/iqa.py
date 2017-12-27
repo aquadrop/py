@@ -14,7 +14,7 @@ from qa.base import BaseKernel
 
 THRESHOLD = 0.95
 REACH = 1
-CACHE_SIZE = 100 #2017/12/26 设置缓存大小
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 class Qa:
     def __init__(self, core, question_key='question', answer_key='answer'):

@@ -22,7 +22,7 @@ THRESHOLD = 0.90
 REACH = 1
 
 
-CACHE_SIZE = 100 #2017/12/26 设置缓存大小
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 
 #'http://localhost:11403/solr'
