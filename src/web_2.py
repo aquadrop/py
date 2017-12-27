@@ -98,6 +98,14 @@ def rule_plugin_reload():
     except:
         return 'rule plugin reload failed'
 
+@app.route('/e/reload_render', methods=['GET', 'POST'])
+def render_plugin_reload():
+    try:
+        MainKernel.static_render.reload()
+        return 'render plugin reload completed'
+    except:
+        return 'render plugin reload failed'
+
 # @app.route('/e/log', methods=['GET', 'POST'])
 # def info():
 #     size = len(lru_kernels)
