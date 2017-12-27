@@ -123,7 +123,7 @@ class MainKernel:
         # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
-            result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
+            result = {"answer": "", "media": "null", 'from': "noise", "sim": 0, 'class':'unk'}
             return result
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
@@ -243,6 +243,11 @@ class MainKernel:
             a_time=time.time()
             result['qtime'] = q_time
             result['atime'] = a_time
+            result['nlp_latent'] = a_time - q_time
+            try:
+                result['uid'] = render['uid']
+            except:
+                result['uid'] = 'uid_undefined'
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15
             return result

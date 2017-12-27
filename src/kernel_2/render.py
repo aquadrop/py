@@ -265,25 +265,30 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
-        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1}
+        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1, 'uid': 'null'}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
                     or response.startswith('reserved_'):
                 # self.sess.clear_memory()
-                matched, answer, score = self.interactive.get_responses(
-                    query=q)
+                matched, answer, score, doc = self.interactive.get_responses(
+                    query=q, cls='')
                 result['answer'] = answer
-                result['from'] = 'base'
+                result['from'] = 'base' if score > self.interactive.THRESHOLD else 'third'
                 result['sim'] = score
-                result['emotion'] = self.render_emotion()
+                try:
+                    result['emotion'] = doc['emotion'][0] if 'emotion' in doc else 'null'
+                except:
+                    result['emotion'] = 'null'
+                result['uid'] = doc['uid']
                 return result
             if response.startswith('api_call_faq_general'):
-                matched, answer, score = self.faq.get_responses(
-                    query=q)
+                matched, answer, score, doc = self.faq.get_responses(
+                    query=q, cls='')
                 ad = self.ad_kernel.anchor_faq_ad(answer)
                 answer = answer + ' ' + ad
                 result['answer'] = answer
+                result['uid'] = doc['uid']
                 return result
             if response.startswith('api_call_faq_info'):
                 result['media'] = self.render_media(response)
@@ -384,7 +389,7 @@ class Render:
 
                 if params.startswith('category:图书') or params.startswith('book.category:'):
                     if self.rule_plugin.check_buy(q):
-                        response+='您可以点击小新主界面下方的购书按钮,按照小新脸上的提示操作就可以了.'
+                        response+='您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
                     else:
                         response += '您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
 
@@ -394,7 +399,7 @@ class Render:
             return response
         except:
             print(traceback.format_exc())
-            matched, answer, score = self.interactive.get_responses(
+            matched, answer, score, _ = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
             result['answer'] = answer

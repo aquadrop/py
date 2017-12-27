@@ -37,7 +37,7 @@ table = [
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["杂志期刊"],"category": ["图书"], "book.category": ["杂志", "期刊", "杂志期刊"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
-    {"title":["社科类图书"],"category": ["图书"], "book.category": ["社会科学", "社科书", "科学书"],
+    {"title":["社科类图书"],"category": ["图书"], "book.category": ["社会科学", "社科书"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["科技图书"],"category": ["图书"], "book.category": ["科技类", "科技书","科学类"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},

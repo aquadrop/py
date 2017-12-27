@@ -76,37 +76,24 @@ class Qa:
                 #     break
                 # print(score)
 
-            # if best_score < THRESHOLD:
-            #     print('redirecting to third party', best_score)
-            #     answer = '您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
-            #              '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
-            #              '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
-            #     return query, answer, best_score
-            #     # return query, 'api_call_base', best_score
-            # else:
-            #     return best_query, np.random.choice(best_answer), best_score
-
-
             if best_score < THRESHOLD:
                 print('redirecting to third party', best_score)
-
-                response = query, self.base.kernel(query), str(best_score)
+                answer = '您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
+                         '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
+                         '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
+                response = query, answer, str(best_score)
                 self.cache[query] = ' '.join(response)
-                # for key in self.cache.keys():
-                #     print(key)
-                # print('\n')
                 # return query, 'api_call_base', best_score
             else:
                 response = best_query, np.random.choice(best_answer), str(best_score)
                 self.cache[query] = ' '.join(response)
-                for key in self.cache.keys():
-                    print(key)
-                print('\n')
+                return best_query, np.random.choice(best_answer), best_score
+
         else:
             response = self.cache.get(query).split(' ')
-            for key in self.cache.keys():
-                print(key)
-            print('\n')
+            # for key in self.cache.keys():
+            #     print(key)
+            # print('\n')
         return response
 
 

@@ -1,6 +1,29 @@
 import requests
 import json
 import numpy as np
+import schedule, time
+
+from lru import LRU
+from threading import Thread
+
+'''
+import schedule
+import time
+
+def job():
+    print("I'm working...")
+
+schedule.every(10).minutes.do(job)
+schedule.every().hour.do(job)
+schedule.every().day.at("10:30").do(job)
+schedule.every(5).to(10).minutes.do(job)
+schedule.every().monday.do(job)
+schedule.every().wednesday.at("13:15").do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+'''
 
 class BaseKernel:
     appid = "841e6cd456e05713213f413e8765648e"
@@ -12,9 +35,16 @@ class BaseKernel:
         #     self.uid = self.register()
         # else:
         self.uid = self.user_ids[1]#np.random.choice(self.user_ids, 1)[0]
+        self.cache = LRU(300)
+        # thread = Thread(target=self.schedule)
+        # thread.start()
 
     def kernel(self, q):
-        return self.chat(q)
+        # if q in self.cache:
+        #     return self.cache[q]
+        answer = self.chat(q)
+        # self.cache[q] = answer
+        return answer
 
     def register(self):
         register_data = {"cmd": "register", "appid": self.appid}
@@ -42,6 +72,16 @@ class BaseKernel:
             return response
         except Exception:
             return 'base kernel is detached'
+
+    def clear_cache(self):
+        print('clear')
+        self.cache.clear()
+
+    def schedule(self):
+        schedule.every().hour.do(self.clear_cache)
+        while True:
+            schedule.run_pending()
+            time.sleep(60)
 
 if __name__ == '__main__':
     bk = BaseKernel()

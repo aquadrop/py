@@ -43,10 +43,10 @@ def compose_fq(mapper, option_fields=['price']):
 
     return fq
 
-def query(must_mappers, option_mapper={}):
+def query(must_mappers, option_mapper={}, qop='OR'):
     params = {
         'q': '*:*',
-        'q.op': "OR"
+        'q.op': qop
     }
     mappers = {}
     option_fields = []
@@ -62,11 +62,17 @@ def query(must_mappers, option_mapper={}):
     return docs
 
 
-def solr_qa(core, query, solr=solr, field=None):
-    if not field:
-        params = {'q': query, 'q.op': 'or', 'rows':20}
+def solr_qa(core, query, solr=solr, field=None, cls='base'):
+    if not cls:
+        if not field:
+            params = {'q': query, 'q.op': 'or', 'rows':20}
+        else:
+            params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
     else:
-        params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20}
+        if not field:
+            params = {'q': query, 'q.op': 'or', 'rows':20, 'fq':"class:{}".format(cls)}
+        else:
+            params = {'q': "{}:{}".format(field, query), 'q.op': 'or', 'rows': 20, 'fq':"class:{}".format(cls)}
     responses = solr.query(core, params)
     docs = responses.docs
     return docs
@@ -93,7 +99,7 @@ def solr_min_value(params, target_field):
         min_val = docs[0][target_field]
     return min_val
 
-def solr_facet(mappers, facet_field, is_range, prefix='facet_', postfix='_str', core='category'):
+def solr_facet(mappers, facet_field, is_range, prefix='facet_', postfix='_str', core='category', qop="AND"):
 
     def render_range(a, gap):
         if len(a) == 0:
@@ -135,7 +141,8 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_', postfix='_str', 
             'q': '*:*',
             'facet': True,
             'facet.field': facet_field,
-            "facet.mincount": 1
+            "facet.mincount": 1,
+            'q.op': qop
         }
         params['fq'] = compose_fq(mappers)
         res = solr.query(core, params)
@@ -146,7 +153,8 @@ def solr_facet(mappers, facet_field, is_range, prefix='facet_', postfix='_str', 
         fq = compose_fq(mappers)
         minmax_params = {
             'q': '*:*',
-            'fq': fq
+            'fq': fq,
+            'q.op': qop
         }
         max_value = solr_max_value(minmax_params, facet_field)
         min_value = solr_min_value(minmax_params, facet_field)

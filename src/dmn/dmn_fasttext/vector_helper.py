@@ -57,7 +57,10 @@ class BenebotVector(metaclass=Singleton):
         for word in words:
             vector = self.getVectorByWord(word)
             if not vector:
-                vector = [0.0] * self.dim
+                if len(word) == 1:
+                    vector = [0.0] * self.dim
+                else:
+                    vector = self.getVectorBySentence(word)
             vectors.append(vector)
         result = [0.0] * self.dim
         if vectors:
@@ -93,6 +96,13 @@ def getVector(word, embedding_dim=300):
     else:
         words = [w for w in word]
         return bv.getVectorBySentence(words)
+
+def computeSentenceSim(sent1, sent2):
+    u = bv.getVectorBySentence(sent1)
+    v = bv.getVectorBySentence(sent2)
+
+    c = np.dot(u, v) / np.linalg.norm(u) / np.linalg.norm(v)
+    return c
 
 
 def embedding_lookup(sequence_num, sequence_length, embedding_dim, input_x, maintain=0):
@@ -137,9 +147,11 @@ def embedding_lookup(sequence_num, sequence_length, embedding_dim, input_x, main
 
 def main():
     while True:
-        ipt = input("input:")
-        vec = bv.getSimilarWords(ipt)
-        print(len(vec), vec)
+        # ipt = input("input:")
+        # vec = bv.getSimilarWords(ipt)
+        # print(len(vec), vec)
+        c = computeSentenceSim("科沃斯,机器人".split(","), "我,想,把,这里,的,书,借出去,可以,吗".split(","))
+        print(c)
 
 
 if __name__ == '__main__':

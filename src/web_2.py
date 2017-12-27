@@ -15,6 +15,8 @@ from tqdm import tqdm
 # pickle
 from graph.belief_graph import Graph
 from kernel_2.main_kernel import MainKernel
+from qa.base import BaseKernel
+from qa.iqa import Qa as QA
 
 import sys
 import os
@@ -32,6 +34,8 @@ logging.basicConfig(filename=os.path.join(parentdir, 'logs/log_corpus_error_' + 
 app = Flask(__name__)
 
 _VERSION_ = '0.2.0'
+
+base = BaseKernel()
 
 config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "solr.facet": 'off',
@@ -69,6 +73,22 @@ def info():
     size = len(lru_kernels)
     result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
     return json.dumps(result, ensure_ascii=False)
+
+@app.route('/e/faq', methods=['GET', 'POST'])
+def faq():
+    result = '\n'.join(QA.cache.keys())
+    return result
+
+@app.route('/e/set_sim', methods=['GET', 'POST'])
+def set_sim():
+    try:
+        args = request.args
+        q = args['q']
+        sim = float(q)
+        QA.THRESHOLD = sim
+        return 'new sim threshold is ' + str(QA.THRESHOLD)
+    except:
+        return 'new sim threshold is ' + str(QA.THRESHOLD)
 
 # @app.route('/e/log', methods=['GET', 'POST'])
 # def info():
@@ -109,7 +129,8 @@ def chat():
     except Exception:
         logging.error("C@user:{}##error_details:{}".format(u, traceback.format_exc()))
         traceback.print_exc()
-        result = {"question": q, "result": {"answer": "kernel exception"}, "user": "solr"}
+        answer = base.kernel(q)
+        result = {"question": q, "result": {"answer": answer, 'media':'null'}, "user": "solr"}
         return json.dumps(result, ensure_ascii=False)
 
 if __name__ == "__main__":
@@ -123,7 +144,7 @@ if __name__ == "__main__":
 
     QSIZE = int(args.qsize)
 
-    for i in range(QSIZE):
+    for i in tqdm(range(QSIZE)):
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
     print('web started...')
