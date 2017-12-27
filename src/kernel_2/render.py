@@ -272,7 +272,7 @@ class Render:
                     or response.startswith('reserved_'):
                 # self.sess.clear_memory()
                 matched, answer, score, doc = self.interactive.get_responses(
-                    query=q)
+                    query=q, cls='')
                 result['answer'] = answer
                 result['from'] = 'base' if score > self.interactive.THRESHOLD else 'third'
                 result['sim'] = score
@@ -284,7 +284,7 @@ class Render:
                 return result
             if response.startswith('api_call_faq_general'):
                 matched, answer, score, doc = self.faq.get_responses(
-                    query=q)
+                    query=q, cls='')
                 ad = self.ad_kernel.anchor_faq_ad(answer)
                 answer = answer + ' ' + ad
                 result['answer'] = answer

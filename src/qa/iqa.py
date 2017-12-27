@@ -43,14 +43,25 @@ class Qa:
         # thread.join()
         # self.solr_addr = solr_addr
 
-    def get_responses(self, query, user='solr'):
+    def get_responses(self, query, user='solr', cls=''):
         if query in self.cache:
             best_query = self.cache[query]['query']
             best_answer = np.random.choice(self.cache[query]['answer'])
             best_score = self.cache[query]['score']
             best_doc = self.cache[query]['doc']
             return best_query, best_answer, best_score, best_doc
-        docs = solr_qa(self.core, query, field=self.question_key )
+        docs = solr_qa(self.core, query, field=self.question_key + '_str', cls=cls)
+        if len(docs) == 0:
+            docs = solr_qa(self.core, query, field=self.question_key, cls=cls)
+        else:
+            doc = np.random.choice(docs)
+            best_query = doc[self.question_key]
+            best_answer = doc[self.answer_key]
+            best_score = 1
+            best_doc = doc
+            cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
+            self.cache[query] = cached
+            return best_query, np.random.choice(best_answer), best_score, best_doc
 
         # docs = solr_qa(self.core, query, self.question_key)
         # print(docs)
