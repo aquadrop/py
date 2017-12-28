@@ -3,6 +3,7 @@ import sys
 import os
 import requests
 import schedule, time
+import pylru
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -17,11 +18,12 @@ from threading import Thread
 
 from amq.sim import BenebotSim
 from dmn.dmn_fasttext.vector_helper import computeSentenceSim
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 class Qa:
 
     static_bt = None
-    cache = LRU(300)
+    cache = pylru.lrucache(CACHE_SIZE)
     THRESHOLD = 0.90
 
     def __init__(self, core, question_key='question', answer_key='answer'):

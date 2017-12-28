@@ -2,6 +2,7 @@ import numpy as np
 import sys
 import os
 import requests
+import pylru
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))#get parent dir path: memory_py
 sys.path.insert(0, parentdir)
@@ -14,10 +15,16 @@ from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
 from amq.sim import BenebotSim
-bt = BenebotSim()
 
+
+bt = BenebotSim()
 THRESHOLD = 0.90
 REACH = 1
+
+
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
+
+
 #'http://localhost:11403/solr'
 class Qa:
     def __init__(self, core, question_key='question', answer_key='answers', solr_addr = 'http://10.89.100.14:8999/solr'):
@@ -26,51 +33,82 @@ class Qa:
         self.answer_key = answer_key #指代solr数据库doc里的key——‘answer’
         self.base = BaseKernel()
         self.solr = SolrClient(solr_addr)
+        self.cache = pylru.lrucache(CACHE_SIZE) #2017/12/26 调用lru算法模型
 
     def get_responses(self, query, user='solr'):
         '''
             程序功能：传入问句query
+            
+            #2017/12/26 query对应的key在缓存中不存在，加入缓存
+                否则从缓存中直接调取
+            
             return  solr数据库中最大相似度的问句、最大相似度的回答以及最大相似度
         '''
-        docs = solr_qa(self.core, query, solr=self.solr, field=self.question_key)
-        best_query = None
-        best_answer = None
-        best_score = -1
 
-        #参数index：所有相似问句的数目
-        #参数doc：单个相似的问句
-        for index, doc in enumerate(docs):
-            if index > 10:
-                break
-            b = doc[self.answer_key]
-            g = doc[self.question_key] # solr库中相似的问句
-            # for _g in g:
-            #     score = self.similarity(query, _g)
-            #     if score > best_score:
-            #         best_score = score
-            #         best_query = _g
-            #         best_answer = b
-            #         if score >= REACH:
-            #             break
-            score, _g = self.m_similarity(query, g)
-            # score,_g = self.bt_similarity(query, g)
-            if score > best_score:
-                best_score = score
-                best_query = _g
-                best_answer = b
-            # if score >= REACH:
-            #     break
-            # print(score)
+        if query not in self.cache:
+            docs = solr_qa(self.core, query, solr=self.solr, field=self.question_key)
+            best_query = None
+            best_answer = None
+            best_score = -1
 
-        if best_score < THRESHOLD:
-            print('redirecting to third party', best_score)
-            answer = '您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
-                     '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
-                     '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
-            return query, answer, best_score
-            # return query, 'api_call_base', best_score
+            #参数index：所有相似问句的数目
+            #参数doc：单个相似的问句
+            for index, doc in enumerate(docs):
+                if index > 10:
+                    break
+                b = doc[self.answer_key]
+                g = doc[self.question_key] # solr库中相似的问句
+                # for _g in g:
+                #     score = self.similarity(query, _g)
+                #     if score > best_score:
+                #         best_score = score
+                #         best_query = _g
+                #         best_answer = b
+                #         if score >= REACH:
+                #             break
+                score, _g = self.m_similarity(query, g)
+                # score,_g = self.bt_similarity(query, g)
+                if score > best_score:
+                    best_score = score
+                    best_query = _g
+                    best_answer = b
+                # if score >= REACH:
+                #     break
+                # print(score)
+
+            # if best_score < THRESHOLD:
+            #     print('redirecting to third party', best_score)
+            #     answer = '您好!您可以输入以下常见问题进行咨询：\n*科沃斯旺宝产品介绍。\n*如何购买科沃斯旺宝？\n*' \
+            #              '科沃斯旺宝可以在哪些行业中应用？\n*科沃斯旺宝有哪些使用实例？\n*科沃斯可以为用户和合作' \
+            #              '伙伴提供哪些服务？\n\n请在下方对话框中提交您的问题，小科将竭尽全力为您解答哟~'
+            #     return query, answer, best_score
+            #     # return query, 'api_call_base', best_score
+            # else:
+            #     return best_query, np.random.choice(best_answer), best_score
+
+
+            if best_score < THRESHOLD:
+                print('redirecting to third party', best_score)
+
+                response = query, self.base.kernel(query), str(best_score)
+                self.cache[query] = ' '.join(response)
+                # for key in self.cache.keys():
+                #     print(key)
+                # print('\n')
+                # return query, 'api_call_base', best_score
+            else:
+                response = best_query, np.random.choice(best_answer), str(best_score)
+                self.cache[query] = ' '.join(response)
+                for key in self.cache.keys():
+                    print(key)
+                print('\n')
         else:
-            return best_query, np.random.choice(best_answer), best_score
+            response = self.cache.get(query).split(' ')
+            for key in self.cache.keys():
+                print(key)
+            print('\n')
+        return response
+
 
     def embed(self, tokens):
         embeddings = [ff_embedding(word) for word in tokens]
@@ -118,8 +156,10 @@ def ceshi():
 
 def main():
     qa = Qa('zx_weixin_qa')
-    best_query, best_answer, best_score = qa.get_responses('科沃斯旺宝服务。')
-    print(best_query, best_answer, best_score)
+    query_list = ['我的名字是小明','要买抽油烟机','科沃斯旺宝服务。','科沃斯旺宝服务。']
+    for quest in query_list:
+        best_query, best_answer, best_score = qa.get_responses(quest)
+        print(best_query, best_answer, best_score)
 
 
 if __name__ == '__main__':
