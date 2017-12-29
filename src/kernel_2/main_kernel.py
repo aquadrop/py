@@ -30,7 +30,10 @@ import os
 import sys
 import logging
 import time
+import schedule
+
 from datetime import datetime
+
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
@@ -52,6 +55,8 @@ from qa.iqa import Qa as QA
 import memory.config as config
 from kernel_2.render import Render
 from kernel_2.rule_base_plugin import RuleBasePlugin
+
+SCHED_TIME = 10 # set schedule time for memory clear
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -157,6 +162,7 @@ class MainKernel:
                 api = self.rule_plugin.fix(q, _api)
                 print(_api, api, prob[0][0], prob)
                 score = float(prob[0][0])
+
                 if score < 0.5:
                     api = 'api_call_base'
                 response = api
@@ -180,6 +186,8 @@ class MainKernel:
                             return self.kernel(q, user, False)
                 else:
                     self.base_counter = 0
+
+
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
@@ -204,6 +212,10 @@ class MainKernel:
                         # self.sess.clear_memory()
                         # self.belief_tracker.clear_memory()
                         memory = ''
+
+                else: #added on 2017-12-28
+                   self.sched()
+
                 if api == 'api_call_deny_all':
                     response, avails = self.belief_tracker.deny_call(slot=None)
                     memory = response
@@ -279,6 +291,14 @@ class MainKernel:
             api_json[key] = value
         return api_json
 
+    def clear(self):
+        self.belief_tracker.clear_memory()
+        self.sess.clear_memory()
+
+    def sched(self):
+        schedule.every(SCHED_TIME).seconds.do(self.clear)
+        while True:
+            schedule.run_pending()
 
 if __name__ == '__main__':
     # metadata_dir = os.path.join(
