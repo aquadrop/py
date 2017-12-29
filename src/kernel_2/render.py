@@ -63,6 +63,13 @@ class Render:
     static_rule_plugin = None
 
     def __init__(self, config):
+        self.config = config
+        self._load(config)
+
+    def reload(self):
+        self._load(self.config)
+
+    def _load(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
         self._load_location_render(config['render_location_file'])
@@ -78,6 +85,7 @@ class Render:
         self.interactive = QA('base')
         self.faq = QA('base')
         print('attaching rendering file...')
+
 
     def _load_emotion_render(self, file):
         self.emotion = []
@@ -272,7 +280,7 @@ class Render:
                     or response.startswith('reserved_'):
                 # self.sess.clear_memory()
                 matched, answer, score, doc = self.interactive.get_responses(
-                    query=q)
+                    query=q, cls='')
                 result['answer'] = answer
                 result['from'] = 'base' if score > self.interactive.THRESHOLD else 'third'
                 result['sim'] = score
@@ -284,7 +292,7 @@ class Render:
                 return result
             if response.startswith('api_call_faq_general'):
                 matched, answer, score, doc = self.faq.get_responses(
-                    query=q)
+                    query=q, cls='')
                 ad = self.ad_kernel.anchor_faq_ad(answer)
                 answer = answer + ' ' + ad
                 result['answer'] = answer

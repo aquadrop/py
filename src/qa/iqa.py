@@ -3,6 +3,7 @@ import sys
 import os
 import requests
 import schedule, time
+import pylru
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -17,19 +18,20 @@ from threading import Thread
 
 from amq.sim import BenebotSim
 from dmn.dmn_fasttext.vector_helper import computeSentenceSim
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 class Qa:
 
     static_bt = None
+    cache = pylru.lrucache(CACHE_SIZE)
+    THRESHOLD = 0.90
 
     def __init__(self, core, question_key='question', answer_key='answer'):
         self.core = core
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
-        self.THRESHOLD = 0.95
         self.REACH = 1
-        self.cache = LRU(300)
 
         # if Qa.static_bt:
         #     self.bt = Qa.static_bt
@@ -43,14 +45,25 @@ class Qa:
         # thread.join()
         # self.solr_addr = solr_addr
 
-    def get_responses(self, query, user='solr'):
+    def get_responses(self, query, user='solr', cls=''):
         if query in self.cache:
             best_query = self.cache[query]['query']
             best_answer = np.random.choice(self.cache[query]['answer'])
             best_score = self.cache[query]['score']
             best_doc = self.cache[query]['doc']
             return best_query, best_answer, best_score, best_doc
-        docs = solr_qa(self.core, query, field=self.question_key )
+        docs = solr_qa(self.core, query, field=self.question_key + '_str', cls=cls)
+        if len(docs) == 0:
+            docs = solr_qa(self.core, query, field=self.question_key, cls=cls)
+        else:
+            doc = np.random.choice(docs)
+            best_query = doc[self.question_key]
+            best_answer = doc[self.answer_key]
+            best_score = 1
+            best_doc = doc
+            cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
+            self.cache[query] = cached
+            return best_query, np.random.choice(best_answer), best_score, best_doc
 
         # docs = solr_qa(self.core, query, self.question_key)
         # print(docs)
@@ -93,7 +106,6 @@ class Qa:
             # return query, 'api_call_base', best_score
         else:
             cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
-            print(cached)
             self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
 

@@ -52,11 +52,19 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 class RuleBasePlugin:
 
     def __init__(self, config):
+        self.config = config
+        self._load(config)
+
+    def reload(self):
+        self._load(self.config)
+
+    def _load(self, config):
         self.api_list = ['api_call_faq_info']
         self.should_clear_list = ['api_call_request_reg.complete']
         self._load_key_word_file(config['key_word_file'])
         self._load_noise_filter(config['noise_keyword_file'])
         self._load_post_filter(config['machine_profile'])
+
 
     def _load_key_word_file(self, key_word_file):
         self.key_words = []

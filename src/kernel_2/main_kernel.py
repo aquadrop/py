@@ -123,7 +123,7 @@ class MainKernel:
         # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
-            result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
+            result = {"answer": "", "media": "null", 'from': "noise", "sim": 0, 'class':'unk'}
             return result
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)

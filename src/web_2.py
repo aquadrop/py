@@ -16,6 +16,7 @@ from tqdm import tqdm
 from graph.belief_graph import Graph
 from kernel_2.main_kernel import MainKernel
 from qa.base import BaseKernel
+from qa.iqa import Qa as QA
 
 import sys
 import os
@@ -73,6 +74,38 @@ def info():
     result = {"question": "request info", "result": {"answer": size}, "user": "solr"}
     return json.dumps(result, ensure_ascii=False)
 
+@app.route('/e/faq', methods=['GET', 'POST'])
+def faq():
+    result = '\n'.join(QA.cache.keys())
+    return result
+
+@app.route('/e/set_sim', methods=['GET', 'POST'])
+def set_sim():
+    try:
+        args = request.args
+        q = args['q']
+        sim = float(q)
+        QA.THRESHOLD = sim
+        return 'new sim threshold is ' + str(QA.THRESHOLD)
+    except:
+        return 'new sim threshold is ' + str(QA.THRESHOLD)
+
+@app.route('/e/reload_rule_plugin', methods=['GET', 'POST'])
+def rule_plugin_reload():
+    try:
+        MainKernel.static_rule_plugin.reload()
+        return 'rule plugin reload completed'
+    except:
+        return 'rule plugin reload failed'
+
+@app.route('/e/reload_render', methods=['GET', 'POST'])
+def render_plugin_reload():
+    try:
+        MainKernel.static_render.reload()
+        return 'render plugin reload completed'
+    except:
+        return 'render plugin reload failed'
+
 # @app.route('/e/log', methods=['GET', 'POST'])
 # def info():
 #     size = len(lru_kernels)
@@ -127,7 +160,7 @@ if __name__ == "__main__":
 
     QSIZE = int(args.qsize)
 
-    for i in range(QSIZE):
+    for i in tqdm(range(QSIZE)):
         k = MainKernel(config)
         kernel_backups.put_nowait(k)
     print('web started...')
