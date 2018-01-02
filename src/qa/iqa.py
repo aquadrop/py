@@ -2,9 +2,8 @@ import numpy as np
 import sys
 import os
 import requests
-
-import pylru
 import schedule, time
+import pylru
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -14,20 +13,17 @@ from utils.solr_util import solr_qa
 from utils.embedding_util import ff_embedding, mlt_ff_embedding
 from qa.base import BaseKernel
 
-THRESHOLD = 0.95
-REACH = 1
-CACHE_SIZE = 50 #2017/12/26 设置缓存大小
-
 from lru import LRU
 from threading import Thread
 
 from amq.sim import BenebotSim
 from dmn.dmn_fasttext.vector_helper import computeSentenceSim
+CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 class Qa:
 
     static_bt = None
-    cache = LRU(300)
+    cache = pylru.lrucache(CACHE_SIZE)
     THRESHOLD = 0.90
 
     def __init__(self, core, question_key='question', answer_key='answer'):
@@ -35,52 +31,6 @@ class Qa:
         self.question_key = question_key
         self.answer_key = answer_key
         self.base = BaseKernel()
-        self.cache = pylru.lrucache(CACHE_SIZE) #2017/12/26 调用lru算法模型
-        # self.solr_addr = solr_addr
-
-    def get_responses(self, query, user='solr'):
-        if query not in self.cache:
-            docs = solr_qa(self.core, query, field=self.question_key )
-
-            # docs = solr_qa(self.core, query, self.question_key)
-            # print(docs)
-            best_query = None
-            best_answer = None
-            best_score = -1
-            for index, doc in enumerate(docs):
-                if index > 10:
-                    break
-                b = doc[self.answer_key]
-                g = doc[self.question_key]
-                # for _g in g:
-                #     score = self.similarity(query, _g)
-                #     if score > best_score:
-                #         best_score = score
-                #         best_query = _g
-                #         best_answer = b
-                #         if score >= REACH:
-                #             break
-                score, _g = self.m_similarity(query, g)
-                if score > best_score:
-                    best_score = score
-                    best_query = _g
-                    best_answer = b
-                # if score >= REACH:
-                #     break
-                # print(score)
-
-            if best_score < THRESHOLD:
-                print('redirecting to third party', best_score)
-
-                response = query, self.base.kernel(query), str(best_score)
-                self.cache[query] = ' '.join(response)
-            else:
-                response = best_query, np.random.choice(best_answer), str(best_score)
-                self.cache[query] = ' '.join(response)
-        else:
-            response = self.cache.get(query).split(' ')
-
-        return response
         self.REACH = 1
 
         # if Qa.static_bt:
