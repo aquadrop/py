@@ -62,7 +62,7 @@ def query(must_mappers, option_mapper={}, qop='OR'):
     return docs
 
 
-def solr_qa(core, query, solr=solr, field=None, cls='base'):
+def solr_qa(core, query, solr=solr, field=None, cls=''):
     if not cls:
         if not field:
             params = {'q': query, 'q.op': 'or', 'rows':20}

@@ -63,6 +63,13 @@ class Render:
     static_rule_plugin = None
 
     def __init__(self, config):
+        self.config = config
+        self._load(config)
+
+    def reload(self):
+        self._load(self.config)
+
+    def _load(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
         self._load_location_render(config['render_location_file'])
@@ -78,6 +85,7 @@ class Render:
         self.interactive = QA('base')
         self.faq = QA('base')
         print('attaching rendering file...')
+
 
     def _load_emotion_render(self, file):
         self.emotion = []
