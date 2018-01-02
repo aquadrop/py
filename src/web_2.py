@@ -57,7 +57,8 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "emotion_file": os.path.join(parentdir, 'model/render_2/emotion.txt'),
               "noise_keyword_file": os.path.join(parentdir, 'model/render_2/noise.txt'),
               "ad_anchor": os.path.join(parentdir, 'model/render_2/ad_anchor.txt'),
-              "machine_profile": os.path.join(parentdir, 'model/render_2/machine_profile_replacement.txt')
+              "machine_profile": os.path.join(parentdir, 'model/render_2/machine_profile_replacement.txt'),
+              "synonym": os.path.join(parentdir, 'model/render_2/synonym.txt'),
               }
 
 kernel = MainKernel(config)

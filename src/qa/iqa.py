@@ -61,6 +61,8 @@ class Qa:
             best_answer = doc[self.answer_key]
             best_score = 1
             best_doc = doc
+            if 'uid' not in best_doc:
+                best_doc['uid'] = 'uid_not_defined'
             cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
             self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
