@@ -119,7 +119,9 @@ class MainKernel:
         start = time.time()
         q = self.rule_plugin.filter(q)
         q = self.rule_plugin.pre_replace(q)
-        # print(q)
+        print("before:",q)
+        q=self.rule_plugin.introduction(q)
+        print("after:",q)
         # q=self.rule_plugin.rewrite(q)
         # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}

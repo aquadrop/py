@@ -25,7 +25,7 @@ table = [
         "学习机"], "location": ["一楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城一楼"},
     {"title":["精品图书展台"],"poi": ["精品图书展台", "图书展台", "精品展台"], "location": [
         "一楼中心区域"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城一楼"},
-    # {"title":["吴江新华书店"],"poi": ["吴江新华书店"], "location": ["苏州市吴江区"],"store_id":"吴江新华书店"},
+    {"title":["吴江新华书店"],"poi": ["吴江新华书店"], "location": ["苏州市吴江区"],"store_id":"吴江新华书店"},
     {"title":["茶颜观色餐饮区"],"brand": ["茶颜观色"], "poi": ["餐饮区"],
         "location": ["二楼东侧"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["咖啡馆"],"poi": ["咖啡"], "location": ["二楼东侧"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
@@ -35,7 +35,7 @@ table = [
     {"title":["亨通市民书房"],"poi": ["亨通市民书房"], "location": ["二楼西侧"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["文学类图书"],"category": ["图书"], "book.category": ["文学类"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
-    {"title":["杂志期刊"],"category": ["图书"], "book.category": ["杂志", "期刊", "杂志期刊"],
+    {"title":["杂志期刊"],"category": ["图书"], "book.category": ["杂志", "期刊", "杂志期刊" ],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["社科类图书"],"category": ["图书"], "book.category": ["社会科学", "社科书"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
