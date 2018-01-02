@@ -167,6 +167,16 @@ class RuleBasePlugin:
             qq=q
         return qq
 
+    def introduction(self,q):
+        pattern1=r'.*[介绍|了解].*[书店].*'
+        pattern2 = r'.*[书店].*[介绍|了解].*'
+        res1 = re.findall(pattern1, q)
+        res2 = re.findall(pattern2, q)
+
+        if len(res1) or len(res2):
+            q='我不太了解你们书店'
+        return q
+
     def check_buy(self,q):
         pattern=r'.*[买|卖|购].*'
         res=re.findall(pattern,q)
