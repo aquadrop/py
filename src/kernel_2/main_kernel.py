@@ -83,7 +83,7 @@ class MainKernel:
         self.base_counter = 0
         self.base_clear_memory = 2
 
-        thread = threading.Thread(target=self.sched())
+        thread = threading.Thread(target=self.sched)
         thread.start()
 
         if config['clf'] == 'memory':
