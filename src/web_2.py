@@ -57,7 +57,8 @@ config = {"belief_graph": parentdir + "/model/graph/belief_graph.pkl",
               "emotion_file": os.path.join(parentdir, 'model/render_2/emotion.txt'),
               "noise_keyword_file": os.path.join(parentdir, 'model/render_2/noise.txt'),
               "ad_anchor": os.path.join(parentdir, 'model/render_2/ad_anchor.txt'),
-              "machine_profile": os.path.join(parentdir, 'model/render_2/machine_profile_replacement.txt')
+              "machine_profile": os.path.join(parentdir, 'model/render_2/machine_profile_replacement.txt'),
+              "synonym": os.path.join(parentdir, 'model/render_2/synonym.txt'),
               }
 
 kernel = MainKernel(config)
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--qsize', choices={'1', '20', '200'},
-                        default='20', help='q_size initializes number of the starting instances...')
+                        default='200', help='q_size initializes number of the starting instances...')
     args = parser.parse_args()
 
     QSIZE = int(args.qsize)
