@@ -101,7 +101,8 @@ class Qa:
 
         if best_score < self.THRESHOLD:
             print('redirecting to third party', best_score)
-            answer = self.base.kernel(query)
+            # answer = self.base.kernel(query)
+            answer = 'null'
             cached = {"query": query, "answer": [answer], "score": best_score, "doc":best_doc}
             # self.cache[query] = cached
             return query, answer, best_score, best_doc
