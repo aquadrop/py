@@ -64,6 +64,7 @@ class RuleBasePlugin:
         self._load_key_word_file(config['key_word_file'])
         self._load_noise_filter(config['noise_keyword_file'])
         self._load_post_filter(config['machine_profile'])
+        self._load_pre_filter(config['synonym'])
 
 
     def _load_key_word_file(self, key_word_file):
@@ -88,6 +89,14 @@ class RuleBasePlugin:
                 a, b = line.split('#')
                 self.replacement[a] = b
 
+    def _load_pre_filter(self, replace_file):
+        self.pre_replacement = dict()
+        with open(replace_file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                a, b = line.split('#')
+                self.pre_replacement[a] = b
+
     def replace(self, q):
         """
         dangerous to use; easy to misuse
@@ -95,7 +104,17 @@ class RuleBasePlugin:
         :return:
         """
         for key, value in self.replacement.items():
-            print(key, value, q)
+            q = q.replace(key, value)
+
+        return q
+
+    def pre_replace(self, q):
+        """
+        dangerous to use; easy to misuse
+        :param q:
+        :return:
+        """
+        for key, value in self.pre_replacement.items():
             q = q.replace(key, value)
 
         return q
