@@ -34,6 +34,7 @@ import datetime
 import hashlib
 import locale
 import re
+import pymongo
 
 locale.setlocale(locale.LC_ALL)
 
@@ -46,9 +47,11 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
+from utils.mongodb_client import Mongo
 from qa.iqa import Qa as QA
 from kernel_2.ad_kernel import AdKernel
 from kernel_2.rule_base_plugin import RuleBasePlugin
+
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -72,7 +75,8 @@ class Render:
     def _load(self, config):
         self.index_cls_name_mapper = dict()
         self._load_major_render(config['render_api_file'])
-        self._load_location_render(config['render_location_file'])
+        # self._load_location_render(config['render_location_file'])
+        self._load_location_render()
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
@@ -84,6 +88,7 @@ class Render:
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
         self.faq = QA('base')
+        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         print('attaching rendering file...')
 
 
@@ -144,20 +149,38 @@ class Render:
                         filtered.append(r)
                 self.major_render_mapper[key] = filtered
 
+    # def _load_location_render(self, file):
     def _load_location_render(self, file):
         self.location_templates = []
         self.location_applicables = dict()
         self.location_precludes = dict()
-        index = 0
-        with open(file, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip('\n')
-                template, applicable, preclude = line.split('#')
-                self.location_templates.append(template)
-                self.location_applicables[index] = applicable.split(',')
-                self.location_precludes[index] = preclude.split(',')
-                index += 1
+        suitable_list = self.mongdb.search(query={},
+                                      field={'suitable': '1'},
+                                      collection='render_location',
+                                      key='suitable')
+        unsuitable_list = self.mongdb.search(query={},
+                                        field={'unsuitable': '1'},
+                                        collection='render_location',
+                                        key='unsuitable')
+        template_list = self.mongdb.search(query={},
+                                      field={'template': '1'},
+                                      collection='render_location',
+                                      key='template')
 
+        for index in range(len(template_list)):
+            self.location_applicables[index] = suitable_list[index].split(',')
+            self.location_precludes[index] = unsuitable_list[index].split(',')
+        self.location_templates = template_list
+
+        # index = 0
+        # with open(file, 'r', encoding='utf-8') as f:
+        #     for line in f:
+        #         line = line.strip('\n')
+        #         template, applicable, preclude = line.split('#')
+        #         self.location_templates.append(template)
+        #         self.location_applicables[index] = applicable.split(',')
+        #         self.location_precludes[index] = preclude.split(',')
+        #         index += 1
     def _load_recommend_render(self, file):
         self.recommend_templates = []
         with open(file, 'r', encoding='utf-8') as f:
