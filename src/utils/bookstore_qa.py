@@ -35,7 +35,7 @@ table = [
     {"title":["亨通市民书房"],"poi": ["亨通市民书房"], "location": ["二楼西侧"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["文学类图书"],"category": ["图书"], "book.category": ["文学类"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
-    {"title":["杂志期刊"],"category": ["图书"], "book.category": ["杂志", "期刊", "杂志期刊"],
+    {"title":["杂志期刊"],"category": ["图书"], "book.category": ["杂志", "期刊", "杂志期刊" ],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
     {"title":["社科类图书"],"category": ["图书"], "book.category": ["社会科学", "社科书"],
         "location": ["二楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城二楼"},
@@ -56,9 +56,9 @@ table = [
     {"title":["文化用品"],"category": ["文具", "文化用品"], "location": ["四楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城三楼"},
     {"title":["教辅类图书"],"category": ["图书"], "book.category": ["教辅", "小升初", "中考",
                                            "高考"], "location": ["四楼"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城三楼"},
-    {"title":["收银台"],"facility": ["收银台", "服务总台"], "location": [
+    {"title":["收银台"],"facility": ["收银台", "服务总台","服务台"], "location": [
         "一楼的电梯出来后右手边,在屏幕平面图的正上方"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城一楼"},
-    {"title":["卫生间"],"facility": ["卫生间", "厕所"], "location": [
+    {"title":["卫生间"],"facility": ["卫生间", "厕所","洗手间"], "location": [
         "三楼的电梯出来后右手走到底,咨询工作人员"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城三楼"},
     {"title":["电梯"],"facility": ["电梯"], "location": ["在屏幕平面图的右上方"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城三楼"},
     {"title":["楼梯"],"facility": ["楼梯"], "location": ["在屏幕平面图的右上方"], "store_id":"吴江新华书店","image_key":"吴江新华书店书城三楼"}]

@@ -128,7 +128,10 @@ class MainKernel:
         q_time=time.time()
         start = time.time()
         q = self.rule_plugin.filter(q)
-        # print(q)
+        q = self.rule_plugin.pre_replace(q)
+        print("before:",q)
+        q=self.rule_plugin.introduction(q)
+        print("after:",q)
         # q=self.rule_plugin.rewrite(q)
         # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
@@ -340,6 +343,7 @@ if __name__ == '__main__':
               "noise_keyword_file": os.path.join(grandfatherdir, 'model/render_2/noise.txt'),
               "ad_anchor": os.path.join(grandfatherdir, 'model/render_2/ad_anchor.txt'),
               "machine_profile": os.path.join(grandfatherdir, 'model/render_2/machine_profile_replacement.txt'),
+              "synonym": os.path.join(grandfatherdir, 'model/render_2/synonym.txt'),
               }
     kernel = MainKernel(config)
     while True:
