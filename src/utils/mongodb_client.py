@@ -24,9 +24,17 @@ class Mongo():
             traceback.print_exc()
             return 0
 
-    def search(self, query={}, filter={}, collection='template'):
+    def update(self, filter={}, data):
         try:
-            data = [x for x in self.db[collection].find(query)]
+            self.collection.update_many(filter, {'$set':data})
+            return 1
+        except:
+            traceback.print_exc()
+            return 0
+
+    def search(self, query={}, field={'_id':0}, collection='template'):
+        try:
+            data = [x for x in self.db[collection].find(query, field)]
             return data
         except:
             traceback.print_exc()
@@ -41,7 +49,7 @@ if __name__ == '__main__':
         print('delete error!')
     if not mongo.insert(data):
         print('insert data error!!!')
-    data = mongo.search(query={'type':'location'})
+    data = mongo.search(query={'type':'location'}, field=None)
     for x in data:
         print(x)
     
