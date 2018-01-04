@@ -74,13 +74,16 @@ class Render:
 
     def _load(self, config):
         self.index_cls_name_mapper = dict()
-        self._load_major_render(config['render_api_file'])
+        # self._load_major_render(config['render_api_file'])
         # self._load_location_render(config['render_location_file'])
+        # self._load_media_render(config['render_media_file'])
+        self._load_media_render()
+        self._load_major_render()
         self._load_location_render()
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
-        self._load_media_render(config['render_media_file'])
+
         self._load_emotion_render(config['emotion_file'])
         self._load_ad(config['ad_anchor'])
         self._load_rule_plugin(config)
@@ -124,33 +127,62 @@ class Render:
             return np.random.choice(self.emotion)
         return 'null'
 
-    def _load_media_render(self, file):
-        self.media_render_mapper=dict()
-        with open(file,'r') as f:
-            for line in f:
-                line=line.strip('\n')
-                values=line.split('#')
-                if not values[1]:
-                    self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
-                else:
-                    self.media_render_mapper[values[0]]=values[1]
+    def _load_media_render(self):
+        self.media_render_mapper = dict()
+        img_list = self.mongdb.search(query={},
+                                 field={'img': '1'},
+                                 collection='render_media',
+                                 key='img')
+        instruct_list = self.mongdb.search(query={},
+                                      field={'instruct': '1'},
+                                      collection='render_media',
+                                      key='instruct')
+        for index in range(len(img_list)):
+            if not img_list[index]:
+                self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[0].encode('utf-8')).hexdigest()
+            else:
+                self.media_render_mapper[instruct_list[index]] = img_list[index]
+    # def _load_media_render(self, file):
+    #     self.media_render_mapper=dict()
+    #     with open(file,'r') as f:
+    #         for line in f:
+    #             line=line.strip('\n')
+    #             values=line.split('#')
+    #             if not values[1]:
+    #                 self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
+    #             else:
+    #                 self.media_render_mapper[values[0]]=values[1]
 
-    def _load_major_render(self, file):
+    def _load_major_render(self):
         self.major_render_mapper = dict()
-        with open(file, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip('\n')
-                key, replies = line.split('|')
-                key = key.split('##')[0]
-                replies = replies.split('/')
-                filtered = []
-                for r in replies:
-                    if r:
-                        filtered.append(r)
-                self.major_render_mapper[key] = filtered
+        replies_list = self.mongdb.search(query={},
+                                     field={'replies': '1'},
+                                     collection='render_api',
+                                     key='replies')
+        instruct_list = self.mongdb.search(query={},
+                                      field={'instruct': '1'},
+                                      collection='render_api',
+                                      key='instruct')
+        self.major_render_mapper = dict(list(zip(instruct_list, replies_list)))
 
-    # def _load_location_render(self, file):
-    def _load_location_render(self, file):
+
+    # def _load_major_render(self, file):
+    #     self.major_render_mapper = dict()
+    #
+        # with open(file, 'r', encoding='utf-8') as f:
+        #     for line in f:
+        #         line = line.strip('\n')
+        #         key, replies = line.split('|')
+        #         key = key.split('##')[0]
+        #         replies = replies.split('/')
+        #         filtered = []
+        #         for r in replies:
+        #             if r:
+        #                 filtered.append(r)
+        #         self.major_render_mapper[key] = filtered
+
+
+    def _load_location_render(self):
         self.location_templates = []
         self.location_applicables = dict()
         self.location_precludes = dict()
@@ -172,6 +204,7 @@ class Render:
             self.location_precludes[index] = unsuitable_list[index].split(',')
         self.location_templates = template_list
 
+    # def _load_location_render(self, file):
         # index = 0
         # with open(file, 'r', encoding='utf-8') as f:
         #     for line in f:

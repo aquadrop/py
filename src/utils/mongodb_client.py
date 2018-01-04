@@ -44,7 +44,7 @@ if __name__ == '__main__':
         print('delete error!')
     if not mongo.insert(data):
         print('insert data error!!!')
-    data = mongo.search(query={}, field={'type':1}, category='type')
+    data = mongo.search(query={}, field={'type':1}, key='type')
     for x in data:
         print(x)
     
