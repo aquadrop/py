@@ -2,6 +2,8 @@
 import os, sys
 import traceback
 from pymongo import MongoClient
+import bottle
+import json
 
 _defalut_attrs = {
         'scene':'_default',
@@ -31,7 +33,7 @@ class Machine_portrait():
 
     def create_default(self, attrs):
         try:
-            self.collection.delete_many(attrs)
+            self.collection.delete_many({'scene':'_default'})
             self.collection.insert(attrs)
             return 1
         except:
@@ -72,11 +74,47 @@ class Machine_portrait():
     def search(self, scene, field={'_id':0}):
         try:
             data = self.collection.find_one({'scene':scene}, field)
+            if data and '_id' in data:
+                data['_id'] = str(data['_id'])
             return data
         except:
             traceback.print_exc()
             return None
 
+@bottle.route('/:cmd/:scene', method=['GET', 'POST'])
+def cmd_2(cmd='', scene=''):
+    mp = Machine_portrait()
+    if cmd == 'create':
+        if mp.create(scene):
+            return {'result':'ok'}
+        return {'result':'error'}
+    if cmd == 'delete':
+        if mp.delete(scene):
+            return {'result':'ok'}
+        return {'result':'error'}
+    if cmd != 'search':
+        return {'result':'cmd error'}
+    data = mp.search(scene, field=None)
+    if not data:
+        return {'result':None}
+    data = json.dumps({'result':data}, ensure_ascii=False)
+    return data.encode('utf-8')
+
+@bottle.route('/update/:scene/:data', method=['GET', 'POST'])
+def cmd_3(cmd='', scene='', data=''):
+    mp = Machine_portrait()
+    if type(data) == bytes:
+        data = data.decode('utf-8')
+    try:
+        data = json.loads(data)
+    except:
+        traceback.print_exc()
+        return {'result':'data format error'}
+    if type(data) != dict:
+        return {'result':'data format error'}
+    if mp.update(scene, data):
+        return {'result':'ok'}
+    return {'result':'error'}
 
 if __name__ == '__main__':
     mp = Machine_portrait()
@@ -84,5 +122,5 @@ if __name__ == '__main__':
     #mp.create('test')
     #mp.update('test', {'age':1})
     #print(mp.search('test'))
-    print(dir(mp.collection))
+    bottle.run(host='0.0.0.0', port=1235)
 
