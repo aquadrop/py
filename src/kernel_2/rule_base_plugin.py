@@ -64,8 +64,8 @@ class RuleBasePlugin:
         self._load_key_word_file(config['key_word_file'])
         self._load_noise_filter(config['noise_keyword_file'])
         self._load_post_filter(config['machine_profile'])
-        self._load_pre_filter(config['synonym'])
-
+        # self._load_pre_filter(config['synonym'])
+        self._load_pre_filter()
 
     def _load_key_word_file(self, key_word_file):
         self.key_words = []
@@ -89,13 +89,25 @@ class RuleBasePlugin:
                 a, b = line.split('#')
                 self.replacement[a] = b
 
-    def _load_pre_filter(self, replace_file):
+    def _load_pre_filter(self):
         self.pre_replacement = dict()
-        with open(replace_file, 'r') as f:
-            for line in f:
-                line = line.strip('\n')
-                a, b = line.split('#')
-                self.pre_replacement[a] = b
+        given_list = self.mongdb.search(query={},
+                                   field={'given': '1'},
+                                   collection='synonym',
+                                   key='given')
+        matched_list = self.mongdb.search(query={},
+                                     field={'matched': '1'},
+                                     collection='synonym',
+                                     key='matched')
+        self.pre_replacement = dict(zip(given_list, matched_list))
+
+    # def _load_pre_filter(self, replace_file):
+    #     self.pre_replacement = dict()
+    #     with open(replace_file, 'r') as f:
+    #         for line in f:
+    #             line = line.strip('\n')
+    #             a, b = line.split('#')
+    #             self.pre_replacement[a] = b
 
     def replace(self, q):
         """

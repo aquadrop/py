@@ -83,7 +83,6 @@ class Render:
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
-
         self._load_emotion_render(config['emotion_file'])
         self._load_ad(config['ad_anchor'])
         self._load_rule_plugin(config)
