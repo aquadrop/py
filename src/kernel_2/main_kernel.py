@@ -83,8 +83,8 @@ class MainKernel:
         self.base_counter = 0
         self.base_clear_memory = 2
 
-        thread = threading.Thread(target=self.sched)
-        thread.start()
+        # thread = threading.Thread(target=self.sched)
+        # thread.start()
 
         if config['clf'] == 'memory':
             self._load_memory(config)
@@ -222,7 +222,8 @@ class MainKernel:
                         memory = ''
 
                 else: #added on 2017-12-28
-                   self.sched()
+                   # self.sched() remove temporally for further test
+                   pass
 
                 if api == 'api_call_deny_all':
                     response, avails = self.belief_tracker.deny_call(slot=None)

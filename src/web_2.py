@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--qsize', choices={'1', '20', '200'},
-                        default='20', help='q_size initializes number of the starting instances...')
+                        default='200', help='q_size initializes number of the starting instances...')
     args = parser.parse_args()
 
     QSIZE = int(args.qsize)
