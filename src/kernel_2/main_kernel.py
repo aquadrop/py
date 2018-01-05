@@ -222,7 +222,7 @@ class MainKernel:
                         memory = ''
 
                 else: #added on 2017-12-28
-                   # self.sched()
+                   # self.sched() remove temporally for further test
                    pass
 
                 if api == 'api_call_deny_all':

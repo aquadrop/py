@@ -10,3 +10,4 @@ tqdm
 pika==0.10.0
 schedule
 pylru
+pymongo

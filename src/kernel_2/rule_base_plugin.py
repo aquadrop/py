@@ -44,6 +44,7 @@ sys.path.append(grandfatherdir)
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 from kernel_2.ad_kernel import AdKernel
+from utils.mongodb_client import Mongo
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -52,6 +53,7 @@ logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
 class RuleBasePlugin:
 
     def __init__(self, config):
+        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self.config = config
         self._load(config)
 
@@ -127,17 +129,6 @@ class RuleBasePlugin:
         :return:
         """
         for key, value in self.pre_replacement.items():
-            q = q.replace(key, value)
-
-        return q
-
-    def pre_replace(self, q):
-        """
-        dangerous to use; easy to misuse
-        :param q:
-        :return:
-        """
-        for key, value in self.replacement.items():
             q = q.replace(key, value)
 
         return q
