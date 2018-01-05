@@ -80,6 +80,11 @@ def faq():
     result = '\n'.join(QA.cache.keys())
     return result
 
+@app.route('/e/clear_qa_cache', methods=['GET', 'POST'])
+def clear_qa_cache():
+    QA.cache.clear()
+    return 'cache cleared'
+
 @app.route('/e/set_sim', methods=['GET', 'POST'])
 def set_sim():
     try:

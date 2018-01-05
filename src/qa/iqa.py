@@ -2,6 +2,7 @@ import numpy as np
 import sys
 import os
 import requests
+
 import schedule, time
 import pylru
 
@@ -61,6 +62,8 @@ class Qa:
             best_answer = doc[self.answer_key]
             best_score = 1
             best_doc = doc
+            if 'uid' not in best_doc:
+                best_doc['uid'] = 'uid_not_defined'
             cached = {"query": best_query, "answer": best_answer, "score": best_score, "doc": best_doc}
             self.cache[query] = cached
             return best_query, np.random.choice(best_answer), best_score, best_doc
@@ -99,7 +102,8 @@ class Qa:
 
         if best_score < self.THRESHOLD:
             print('redirecting to third party', best_score)
-            answer = self.base.kernel(query)
+            # answer = self.base.kernel(query)
+            answer = 'null'
             cached = {"query": query, "answer": [answer], "score": best_score, "doc":best_doc}
             # self.cache[query] = cached
             return query, answer, best_score, best_doc

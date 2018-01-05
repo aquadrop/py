@@ -31,6 +31,7 @@ import sys
 import logging
 import time
 import schedule
+import threading
 
 from datetime import datetime
 
@@ -81,6 +82,10 @@ class MainKernel:
         self._load_rule_plugin(config)
         self.base_counter = 0
         self.base_clear_memory = 2
+
+        thread = threading.Thread(target=self.sched)
+        thread.start()
+
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -124,7 +129,9 @@ class MainKernel:
         start = time.time()
         q = self.rule_plugin.filter(q)
         q = self.rule_plugin.pre_replace(q)
-        # print(q)
+        print("before:",q)
+        q=self.rule_plugin.introduction(q)
+        print("after:",q)
         # q=self.rule_plugin.rewrite(q)
         # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}

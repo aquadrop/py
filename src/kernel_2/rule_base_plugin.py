@@ -104,7 +104,17 @@ class RuleBasePlugin:
         :return:
         """
         for key, value in self.replacement.items():
-            print(key, value, q)
+            q = q.replace(key, value)
+
+        return q
+
+    def pre_replace(self, q):
+        """
+        dangerous to use; easy to misuse
+        :param q:
+        :return:
+        """
+        for key, value in self.pre_replacement.items():
             q = q.replace(key, value)
 
         return q
@@ -167,6 +177,16 @@ class RuleBasePlugin:
         else:
             qq=q
         return qq
+
+    def introduction(self,q):
+        pattern1=r'.*[介绍|了解].*[书店].*'
+        pattern2 = r'.*[书店].*[介绍|了解].*'
+        res1 = re.findall(pattern1, q)
+        res2 = re.findall(pattern2, q)
+
+        if len(res1) or len(res2):
+            q='我不太了解你们书店'
+        return q
 
     def check_buy(self,q):
         pattern=r'.*[买|卖|购].*'
