@@ -67,6 +67,7 @@ class Render:
 
     def __init__(self, config):
         self.config = config
+        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self._load(config)
 
     def reload(self):
@@ -90,7 +91,7 @@ class Render:
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
         self.faq = QA('base')
-        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
+
         print('attaching rendering file...')
 
 
