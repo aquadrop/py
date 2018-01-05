@@ -69,7 +69,7 @@ class Model_trans(Mongo):
                 with open(self.f_path, 'r') as f_in:
                     data_list = []
                     value_list = []
-                    key_list = ['given', 'synonym']
+                    key_list = ['given', 'matched']
 
                     for eachline in f_in.readlines():
                         value_list = eachline.strip().split('#')
@@ -87,13 +87,13 @@ class Model_trans(Mongo):
 
 
 if __name__ == '__main__':
-    fname = 'render_api.txt'
+    fname = 'synonym.txt'
     db_name = 'bookstore' # set datebase name
     ip = '10.89.100.12'
     port = 27017
 
-    model_category = 'api'
-    collection = 'render_api' # set collection branch name
+    model_category = 'synonym'
+    collection = 'synonym' # set collection branch name
 
     mt = Model_trans(fname = fname, db_name = db_name ,ip = ip ,port = port , model_category = model_category)
     mt.delete(collation={}, collection = collection)
