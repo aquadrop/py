@@ -138,7 +138,7 @@ class Render:
                                       key='instruct')
         for index in range(len(img_list)):
             if not img_list[index]:
-                self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[0].encode('utf-8')).hexdigest()
+                self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[index].encode('utf-8')).hexdigest()
             else:
                 self.media_render_mapper[instruct_list[index]] = img_list[index]
     # def _load_media_render(self, file):
