@@ -68,7 +68,6 @@ class Render:
     def __init__(self, config):
         self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self.config = config
-        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self._load(config)
 
     def reload(self):
@@ -131,13 +130,13 @@ class Render:
     def _load_media_render(self):
         self.media_render_mapper = dict()
         img_list = self.mongdb.search(query={},
-                                 field={'img': '1'},
-                                 collection='render_media',
-                                 key='img')
-        instruct_list = self.mongdb.search(query={},
-                                      field={'instruct': '1'},
+                                      field={'img': '1'},
                                       collection='render_media',
-                                      key='instruct')
+                                      key='img')
+        instruct_list = self.mongdb.search(query={},
+                                           field={'instruct': '1'},
+                                           collection='render_media',
+                                           key='instruct')
         for index in range(len(img_list)):
             if not img_list[index]:
                 self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[index].encode('utf-8')).hexdigest()
@@ -157,13 +156,13 @@ class Render:
     def _load_major_render(self):
         self.major_render_mapper = dict()
         replies_list = self.mongdb.search(query={},
-                                     field={'replies': '1'},
-                                     collection='render_api',
-                                     key='replies')
+                                          field={'replies': '1'},
+                                          collection='render_api',
+                                          key='replies')
         instruct_list = self.mongdb.search(query={},
-                                      field={'instruct': '1'},
-                                      collection='render_api',
-                                      key='instruct')
+                                           field={'instruct': '1'},
+                                           collection='render_api',
+                                           key='instruct')
         self.major_render_mapper = dict(list(zip(instruct_list, replies_list)))
 
 
@@ -188,17 +187,17 @@ class Render:
         self.location_applicables = dict()
         self.location_precludes = dict()
         suitable_list = self.mongdb.search(query={},
-                                      field={'suitable': '1'},
-                                      collection='render_location',
-                                      key='suitable')
+                                           field={'suitable': '1'},
+                                           collection='render_location',
+                                           key='suitable')
         unsuitable_list = self.mongdb.search(query={},
-                                        field={'unsuitable': '1'},
-                                        collection='render_location',
-                                        key='unsuitable')
+                                             field={'unsuitable': '1'},
+                                             collection='render_location',
+                                             key='unsuitable')
         template_list = self.mongdb.search(query={},
-                                      field={'template': '1'},
-                                      collection='render_location',
-                                      key='template')
+                                           field={'template': '1'},
+                                           collection='render_location',
+                                           key='template')
 
         for index in range(len(template_list)):
             self.location_applicables[index] = suitable_list[index].split(',')

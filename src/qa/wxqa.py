@@ -21,8 +21,6 @@ from amq.sim import BenebotSim
 bt = BenebotSim()
 THRESHOLD = 0.90
 REACH = 1
-
-
 CACHE_SIZE = 50 #2017/12/26 设置缓存大小
 
 

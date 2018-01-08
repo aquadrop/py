@@ -55,7 +55,6 @@ class RuleBasePlugin:
     def __init__(self, config):
         self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self.config = config
-        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
         self._load(config)
 
     def reload(self):

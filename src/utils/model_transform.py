@@ -12,7 +12,7 @@ from utils.mongodb_client import Mongo
 
 class Model_trans(Mongo):
 
-    def __init__(self, fname, db_name= 'bookstore', ip= 'bookstore', port= '27017', model_category = 'location' ):
+    def __init__(self, fname, model_category = 'location', db_name= 'bookstore', ip= 'bookstore', port= '27017' ):
 
         super(Model_trans,self).__init__(db_name, ip, port)
         self.f_path = os.path.join(grandfatherdir,'model/render_2/{}'.format(fname))
