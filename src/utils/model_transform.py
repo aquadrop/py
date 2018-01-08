@@ -87,13 +87,13 @@ class Model_trans(Mongo):
 
 
 if __name__ == '__main__':
-    fname = 'synonym.txt'
+    fname = 'render_api.txt'
     db_name = 'bookstore' # set datebase name
     ip = '10.89.100.12'
     port = 27017
 
-    model_category = 'synonym'
-    collection = 'synonym' # set collection branch name
+    model_category = 'api'
+    collection = 'training' # set collection branch name
 
     mt = Model_trans(fname = fname, db_name = db_name ,ip = ip ,port = port , model_category = model_category)
     mt.delete(collation={}, collection = collection)

@@ -37,19 +37,6 @@ class Mongo():
             traceback.print_exc()
             return None
 
-
-    def update(self,data, filter={}):
-        try:
-            self.collection.update_many(filter, {'$set':data})
-            return 1
-        except:
-            traceback.print_exc()
-            return 0
-
-
-
-
-
     def update(self, data, filter={},  collection = 'template'):
         try:
             self.db[collection].update_many(filter, {'$set': data})
