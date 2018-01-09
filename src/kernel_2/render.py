@@ -33,6 +33,8 @@ import time
 import datetime
 import hashlib
 import locale
+import re
+import pymongo
 
 locale.setlocale(locale.LC_ALL)
 
@@ -45,8 +47,11 @@ sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
 import utils.solr_util as solr_util
+from utils.mongodb_client import Mongo
 from qa.iqa import Qa as QA
 from kernel_2.ad_kernel import AdKernel
+from kernel_2.rule_base_plugin import RuleBasePlugin
+
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
@@ -57,22 +62,38 @@ class Render:
     prefix = ['这样啊.', '没问题.', '好吧']
     TIME_CN_FORMAT = '{0:%Y年%m月%d日%H点%M分%S秒}'
     ANY = 'any'
-    AD_PROB = 0.7
+    AD_PROB = 0.2
+    static_rule_plugin = None
+
     def __init__(self, config):
+        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
+        self.config = config
+        self._load(config)
+
+    def reload(self):
+        self._load(self.config)
+
+    def _load(self, config):
         self.index_cls_name_mapper = dict()
-        self._load_major_render(config['render_api_file'])
-        self._load_location_render(config['render_location_file'])
+        # self._load_major_render(config['render_api_file'])
+        # self._load_location_render(config['render_location_file'])
+        # self._load_media_render(config['render_media_file'])
+        self._load_media_render()
+        self._load_major_render()
+        self._load_location_render()
         self._load_ambiguity_render(config['render_ambiguity_file'])
         self._load_recommend_render(config['render_recommend_file'])
         self._load_price_render(config['render_price_file'])
-        self._load_media_render(config['render_media_file'])
         self._load_emotion_render(config['emotion_file'])
         self._load_ad(config['ad_anchor'])
+        self._load_rule_plugin(config)
         self.ad_kernel = AdKernel(config)
         # self.belief_tracker = belief_tracker
         self.interactive = QA('base')
         self.faq = QA('base')
+
         print('attaching rendering file...')
+
 
     def _load_emotion_render(self, file):
         self.emotion = []
@@ -89,6 +110,13 @@ class Render:
                 line = line.strip('\n')
                 self.ad.append(line)
 
+    def _load_rule_plugin(self, config):
+        if not Render.static_rule_plugin:
+            self.rule_plugin = RuleBasePlugin(config)
+            Render.static_rule_plugin = self.rule_plugin
+        else:
+            self.rule_plugin = Render.static_rule_plugin
+
     def render_ad(self):
         if np.random.uniform() < self.AD_PROB:
             return "," + np.random.choice(self.ad)
@@ -99,45 +127,93 @@ class Render:
             return np.random.choice(self.emotion)
         return 'null'
 
-    def _load_media_render(self, file):
-        self.media_render_mapper=dict()
-        with open(file,'r') as f:
-            for line in f:
-                line=line.strip('\n')
-                values=line.split('#')
-                if not values[1]:
-                    self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
-                else:
-                    self.media_render_mapper[values[0]]=values[1]
+    def _load_media_render(self):
+        self.media_render_mapper = dict()
+        img_list = self.mongdb.search(query={},
+                                      field={'img': '1'},
+                                      collection='render_media',
+                                      key='img')
+        instruct_list = self.mongdb.search(query={},
+                                           field={'instruct': '1'},
+                                           collection='render_media',
+                                           key='instruct')
+        for index in range(len(img_list)):
+            if not img_list[index]:
+                self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[index].encode('utf-8')).hexdigest()
+            else:
+                self.media_render_mapper[instruct_list[index]] = img_list[index]
+    # def _load_media_render(self, file):
+    #     self.media_render_mapper=dict()
+    #     with open(file,'r') as f:
+    #         for line in f:
+    #             line=line.strip('\n')
+    #             values=line.split('#')
+    #             if not values[1]:
+    #                 self.media_render_mapper[values[0]]=hashlib.sha256(values[0].encode('utf-8')).hexdigest()
+    #             else:
+    #                 self.media_render_mapper[values[0]]=values[1]
 
-    def _load_major_render(self, file):
+    def _load_major_render(self):
         self.major_render_mapper = dict()
-        with open(file, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip('\n')
-                key, replies = line.split('|')
-                key = key.split('##')[0]
-                replies = replies.split('/')
-                filtered = []
-                for r in replies:
-                    if r:
-                        filtered.append(r)
-                self.major_render_mapper[key] = filtered
+        replies_list = self.mongdb.search(query={},
+                                          field={'replies': '1'},
+                                          collection='render_api',
+                                          key='replies')
+        instruct_list = self.mongdb.search(query={},
+                                           field={'instruct': '1'},
+                                           collection='render_api',
+                                           key='instruct')
+        self.major_render_mapper = dict(list(zip(instruct_list, replies_list)))
 
-    def _load_location_render(self, file):
+
+    # def _load_major_render(self, file):
+    #     self.major_render_mapper = dict()
+    #
+        # with open(file, 'r', encoding='utf-8') as f:
+        #     for line in f:
+        #         line = line.strip('\n')
+        #         key, replies = line.split('|')
+        #         key = key.split('##')[0]
+        #         replies = replies.split('/')
+        #         filtered = []
+        #         for r in replies:
+        #             if r:
+        #                 filtered.append(r)
+        #         self.major_render_mapper[key] = filtered
+
+
+    def _load_location_render(self):
         self.location_templates = []
         self.location_applicables = dict()
         self.location_precludes = dict()
-        index = 0
-        with open(file, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip('\n')
-                template, applicable, preclude = line.split('#')
-                self.location_templates.append(template)
-                self.location_applicables[index] = applicable.split(',')
-                self.location_precludes[index] = preclude.split(',')
-                index += 1
+        suitable_list = self.mongdb.search(query={},
+                                           field={'suitable': '1'},
+                                           collection='render_location',
+                                           key='suitable')
+        unsuitable_list = self.mongdb.search(query={},
+                                             field={'unsuitable': '1'},
+                                             collection='render_location',
+                                             key='unsuitable')
+        template_list = self.mongdb.search(query={},
+                                           field={'template': '1'},
+                                           collection='render_location',
+                                           key='template')
 
+        for index in range(len(template_list)):
+            self.location_applicables[index] = suitable_list[index].split(',')
+            self.location_precludes[index] = unsuitable_list[index].split(',')
+        self.location_templates = template_list
+
+    # def _load_location_render(self, file):
+        # index = 0
+        # with open(file, 'r', encoding='utf-8') as f:
+        #     for line in f:
+        #         line = line.strip('\n')
+        #         template, applicable, preclude = line.split('#')
+        #         self.location_templates.append(template)
+        #         self.location_applicables[index] = applicable.split(',')
+        #         self.location_precludes[index] = preclude.split(',')
+        #         index += 1
     def _load_recommend_render(self, file):
         self.recommend_templates = []
         with open(file, 'r', encoding='utf-8') as f:
@@ -253,25 +329,30 @@ class Render:
         return rendered
 
     def render(self, q, response, avails=dict(), prefix=''):
-        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1}
+        result = {"answer":"", "media":"null", 'from':"memory", "sim":0, "timeout":-1, 'uid': 'null'}
         try:
             # media=self.render_media(response)
             if response.startswith('api_call_base') or response.startswith('api_call_greet')\
                     or response.startswith('reserved_'):
                 # self.sess.clear_memory()
-                matched, answer, score = self.interactive.get_responses(
-                    query=q)
+                matched, answer, score, doc = self.interactive.get_responses(
+                    query=q, cls='')
                 result['answer'] = answer
-                result['from'] = 'base'
+                result['from'] = 'base' if score > self.interactive.THRESHOLD else 'third'
                 result['sim'] = score
-                result['emotion'] = self.render_emotion()
+                try:
+                    result['emotion'] = doc['emotion'][0] if 'emotion' in doc else 'null'
+                except:
+                    result['emotion'] = 'null'
+                result['uid'] = doc['uid']
                 return result
             if response.startswith('api_call_faq_general'):
-                matched, answer, score = self.faq.get_responses(
-                    query=q)
+                matched, answer, score, doc = self.faq.get_responses(
+                    query=q, cls='')
                 ad = self.ad_kernel.anchor_faq_ad(answer)
                 answer = answer + ' ' + ad
                 result['answer'] = answer
+                result['uid'] = doc['uid']
                 return result
             if response.startswith('api_call_faq_info'):
                 result['media'] = self.render_media(response)
@@ -369,13 +450,20 @@ class Render:
                 if 'category' in mapper:
                     response = response
                 ad = self.render_ad()
+
+                if params.startswith('category:图书') or params.startswith('book.category:'):
+                    if self.rule_plugin.check_buy(q):
+                        response+='您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
+                    else:
+                        response += '您可以点击小新主界面下方的查书按钮,按照小新脸上的提示操作就可以了.'
+
                 response = response + ad
                 result = {'answer': response, 'media': image_key, 'avail_vals':""}
                 return result
             return response
         except:
             print(traceback.format_exc())
-            matched, answer, score = self.interactive.get_responses(
+            matched, answer, score, _ = self.interactive.get_responses(
                 query=q)
             logging.error("C@code:{}##error_details:{}".format('render', traceback.format_exc()))
             result['answer'] = answer

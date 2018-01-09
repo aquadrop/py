@@ -9,3 +9,6 @@ gensim
 tqdm
 pika==0.10.0
 transitions
+schedule
+pylru
+pymongo

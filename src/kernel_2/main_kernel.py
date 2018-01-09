@@ -31,7 +31,11 @@ import sys
 import logging
 import time
 import json
+import schedule
+import threading
+
 from datetime import datetime
+
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 grandfatherdir = os.path.dirname(os.path.dirname(
@@ -54,6 +58,8 @@ from qa.iqa import Qa as QA
 import memory.config as config
 from kernel_2.render import Render
 from kernel_2.rule_base_plugin import RuleBasePlugin
+
+SCHED_TIME = 10 # set schedule time for memory clear
 
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
@@ -79,6 +85,10 @@ class MainKernel:
         self._load_belief_tracker(config)
         self.base_counter = 0
         self.base_clear_memory = 2
+
+        # thread = threading.Thread(target=self.sched)
+        # thread.start()
+
         if config['clf'] == 'memory':
             self._load_memory(config)
             self.sess = self.memory.get_session()
@@ -135,11 +145,18 @@ class MainKernel:
         print(type(self.api_transition),self.api_transition)
 
     def kernel(self, q, user='solr', recursive=True):
+        q_time=time.time()
         start = time.time()
         q = self.rule_plugin.filter(q)
+        q = self.rule_plugin.pre_replace(q)
+        print("before:",q)
+        q=self.rule_plugin.introduction(q)
+        print("after:",q)
+        # q=self.rule_plugin.rewrite(q)
+        # print(q)
         result = {"answer": "null", "media": "null", 'from': "memory", "sim": 0}
         if not q:
-            result = {"answer": "null", "media": "null", 'from': "noise", "sim": 0}
+            result = {"answer": "", "media": "null", 'from': "noise", "sim": 0, 'class':'unk'}
             return result
         range_rendered, wild_card = self.range_render(q)
         print(range_rendered, wild_card)
@@ -173,6 +190,7 @@ class MainKernel:
                 api = self.rule_plugin.fix(q, _api)
                 print(_api, api, prob[0][0], prob)
                 score = float(prob[0][0])
+
                 if score < 0.5:
                     api = 'api_call_base'
                 response = api
@@ -196,6 +214,8 @@ class MainKernel:
                             return self.kernel(q, user, False)
                 else:
                     self.base_counter = 0
+
+
                 if api.startswith('api_call_slot'):
                     if api.startswith('api_call_slot_virtual_category'):
                         response = api
@@ -233,6 +253,11 @@ class MainKernel:
                         # self.sess.clear_memory()
                         # self.belief_tracker.clear_memory()
                         memory = ''
+
+                else: #added on 2017-12-28
+                   # self.sched() remove temporally for further test
+                   pass
+
                 if api == 'api_call_deny_all':
                     response, avails = self.belief_tracker.deny_call(slot=None)
                     memory = response
@@ -271,6 +296,14 @@ class MainKernel:
             result['sentence'] = q
             result['score'] = float(prob[0][0])
             result['class'] = api + '->' + response# + '/' + 'avail_vals#{}'.format(str(self.belief_tracker.avails))
+            a_time=time.time()
+            result['qtime'] = q_time
+            result['atime'] = a_time
+            result['nlp_latent'] = a_time - q_time
+            try:
+                result['uid'] = render['uid']
+            except:
+                result['uid'] = 'uid_undefined'
             if 'media'in result and result['media'] and result['media'] is not 'null':
                 result['timeout'] = 15
             return result
@@ -302,6 +335,14 @@ class MainKernel:
             api_json[key] = value
         return api_json
 
+    def clear(self):
+        self.belief_tracker.clear_memory()
+        self.sess.clear_memory()
+
+    def sched(self):
+        schedule.every(SCHED_TIME).seconds.do(self.clear)
+        while True:
+            schedule.run_pending()
 
 
 
@@ -342,7 +383,8 @@ if __name__ == '__main__':
               "machine_profile": os.path.join(grandfatherdir, 'model/render_2/machine_profile_replacement.txt'),
               "api_transition":os.path.join(grandfatherdir, 'model/transition/api_transition.txt'),
               "response_transition":os.path.join(grandfatherdir, 'model/transition/response_transition.txt'),
-              "belief_tracker":"fsm"#fsm
+              "belief_tracker":"fsm",#fsm
+              "synonym": os.path.join(grandfatherdir, 'model/render_2/synonym.txt'),
               }
     kernel = MainKernel(config)
     while True:

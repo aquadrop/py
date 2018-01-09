@@ -31,6 +31,7 @@ import logging
 import traceback
 import time
 import hashlib
+import re
 
 import numpy as np
 
@@ -43,18 +44,30 @@ sys.path.append(grandfatherdir)
 import utils.solr_util as solr_util
 from qa.iqa import Qa as QA
 from kernel_2.ad_kernel import AdKernel
+from utils.mongodb_client import Mongo
 current_date = time.strftime("%Y.%m.%d")
 logging.basicConfig(handlers=[logging.FileHandler(os.path.join(grandfatherdir,
                     'logs/log_corpus_' + current_date + '.log'), 'w', 'utf-8')],
                     format='%(asctime)s %(message)s', datefmt='%Y.%m.%dT%H:%M:%S', level=logging.INFO)
 
 class RuleBasePlugin:
+
     def __init__(self, config):
+        self.mongdb = Mongo(ip='10.89.100.12', db_name='bookstore')
+        self.config = config
+        self._load(config)
+
+    def reload(self):
+        self._load(self.config)
+
+    def _load(self, config):
         self.api_list = ['api_call_faq_info']
         self.should_clear_list = ['api_call_request_reg.complete']
         self._load_key_word_file(config['key_word_file'])
         self._load_noise_filter(config['noise_keyword_file'])
         self._load_post_filter(config['machine_profile'])
+        # self._load_pre_filter(config['synonym'])
+        self._load_pre_filter()
 
     def _load_key_word_file(self, key_word_file):
         self.key_words = []
@@ -78,6 +91,26 @@ class RuleBasePlugin:
                 a, b = line.split('#')
                 self.replacement[a] = b
 
+    def _load_pre_filter(self):
+        self.pre_replacement = dict()
+        given_list = self.mongdb.search(query={},
+                                   field={'given': '1'},
+                                   collection='synonym',
+                                   key='given')
+        matched_list = self.mongdb.search(query={},
+                                     field={'matched': '1'},
+                                     collection='synonym',
+                                     key='matched')
+        self.pre_replacement = dict(zip(given_list, matched_list))
+
+    # def _load_pre_filter(self, replace_file):
+    #     self.pre_replacement = dict()
+    #     with open(replace_file, 'r') as f:
+    #         for line in f:
+    #             line = line.strip('\n')
+    #             a, b = line.split('#')
+    #             self.pre_replacement[a] = b
+
     def replace(self, q):
         """
         dangerous to use; easy to misuse
@@ -85,7 +118,17 @@ class RuleBasePlugin:
         :return:
         """
         for key, value in self.replacement.items():
-            print(key, value, q)
+            q = q.replace(key, value)
+
+        return q
+
+    def pre_replace(self, q):
+        """
+        dangerous to use; easy to misuse
+        :param q:
+        :return:
+        """
+        for key, value in self.pre_replacement.items():
             q = q.replace(key, value)
 
         return q
@@ -127,6 +170,34 @@ class RuleBasePlugin:
             if key in q:
                 return key
         return None
+
+    def rewrite(self,q):
+        pattern=r'.*[查|找|搜].*[书].*'
+        res1=re.findall(pattern,q)
+        print(res1)
+        if len(res1):
+            qq=q+"在哪里"
+        else:
+            qq=q
+        return qq
+
+    def introduction(self,q):
+        pattern1=r'.*[介绍|了解].*[书店].*'
+        pattern2 = r'.*[书店].*[介绍|了解].*'
+        res1 = re.findall(pattern1, q)
+        res2 = re.findall(pattern2, q)
+
+        if len(res1) or len(res2):
+            q='我不太了解你们书店'
+        return q
+
+    def check_buy(self,q):
+        pattern=r'.*[买|卖|购].*'
+        res=re.findall(pattern,q)
+        if len(res):
+            return True
+        else:
+            return False
 
 if __name__ == "__main__":
     config = {"belief_graph": "../../model/graph/belief_graph.pkl",

@@ -10,7 +10,7 @@ class Config(object):
     hidden_size = 300
 
     max_epochs = 3456
-    interval_epochs = 5
+    interval_epochs = 2
     early_stopping = 20
 
     dropout = 0.9
