@@ -9,10 +9,10 @@ grandfatherdir = os.path.dirname(os.path.dirname(
 sys.path.append(parentdir)
 sys.path.append(grandfatherdir)
 
-from graph.fsm import FSM
-from graph.fsm_graph import FSMGraph
+from graph.automata import Automata
+from graph.automata_graph import AutomataGraph
 # from dmn.dmn_fasttext.dmn_session import DmnInfer
-from fsm_render import triggers_map_bot
+from kernel_2.fsm_render import triggers_map_bot
 
 
 class FSMKernel(object):
@@ -38,7 +38,7 @@ class FSMKernel(object):
                 print('attaching fsm graph...100%')
                 # with open(self.fsm_graph_path, 'rb') as f:
                 # self.fsm_graph = pickle.load(f)
-                self.fsm_graph = FSMGraph()
+                self.fsm_graph = AutomataGraph()
                 FSMKernel.static_fsm_graph = self.fsm_graph
             except:
                 traceback.print_exc()

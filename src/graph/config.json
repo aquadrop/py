@@ -1,0 +1,19 @@
+{
+  "name":"xinhua",
+  "max_loop_num":2,
+  "terminate_num":2,
+  "states":["root", "scan", "auth", "success", "fail"],
+  "transitions":[],
+  "inputs_conditions_map":{"register": "is_register",
+            "scan_success": "is_scan_success",
+            "scan_fail": "is_scan_fail",
+            "auth_success": "is_auth_success",
+            "auth_fail": "is_auth_fail",
+            "times_scan_fail": "is_times_scan_fail",
+            "times_auth_fail": "is_times_auth_fail"},
+  "terminate_states":["success","fail"],
+  "success_inputs":["scan_success","auth_success"],
+  "fail_inputs":["scan_fail","auth_fail"],
+  "times_fail_inputs":["times_scan_fail","times_auth_fail"],
+  "fail_inputs_map":{"scan_fail": "times_scan_fail", "auth_fail": "times_auth_fail"}
+}
