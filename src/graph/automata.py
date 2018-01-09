@@ -1,9 +1,8 @@
-from enum import Enum, unique
-from transitions import Machine
 import random
 
+from transitions import Machine
 
-class FSM(object):
+class Automata(object):
     def __init__(self, config):
         self.name = config['name']
         self.max_loop_num = config['max_loop_num']
@@ -13,7 +12,7 @@ class FSM(object):
         self._init_states(config['states'])
         self._init_transitions(config['transitions'])
         self._register_conditions(config['conditions_map'])
-        self.triggers_conditions_map = config['triggers_conditions_map']
+        self.inputs_conditions_map = config['inputs_conditions_map']
         self.machine = Machine(model=self, states=self.states,
                                transitions=self.transitions, initial=self.init_state)
         self.last_state = None
@@ -47,41 +46,41 @@ class FSM(object):
     def goto_init_state(self):
         self.to_root()
 
-    def check_jump(self,trigger):
-        available_triggers = self.machine.get_triggers(self.state)
-        if trigger in available_triggers:
+    def check_jump(self,input):
+        available_inputs = self.machine.get_triggers(self.state)
+        if input in available_inputs:
             return True
         else:
             return False
 
-    def goto_next_state(self, trigger):
-        # print(available_triggers)
+    def goto_next_state(self, input):
+        # print(available_inputs)
         current_loop_num = self.get_current_loop_num()
-        self.__dict__[trigger](current_loop_num, self.max_loop_num)
+        self.__dict__[input](current_loop_num, self.max_loop_num)
 
     def goto_next_state_random(self):
-        available_triggers = self.machine.get_triggers(self.state)
-        available_triggers = [
-            trigger for trigger in available_triggers
-            if not trigger.startswith('to_')]
-        # print(available_triggers)
+        available_inputs = self.machine.get_triggers(self.state)
+        available_inputs = [
+            input for input in available_inputs
+            if not input.startswith('to_')]
+        # print(available_inputs)
 
         current_loop_num = self.get_current_loop_num()
-        available_triggers = [trigger for trigger in available_triggers if
-                              self.__dict__[self.triggers_conditions_map[trigger]](current_loop_num, self.max_loop_num)]
-        trigger = random.choice(available_triggers)
-        self.__dict__[trigger](current_loop_num, self.max_loop_num)
+        available_inputs = [input for input in available_inputs if
+                              self.__dict__[self.inputs_conditions_map[input]](current_loop_num, self.max_loop_num)]
+        input = random.choice(available_inputs)
+        self.__dict__[input](current_loop_num, self.max_loop_num)
 
-        return trigger
+        return input
 
     def travel_cycle(self, threshold=100):
         count = 0
         previous_len = 0
 
         res_states = set()
-        res_triggers = set()
+        res_inputs = set()
         one_cycle_states = list()
-        one_cycle_triggers = list()
+        one_cycle_inputs = list()
         while True:
             if self.is_terminate_state():
                 print(self.state)
@@ -89,9 +88,9 @@ class FSM(object):
                 print('**************')
 
                 one_cycle_states = ','.join(one_cycle_states)
-                one_cycle_triggers = ','.join(one_cycle_triggers)
+                one_cycle_inputs = ','.join(one_cycle_inputs)
                 res_states.add(one_cycle_states)
-                res_triggers.add(one_cycle_triggers)
+                res_inputs.add(one_cycle_inputs)
 
                 if len(res_states) == previous_len:
                     count += 1
@@ -101,23 +100,23 @@ class FSM(object):
                 if count > threshold:
                     res_states = list(res_states)
                     res_states = [s.split(',') for s in res_states]
-                    res_triggers = list(res_triggers)
-                    res_triggers = [t.split(',') for t in res_triggers]
+                    res_inputs = list(res_inputs)
+                    res_inputs = [t.split(',') for t in res_inputs]
                     break
                 one_cycle_states = list()
-                one_cycle_triggers = list()
+                one_cycle_inputs = list()
                 self.goto_init_state()
             print(self.state)
             one_cycle_states.append(self.state)
-            trigger = self.goto_next_state_random()
-            print(trigger)
-            one_cycle_triggers.append(trigger)
+            input = self.goto_next_state_random()
+            print(input)
+            one_cycle_inputs.append(input)
 
-        return {'states': res_states, 'triggers': res_triggers}
+        return {'states': res_states, 'inputs': res_inputs}
 
     def debug(self):
-        triggers = ['register', 'scan_fail', 'scan_fail', 'times_scan_fail']
-        for tr in triggers:
+        inputs = ['register', 'scan_fail', 'scan_fail', 'times_scan_fail']
+        for tr in inputs:
             last_state = self.last_state
             state = self.state
             print(self.state)
