@@ -128,20 +128,20 @@ class Render:
         return 'null'
 
     def _load_media_render(self):
+        '''     the following func will generate a list of dicts each of which is composed of
+            'instruct' and 'img'. Similar as the following funcs.  '''
+
         self.media_render_mapper = dict()
-        img_list = self.mongdb.search(query={},
-                                      field={'img': '1'},
-                                      collection='render_media',
-                                      key='img')
-        instruct_list = self.mongdb.search(query={},
-                                           field={'instruct': '1'},
-                                           collection='render_media',
-                                           key='instruct')
-        for index in range(len(img_list)):
-            if not img_list[index]:
-                self.media_render_mapper[instruct_list[index]] = hashlib.sha256(instruct_list[index].encode('utf-8')).hexdigest()
+        result_list = self.mongdb.search(field={'img': 1, 'instruct': 1, '_id': 0},
+                                    collection='render_media')
+
+        for each_dict in result_list:
+            if not each_dict['img']:
+                self.media_render_mapper[each_dict['instruct']] = hashlib.sha256(
+                    each_dict['instruct'].encode('utf-8')).hexdigest()
             else:
-                self.media_render_mapper[instruct_list[index]] = img_list[index]
+                self.media_render_mapper[each_dict['instruct']] = each_dict['img']
+
     # def _load_media_render(self, file):
     #     self.media_render_mapper=dict()
     #     with open(file,'r') as f:
@@ -155,15 +155,13 @@ class Render:
 
     def _load_major_render(self):
         self.major_render_mapper = dict()
-        replies_list = self.mongdb.search(query={},
-                                          field={'replies': '1'},
-                                          collection='render_api',
-                                          key='replies')
-        instruct_list = self.mongdb.search(query={},
-                                           field={'instruct': '1'},
-                                           collection='render_api',
-                                           key='instruct')
-        self.major_render_mapper = dict(list(zip(instruct_list, replies_list)))
+
+        result_list = self.mongdb.search(field={'replies': 1, '_id': 0, 'instruct': 1},
+                                    collection='render_api')
+        for each_dict in result_list:
+            # here the values of 'replies' exits as type lists
+            self.major_render_mapper[each_dict['instruct']] = each_dict['replies']
+
 
 
     # def _load_major_render(self, file):
@@ -186,23 +184,15 @@ class Render:
         self.location_templates = []
         self.location_applicables = dict()
         self.location_precludes = dict()
-        suitable_list = self.mongdb.search(query={},
-                                           field={'suitable': '1'},
-                                           collection='render_location',
-                                           key='suitable')
-        unsuitable_list = self.mongdb.search(query={},
-                                             field={'unsuitable': '1'},
-                                             collection='render_location',
-                                             key='unsuitable')
-        template_list = self.mongdb.search(query={},
-                                           field={'template': '1'},
-                                           collection='render_location',
-                                           key='template')
+        result_list = self.mongdb.search(field={'_id': 0, 'suitable': 1, 'unsuitable': 1, 'template': 1},
+                                         collection='render_location')
+        index = 0
+        for each_dict in result_list:
+            self.location_templates.append(each_dict['template'])
+            self.location_applicables[index] = each_dict['suitable'].split(',')
+            self.location_precludes[index] = each_dict['unsuitable'].split(',')
+            index += 1
 
-        for index in range(len(template_list)):
-            self.location_applicables[index] = suitable_list[index].split(',')
-            self.location_precludes[index] = unsuitable_list[index].split(',')
-        self.location_templates = template_list
 
     # def _load_location_render(self, file):
         # index = 0
