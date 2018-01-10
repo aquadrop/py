@@ -26,12 +26,10 @@ class Mongo():
 
 
 
-    def search(self, query={}, field={}, collection='template',key = 'Null'):
+    def search(self, query={}, field={}, collection='template'):
         try:
-            if key == 'Null':
-                data = [x for x in self.db[collection].find(query, field)]
-            else:
-                data = [x[key] for x in self.db[collection].find(query, field)]
+
+            data = [x for x in self.db[collection].find(query, field)]
             return data
         except:
             traceback.print_exc()
@@ -47,7 +45,7 @@ class Mongo():
 
 if __name__ == '__main__':
 
-    mongo = Mongo(ip='10.89.100.14', db_name='template')
+    mongo = Mongo(ip='10.89.100.12', db_name='bookstore')
 
 
     # data = [{'type':'location', 'context':'XXXX[X]XX'},
@@ -57,7 +55,7 @@ if __name__ == '__main__':
     # if not mongo.insert(data):
     #     print('insert data error!!!')
 
-    data = mongo.search(query={}, field={'type':1}, key='type')
+    data = mongo.search(query={}, field={'instruct':1, 'replies': 1, '_id' : 0}, collection = 'training')
 
     for x in data:
         print(x)
