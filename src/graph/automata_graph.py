@@ -7,7 +7,7 @@ from graph.automata import Automata
 class AutomataGraph(object):
     def __init__(self,path):
         self.config=self.load_config(path)
-        self.init_automata()
+        self._init_automata()
         self.terminate_states = self.config['terminate_states']
         self.success_inputs = self.config['success_inputs']
         self.fail_inputs = self.config['fail_inputs']
@@ -29,7 +29,7 @@ class AutomataGraph(object):
         print(config)
         return config
 
-    def init_automata(self):
+    def _init_automata(self):
         self.automata = Automata(self.config)
         self.automata.machine.add_transition(
             'register', 'root', 'scan', conditions='is_register')

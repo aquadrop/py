@@ -12,3 +12,4 @@ transitions
 schedule
 pylru
 pymongo
+pygraphviz
