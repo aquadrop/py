@@ -1,19 +1,106 @@
 {
-  "name":"xinhua",
-  "max_loop_num":2,
-  "terminate_num":2,
-  "states":["root", "scan", "auth", "success", "fail"],
-  "transitions":[],
-  "inputs_conditions_map":{"register": "is_register",
-            "scan_success": "is_scan_success",
-            "scan_fail": "is_scan_fail",
-            "auth_success": "is_auth_success",
-            "auth_fail": "is_auth_fail",
-            "times_scan_fail": "is_times_scan_fail",
-            "times_auth_fail": "is_times_auth_fail"},
-  "terminate_states":["success","fail"],
-  "success_inputs":["scan_success","auth_success"],
-  "fail_inputs":["scan_fail","auth_fail"],
-  "times_fail_inputs":["times_scan_fail","times_auth_fail"],
-  "fail_inputs_map":{"scan_fail": "times_scan_fail", "auth_fail": "times_auth_fail"}
+	"name": "xinhua",
+	"out_state_num": 2,
+	"init_state": "root",
+	"ignore_invalid_triggers": "False",
+	"states": [
+		"root",
+		"scan",
+		"auth",
+		"firstScanFail",
+		"secondScanFail",
+		"firstAuthFail",
+		"secondAuthFail",
+		"finalSuccess",
+		"finalFail"
+	],
+	"policy": {
+		"root:register": "Scan please.",
+		"scan:success": "Good,auth please.",
+		"scan:fail": "Ok,try scanning again.(first)",
+		"firstScanFail:fail": "Ok,try scanning again.(second)",
+		"firstScanFail:success": "Good,auth please.",
+		"secondScanFail:fail": "Please give up.",
+		"secondScanFail:success": "Good,auth please.",
+		"auth:success": "Good,success.",
+		"auth:fail": "Ok,try auth again.(first)",
+		"firstAuthFail:fail": "Ok,try auth again.(second)",
+		"firstAuthFail:success": "Good,success.",
+		"secondAuthFail:fail": "Please give up.",
+		"secondAuthFail:success": "Good,success."
+	},
+	"transitions": [
+		{
+			"trigger": "register",
+			"source": "root",
+			"dest": "scan",
+			"before": "response"
+		},
+		{
+			"trigger": "success",
+			"source": "scan",
+			"dest": "auth",
+			"before": "response"
+		},
+		{
+			"trigger": "success",
+			"source": "auth",
+			"dest": "finalSuccess",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "scan",
+			"dest": "firstScanFail",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "firstScanFail",
+			"dest": "secondScanFail",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "secondScanFail",
+			"dest": "finalFail",
+			"before": "response"
+		},
+		{
+			"trigger": "success",
+			"source": [
+				"firstScanFail",
+				"secondScanFail"
+			],
+			"dest": "auth",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "auth",
+			"dest": "firstAuthFail",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "firstAuthFail",
+			"dest": "secondAuthFail",
+			"before": "response"
+		},
+		{
+			"trigger": "fail",
+			"source": "secondAuthFail",
+			"dest": "finalFail",
+			"before": "response"
+		},
+		{
+			"trigger": "success",
+			"source": [
+				"firstAuthFail",
+				"secondAuthFail"
+			],
+			"dest": "finalSuccess",
+			"before": "response"
+		}
+	]
 }
