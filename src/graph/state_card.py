@@ -9,10 +9,17 @@ from graph.policy import Policy
 
 class StateCard(transitions.State):
     def __init__(self, name, on_enter=None, on_exit=None,
-                 ignore_invalid_triggers=False, regex=None):
+                 ignore_invalid_triggers=False, interpreter='keyword'):
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
         self.id = str(uuid.uuid4())
         self.max_out_num = 2
-        self.regex = regex
+        self.interpreter = interpreter
+        self._inputs = set()
+
+    def append_input(self, input_):
+        self._inputs.add(input_)
+
+    def get_inputs(self):
+        return self._inputs.copy()
 
 

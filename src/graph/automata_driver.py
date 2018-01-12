@@ -14,12 +14,14 @@
 
 import random
 import uuid
+import re
 
 from transitions.extensions import GraphMachine as Machine
 from transitions import State
 
 from graph.policy import Policy
 from graph.state_card import StateCard as MyState
+from graph.nlu import NLU
 
 class Automata(object):
     def __init__(self, config):
@@ -31,48 +33,79 @@ class Automata(object):
         self.transitions = config['transitions']
         self.policy = config['policy']
         self.instruct = config['instruct']
-        self.machine = Machine(model=self.policy, states=self.states,
+        self.inputs_regex_interpret_helper =  config['inputs_regex_interpret_helper']
+        self.graph = Machine(model=self.policy, states=self.states,
                                transitions=self.transitions,
                                initial=self.init_state,
                                after_state_change=['instruct'])
-        self.last_state = None
+        self.nlu = NLU(config, self.graph)
+        self._load_state_mapper()
+        self._load_state_inputs()
+
+    def _load_state_mapper(self):
+        self.state_mapper = {}
+        for state in self.states:
+            self.state_mapper[state.name] = state
+
+    def _load_state_inputs(self):
+        for transition in self.transitions:
+            trigger_input = transition['trigger']
+            state = self.state_mapper[transition['source']]
+            state.append_input(trigger_input)
+
+    def kernel(self, q):
+        input_ = self.nlu.process(q, self.current_state())
+        return self.drive(input_)
 
     def current_state(self):
-        return self.policy.state
+        return self.state_mapper[self.policy.state]
 
-    def go(self, input_):
-        self.policy.trigger(input_)
+    def false_instruct(self):
+        return self.policy.false_instruct()
+
+    def drive(self, input_):
+        try:
+            self.policy.trigger(input_)
+            return self.policy.current_instruction
+        except Exception:
+            return self.false_instruct()
 
     def set_state(self, state_name):
-        self.machine.set_state(state=state_name)
+        self.graph.set_state(state=state_name)
 
     def set_init_state(self):
-        self.machine.set_state(state=self.init_state.name)
+        self.graph.set_state(state=self.init_state.name)
 
 
 def main():
     config = {"store_id":"bookstore", "name":"bookstore",
               "instruct":"instruct",
-              "states":[MyState(name='root'),
-                        MyState(name='register'),
-                        MyState(name='auth'),
-                        MyState(name='register_complete'),
-                        MyState(name='scan_a_0'),
-                        MyState(name='auth_a_0'),
-                        MyState(name='scan_fail'),
-                        MyState(name='auth_fail')],
+              "states":[MyState(name='root', interpreter='regex'),
+                        MyState(name='register', interpreter='regex'),
+                        MyState(name='auth', interpreter='regex'),
+                        MyState(name='register_complete', interpreter='regex'),
+                        MyState(name='scan_a_0', interpreter='regex'),
+                        MyState(name='auth_a_0', interpreter='regex'),
+                        MyState(name='scan_fail', interpreter='regex'),
+                        MyState(name='auth_fail', interpreter='regex')],
               "transitions":[
-    { 'trigger': 'register', 'source': 'root', 'dest': 'register' },
-    { 'trigger': 'ok', 'source': 'register', 'dest': 'auth' },
-    { 'trigger': 'ok', 'source': 'auth', 'dest': 'register_complete' },
-    { 'trigger': 'oops', 'source': 'register', 'dest': 'scan_a_0' },
-    {'trigger': 'oops', 'source': 'scan_a_0', 'dest': 'scan_fail'},
+            { 'trigger': 'register', 'source': 'root', 'dest': 'register' },
+                    { 'trigger': 'ok', 'source': 'register', 'dest': 'auth' },
+                  {'trigger': 'auth', 'source': 'register', 'dest': 'auth'},
+        { 'trigger': 'ok', 'source': 'auth', 'dest': 'register_complete' },
+        { 'trigger': 'oops', 'source': 'register', 'dest': 'scan_a_0' },
+        {'trigger': 'oops', 'source': 'scan_a_0', 'dest': 'scan_fail'},
                   {'trigger': 'oops', 'source': 'auth', 'dest': 'auth_a_0'},
                   {'trigger': 'oops', 'source': 'auth_a_0', 'dest': 'auth_fail'},
                   {'trigger': 'oops', 'source': 'auth', 'dest': 'auth_a_0'},
                   {'trigger': 'ok', 'source': 'scan_a_0', 'dest': 'auth'},
                   {'trigger': 'ok', 'source': 'auth_a_0', 'dest': 'register_complete'}]
               }
+
+    inputs_interpreter_regex_helper = {'register': r'register|注册',
+                                       'ok': r'ok',
+                                       'oops': r'不行',
+                                       'auth': r'auth'}
 
     instructions = {"root":"hello", "register":"please scan", "auth":"please auth", "register_complete":"congrats",
                     "scan_a_0":"scan again", "scan_fail":"noob", "auth_a_0":"auth again", "auth_fail":"noob"}
@@ -82,7 +115,7 @@ def main():
     config['false_instructions'] = false_instructions
     policy = Policy(config)
     config['policy'] = policy
-
+    config['inputs_regex_interpret_helper'] = inputs_interpreter_regex_helper
     machine = Automata(config)
     # machine.set_init_state()
 
@@ -91,7 +124,7 @@ def main():
     while True:
         input_ = input('input:')
         try:
-            machine.go(input_)
+            print(machine.kernel(input_))
         except:
             print(machine.current_state())
     

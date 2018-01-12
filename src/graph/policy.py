@@ -11,10 +11,12 @@ class Policy(object):
         self.instructions = config['instructions']
         self.false_instructions = config['false_instructions']
 
+        self.current_instruction = None
+
     def instruct(self):
-        print(self.instructions[self.state])
+        self.current_instruction = self.instructions[self.state]
 
     def false_instruct(self):
-        print(self.false_instructions[self.state])
+        return self.false_instructions[self.state]
 
 

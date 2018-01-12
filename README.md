@@ -3,6 +3,22 @@ chatbot powered by memory network
 
 One Paragraph of project description goes here
 
+======
+"""
+-------------------------------------------------
+   File Name：     regex_rank
+   Description :
+   Author :       deep
+   date：          18-1-12
+-------------------------------------------------
+   Change Activity:
+                   18-1-12:
+
+   __author__ = 'deep'
+-------------------------------------------------
+"""
+======
+
 ## Tips
 head data | awk 'BEGIN {FS="\t"}; {print $2}'
 
