@@ -54,22 +54,46 @@ class Automata(Machine):
 
 
 class NLU(object):
-    def __init__(self):
-        self.rules = {
-            'register': 'register',
-            'fail': 'fail',
-            'success': 'success'
-        }
+    def __init__(self, config_path):
+        self.config = self._load_config(config_path)
+        self._load_interpreter()
+
+    def _load_config(self, config_path):
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        return config
+
+    def _load_interpreter(self):
+        interpreter_id = self.config['interpreter_id']
+        interpreter_path = self.config['interpreter_path'][interpreter_id]
+        if interpreter_id == 'regex':
+            self.interpreter = self.load_regex_interpreter(interpreter_path)
+        elif interpreter_id =='keyword:
+            self.interpreter = self.load_keyword_interpreter(interpreter_path)
+        elif interpreter_id == 'ml':
+            self.interpreter = self.load_ml_interpreter(interpreter_path)
+
+    def load_regex_interpreter(self, interpreter_path):
+        with open(interpreter_path, 'r') as f:
+            self.regex_mapper = json.load(f)
+        return self.regex_mapper
+
+    def load_keyword_interpreter(self, interpreter_path):
+        pass
+
+    def load_ml_interpreter(self, interpreter_path):
+        pass
 
     def nlu(self, utterence):
-        return self.rules[utterence]
+        pass
 
 
 def main():
     automata = Automata('config.json')
-    while True:
-        ipt = input("input:")
-        automata.control(ipt)
+    automata.show_graph()
+    # while True:
+    #     ipt = input("input:")
+    #     automata.control(ipt)
 
 
 if __name__ == '__main__':

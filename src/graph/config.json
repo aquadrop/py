@@ -7,27 +7,22 @@
 		"root",
 		"scan",
 		"auth",
-		"firstScanFail",
-		"secondScanFail",
-		"firstAuthFail",
-		"secondAuthFail",
+		"scanFail",
+		"authFail",
 		"finalSuccess",
 		"finalFail"
 	],
-	"policy": {
-		"root:register": "Scan please.",
-		"scan:success": "Good,auth please.",
-		"scan:fail": "Ok,try scanning again.(first)",
-		"firstScanFail:fail": "Ok,try scanning again.(second)",
-		"firstScanFail:success": "Good,auth please.",
-		"secondScanFail:fail": "Please give up.",
-		"secondScanFail:success": "Good,auth please.",
-		"auth:success": "Good,success.",
-		"auth:fail": "Ok,try auth again.(first)",
-		"firstAuthFail:fail": "Ok,try auth again.(second)",
-		"firstAuthFail:success": "Good,success.",
-		"secondAuthFail:fail": "Please give up.",
-		"secondAuthFail:success": "Good,success."
+	"triggers": [
+		"register",
+		"scanOk",
+		"authOk",
+		"scanNok",
+		"authNok",
+		"ok",
+		"nok"
+	],
+	"regex_mapper": {
+		"register": "注册"
 	},
 	"transitions": [
 		{
@@ -37,68 +32,122 @@
 			"before": "response"
 		},
 		{
-			"trigger": "success",
+			"trigger": "scanOk",
+			"source": "root",
+			"dest": "auth",
+			"before": "response"
+		},
+		{
+			"trigger": "authOk",
+			"source": "root",
+			"dest": "finalSuccess",
+			"before": "response"
+		},
+		{
+			"trigger": "scanNok",
+			"source": "root",
+			"dest": "scanFail",
+			"before": "response"
+		},
+		{
+			"trigger": "authNok",
+			"source": "root",
+			"dest": "authFail",
+			"before": "response"
+		},
+		{
+			"trigger": "ok",
 			"source": "scan",
 			"dest": "auth",
 			"before": "response"
 		},
 		{
-			"trigger": "success",
+			"trigger": "scanOk",
+			"source": "scan",
+			"dest": "auth",
+			"before": "response"
+		},
+		{
+			"trigger": "ok",
 			"source": "auth",
 			"dest": "finalSuccess",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
+			"trigger": "authOk",
+			"source": "auth",
+			"dest": "finalSuccess",
+			"before": "response"
+		},
+		{
+			"trigger": "nok",
 			"source": "scan",
-			"dest": "firstScanFail",
+			"dest": "scanFail",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
-			"source": "firstScanFail",
-			"dest": "secondScanFail",
+			"trigger": "scanNok",
+			"source": "scan",
+			"dest": "scanFail",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
-			"source": "secondScanFail",
+			"trigger": "nok",
+			"source": "scanFail",
 			"dest": "finalFail",
 			"before": "response"
 		},
 		{
-			"trigger": "success",
-			"source": [
-				"firstScanFail",
-				"secondScanFail"
-			],
+			"trigger": "scanNok",
+			"source": "scanFail",
+			"dest": "finalFail",
+			"before": "response"
+		},
+		{
+			"trigger": "ok",
+			"source": "scanFail",
 			"dest": "auth",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
+			"trigger": "scanOk",
+			"source": "scanFail",
+			"dest": "auth",
+			"before": "response"
+		},
+		{
+			"trigger": "nok",
 			"source": "auth",
-			"dest": "firstAuthFail",
+			"dest": "authFail",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
-			"source": "firstAuthFail",
-			"dest": "secondAuthFail",
+			"trigger": "authNok",
+			"source": "auth",
+			"dest": "authFail",
 			"before": "response"
 		},
 		{
-			"trigger": "fail",
-			"source": "secondAuthFail",
+			"trigger": "nok",
+			"source": "authFail",
 			"dest": "finalFail",
 			"before": "response"
 		},
 		{
-			"trigger": "success",
-			"source": [
-				"firstAuthFail",
-				"secondAuthFail"
-			],
+			"trigger": "authNok",
+			"source": "authFail",
+			"dest": "finalFail",
+			"before": "response"
+		},
+		{
+			"trigger": "ok",
+			"source": "authFail",
+			"dest": "finalSuccess",
+			"before": "response"
+		},
+		{
+			"trigger": "authOk",
+			"source": "authFail",
 			"dest": "finalSuccess",
 			"before": "response"
 		}
