@@ -9,8 +9,8 @@
 		{"name":"auth", "interpreter":"regex", "max_out_num":0},
 		{"name":"scanFail", "interpreter":"regex", "max_out_num":0},
 		{"name":"authFail", "interpreter":"regex", "max_out_num":0},
-		{"name":"finalSuccess", "interpreter":"regex", "max_out_num":0},
-		{"name":"finalFail", "interpreter":"regex", "max_out_num":0}
+		{"name":"finalSuccess", "interpreter":"regex", "max_out_num":0, "portal_dest": "root"},
+		{"name":"finalFail", "interpreter":"regex", "max_out_num":0, "portal_dest": "root"}
 	],
 	"instructions":{"root":"hello",
 		"scan":"请扫码",
