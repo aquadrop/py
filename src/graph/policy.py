@@ -19,4 +19,7 @@ class Policy(object):
     def false_instruct(self):
         return self.false_instructions[self.state]
 
+    def reset(self):
+        self.current_instruction = None
+
 

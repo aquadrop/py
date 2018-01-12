@@ -68,7 +68,7 @@ class NLU(object):
         interpreter_path = self.config['interpreter_path'][interpreter_id]
         if interpreter_id == 'regex':
             self.interpreter = self.load_regex_interpreter(interpreter_path)
-        elif interpreter_id =='keyword:
+        elif interpreter_id =='keyword':
             self.interpreter = self.load_keyword_interpreter(interpreter_path)
         elif interpreter_id == 'ml':
             self.interpreter = self.load_ml_interpreter(interpreter_path)

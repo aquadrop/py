@@ -8,8 +8,12 @@ from graph.policy import Policy
 
 
 class StateCard(transitions.State):
-    def __init__(self, name, on_enter=None, on_exit=None,
-                 ignore_invalid_triggers=False, interpreter='keyword'):
+    def __init__(self, config):
+        name = config['name']
+        on_enter = config.get('on_enter')
+        on_exit = config.get('on_exit')
+        ignore_invalid_triggers = config.get('ignore_invalid_triggers', False)
+        interpreter = config.get('interpreter', 'keyword')
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
         self.id = str(uuid.uuid4())
         self.max_out_num = 2
