@@ -79,9 +79,14 @@ class Automata(Machine):
     def drive(self, input_):
         try:
             self.policy.trigger(input_)
+            self._portal()
             return self.policy.current_instruction
         except Exception:
             return self.false_instruct()
+
+    def _portal(self):
+        if self.current_state().portal_dest:
+            self.set_state(state=self.current_state().portal_dest)
 
     def set_init_state(self):
         self.set_state(state=self.init_state.name)

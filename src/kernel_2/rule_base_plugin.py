@@ -93,15 +93,10 @@ class RuleBasePlugin:
 
     def _load_pre_filter(self):
         self.pre_replacement = dict()
-        given_list = self.mongdb.search(query={},
-                                   field={'given': '1'},
-                                   collection='synonym',
-                                   key='given')
-        matched_list = self.mongdb.search(query={},
-                                     field={'matched': '1'},
-                                     collection='synonym',
-                                     key='matched')
-        self.pre_replacement = dict(zip(given_list, matched_list))
+        result_list = self.mongdb.search(field={'given': 1, '_id': 0, 'matched': 1},
+                                    collection='synonym')
+        for each_dict in result_list:
+            self.pre_replacement[each_dict['given']] = each_dict['matched']
 
     # def _load_pre_filter(self, replace_file):
     #     self.pre_replacement = dict()

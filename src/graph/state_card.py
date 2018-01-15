@@ -14,10 +14,12 @@ class StateCard(transitions.State):
         on_exit = config.get('on_exit')
         ignore_invalid_triggers = config.get('ignore_invalid_triggers', False)
         interpreter = config.get('interpreter', 'keyword')
+        portal_dest = config.get('portal_dest', None)
         super().__init__(name, on_enter, on_exit, ignore_invalid_triggers)
         self.id = str(uuid.uuid4())
         self.max_out_num = 2
         self.interpreter = interpreter
+        self.portal_dest = portal_dest
         self._inputs = set()
 
     def append_input(self, input_):
