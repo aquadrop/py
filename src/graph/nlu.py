@@ -27,22 +27,22 @@ class NLU:
         self.regex_interpreter_helper = config['regex_interpreter_helper']
         self.default_interpreter = self.keyword_interpret
 
-    def process(self, q, state=None):
+    def process(self, q, avail_inputs=None, state_interpreter='keyword'):
         """
 
         :param q:
-        :param state: state is state object
+        :param state_interpreter: str
+        :param avail_inputs: list
         :return:
         """
-        if not state:
-            return self.default_interpreter(q)
-        return self.interpreter_function_mapper[state.interpreter](q, state)
+        if not avail_inputs:
+            avail_inputs = set(self.regex_interpreter_helper.keys())
+        return self.interpreter_function_mapper[state_interpreter](q, avail_inputs)
 
-    def keyword_interpret(self, q, state):
+    def keyword_interpret(self, q, avail_inputs):
         return q
 
-    def regex_interpret(self, q, state):
-        avail_inputs = state.get_inputs()
+    def regex_interpret(self, q, avail_inputs):
         best_trigger = q
         best_reg_rank = 0
         for input_ in avail_inputs:
@@ -54,5 +54,8 @@ class NLU:
                 best_trigger = input_
         return best_trigger
 
-    def ml_interpret(self, q, state):
+    def ml_interpret(self, q, avail_inputs):
         pass
+
+    def get_intents(self):
+        return set(self.regex_interpreter_helper.keys())

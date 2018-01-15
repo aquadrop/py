@@ -1,0 +1,6 @@
+{
+	"name": "common",
+	"store_id":"common",
+	"regex_interpreter_helper": {
+	}
+}

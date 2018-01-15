@@ -15,6 +15,7 @@
 import random
 import uuid
 import re
+import traceback
 
 import json
 
@@ -32,7 +33,7 @@ class Automata(Machine):
 
     def __init__(self, config):
         self.id = str(uuid.uuid4())
-        self.store_id = config['store_id']
+        self.store_id = config.get('store_id', 'base')
         self.name = config['name']
         self._load_states(config)
         self.transitions = config['transitions']
@@ -59,12 +60,15 @@ class Automata(Machine):
             state = self.state_mapper[transition['source']]
             state.append_input(trigger_input)
 
-    def kernel(self, q):
+    def drive(self, q):
         if q == self.RESET_CODE:
             self.reset()
             return self.RESET_CODE
-        input_ = self.nlu.process(q, self.current_state())
-        return self.drive(input_)
+        current_state = self.current_state()
+        interpreter = current_state.interpreter
+        avail_inputs = current_state.get_inputs()
+        input_ = self.nlu.process(q, avail_inputs=avail_inputs, state_interpreter=interpreter)
+        return self._kernel(input_)
 
     def reset(self):
         self.set_init_state()
@@ -76,13 +80,13 @@ class Automata(Machine):
     def false_instruct(self):
         return self.policy.false_instruct()
 
-    def drive(self, input_):
+    def _kernel(self, input_):
         try:
             self.policy.trigger(input_)
             self._portal()
-            return self.policy.current_instruction
+            return {"instruction":self.policy.current_instruction, "matched":True}
         except Exception:
-            return self.false_instruct()
+            return {"instruction":self.false_instruct(), "matched":False}
 
     def _portal(self):
         if self.current_state().portal_dest:
@@ -93,6 +97,12 @@ class Automata(Machine):
 
     def show_graph(self):
         self.get_graph().draw('my_state_diagram.png', prog='dot')
+
+    def get_intents(self):
+        return self.nlu.get_intents()
+
+    def get_open_intents(self):
+        return self.init_state.get_inputs()
 
 
 def main():
@@ -106,9 +116,9 @@ def main():
     while True:
         input_ = input('input:')
         try:
-            print(machine.kernel(input_))
+            print(machine.drive(input_))
         except:
-            print(machine.current_state())
+            traceback.print_exc()
     
 
 

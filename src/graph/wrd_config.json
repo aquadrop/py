@@ -1,6 +1,6 @@
 {
-	"name": "store_id",
-	"store_id":"unmannedstore ",
+	"name": "unmannedstore",
+	"store_id":"unmannedstore",
 	"init_state": "root",
 	"ignore_invalid_triggers": "False",
 	"states": [

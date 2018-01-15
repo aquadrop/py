@@ -1,5 +1,5 @@
 {
-	"name": "store_id",
+	"name": "bookstore",
 	"store_id":"bookstore",
 	"init_state": "root",
 	"ignore_invalid_triggers": "False",
