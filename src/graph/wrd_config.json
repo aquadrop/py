@@ -1,0 +1,227 @@
+{
+	"name": "store_id",
+	"store_id":"unmannedstore ",
+	"init_state": "root",
+	"ignore_invalid_triggers": "False",
+	"states": [
+		{"name":"root", "interpreter":"regex", "max_out_num":0},
+		{"name":"comein", "interpreter":"regex", "max_out_num":0},
+		{"name":"download", "interpreter":"regex", "max_out_num":0},
+        {"name":"register", "interpreter":"regex", "max_out_num":0},
+        {"name":"tiedFace", "interpreter":"regex", "max_out_num":0},
+		{"name":"downloadFail", "interpreter":"regex", "max_out_num":0},
+        {"name":"registerFail", "interpreter":"regex", "max_out_num":0},
+        {"name":"tiedFaceFail", "interpreter":"regex", "max_out_num":0},
+        {"name":"finalFail", "interpreter":"regex", "max_out_num":0},
+		{"name":"finalSuccess", "interpreter":"regex", "max_out_num":0}
+	],
+	"instructions":{"root":"hello",
+		"comein":"下载过了么",
+		"download":"请下载",
+		"register":"请注册",
+		"tiedFace":"请绑脸",
+		"downloadFail":"再下载",
+		"registerFail":"再注册",
+		"tiedFaceFail":"再绑脸",
+		"finalSuccess":"恭喜",
+		"finalFail":"傻逼"},
+	"false_instructions":{"root":"你想干嘛",
+		"comein":"请说好了还是失败",
+		"download":"请说好了还是失败",
+		"register":"请说好了还是失败",
+		"tiedFace":"请说好了还是失败",
+		"downloadFail":"请说好了还是失败",
+		"registerFail":"请说好了还是失败",
+		"tiedFaceFail":"请说好了还是失败",
+		"finalSuccess":"恭喜",
+		"finalFail":"傻逼"},
+	"triggers": [
+		"comein",
+		"wantDownload",
+		"downloaded",
+		"registered",
+		"tiedFaced",
+		"ok",
+		"nok",
+		"downloadOk",
+		"registerOk",
+		"tiedFaceOk",
+		"downloadNok",
+		"registerNok",
+		"tiedFaceNok"
+	],
+	"regex_interpreter_helper": {
+		"comein":"进店",
+		"wantDownload":"我要下载|未下载过",
+		"downloaded":"下载过了",
+		"registered":"注册过了",
+		"tiedFaced":"绑脸过了",
+		"ok":"好了|然后呢|下一步",
+		"nok":"不行|失败",
+		"downloadOk":"下载好了",
+		"registerOk":"注册好了",
+		"tiedFaceOk":"绑脸好了",
+		"downloadNok":"下载失败",
+		"registerNok":"注册失败",
+		"tiedFaceNok":"绑脸失败"
+	},
+	"transitions": [
+		{
+			"trigger": "comein",
+			"source": "root",
+			"dest": "comein"
+		},
+		{
+			"trigger": "wantDownload",
+			"source": "root",
+			"dest": "download"
+		},
+		{
+			"trigger": "downloaded",
+			"source": "root",
+			"dest": "register"
+		},
+		{
+			"trigger": "registered",
+			"source": "root",
+			"dest": "tiedFace"
+		},
+		{
+			"trigger": "tiedFaced",
+			"source": "root",
+			"dest": "finalSuccess"
+		},
+		{
+			"trigger": "wantDownload",
+			"source": "comein",
+			"dest": "download"
+		},
+		{
+			"trigger": "downloaded",
+			"source": "comein",
+			"dest": "register"
+		},
+		{
+			"trigger": "ok",
+			"source": "download",
+			"dest": "register"
+		},
+		{
+			"trigger": "downloadOk",
+			"source": "download",
+			"dest": "register"
+		},
+		{
+			"trigger": "nok",
+			"source": "download",
+			"dest": "downloadFail"
+		},
+		{
+			"trigger": "downloadNok",
+			"source": "download",
+			"dest": "downloadFail"
+		},
+		{
+			"trigger": "ok",
+			"source": "downloadFail",
+			"dest": "register"
+		},
+		{
+			"trigger": "downloadOk",
+			"source": "downloadFail",
+			"dest": "register"
+		},
+		{
+			"trigger": "nok",
+			"source": "downloadFail",
+			"dest": "finalFail"
+		},
+		{
+			"trigger": "downloadNok",
+			"source": "downloadFail",
+			"dest": "finalFail"
+		},
+
+		{
+			"trigger": "ok",
+			"source": "register",
+			"dest": "tiedFace"
+		},
+		{
+			"trigger": "registerOk",
+			"source": "register",
+			"dest": "tiedFace"
+		},
+		{
+			"trigger": "nok",
+			"source": "register",
+			"dest": "registerFail"
+		},
+		{
+			"trigger": "registerNok",
+			"source": "register",
+			"dest": "registerFail"
+		},
+		{
+			"trigger": "ok",
+			"source": "registerFail",
+			"dest": "tiedFace"
+		},
+		{
+			"trigger": "registerOk",
+			"source": "registerFail",
+			"dest": "tiedFace"
+		},
+		{
+			"trigger": "nok",
+			"source": "registerFail",
+			"dest": "finalFail"
+		},
+		{
+			"trigger": "registerNok",
+			"source": "registerFail",
+			"dest": "finalFail"
+		},
+
+		{
+			"trigger": "ok",
+			"source": "tiedFace",
+			"dest": "finalSuccess"
+		},
+		{
+			"trigger": "tiedFaceOk",
+			"source": "tiedFace",
+			"dest": "finalSuccess"
+		},
+		{
+			"trigger": "nok",
+			"source": "tiedFace",
+			"dest": "tiedFaceFail"
+		},
+		{
+			"trigger": "tiedFaceNok",
+			"source": "tiedFace",
+			"dest": "tiedFaceFail"
+		},
+		{
+			"trigger": "ok",
+			"source": "tiedFaceFail",
+			"dest": "finalSuccess"
+		},
+		{
+			"trigger": "tiedFaceOk",
+			"source": "tiedFaceFail",
+			"dest": "finalSuccess"
+		},
+		{
+			"trigger": "nok",
+			"source": "tiedFaceFail",
+			"dest": "finalFail"
+		},
+		{
+			"trigger": "tiedFaceNok",
+			"source": "tiedFaceFail",
+			"dest": "finalFail"
+		}
+	]
+}

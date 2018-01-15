@@ -11,6 +11,8 @@ class Automata(Machine):
         self.policy = self.config['policy']
         self._load_nlu()
         self._init_machine()
+        self.interpreter=None
+        self.trigger=None
 
     def _load_config(self, config_path):
         with open(config_path, 'r') as f:

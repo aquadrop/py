@@ -25,6 +25,7 @@ from graph.policy import Policy
 from graph.state_card import StateCard
 from graph.nlu import NLU
 
+
 class Automata(Machine):
 
     RESET_CODE = 'CLEAR_AUTOMATA'
@@ -90,7 +91,7 @@ class Automata(Machine):
 
 
 def main():
-    with open("config.json", 'r') as f:
+    with open("wrd_config.json", 'r') as f:
         config = json.load(f)
     machine = Automata(config)
     # machine.set_init_state()
